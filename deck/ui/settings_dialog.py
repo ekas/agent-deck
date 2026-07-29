@@ -11,10 +11,29 @@ from deck.render import kit as ck
 from deck.render.kit import BG, INK, INK_2, INK_3
 
 
-class SettingsMixin:
-    """Wird in AgentDeck eingemischt (siehe panel.py)."""
+class SettingsDialog:
+    """Der Einstellungs-Dialog als eigenes Objekt, KEIN Mixin.
 
-    def _open_settings(self):
+    Er war eines: eine Methode auf AgentDeck, die sich über `self` aus dem gesamten
+    Panel-Zustand nahm, was sie brauchte. Gemessen waren das genau vier Dinge und drei
+    Rückrufe — und die stehen jetzt im Konstruktor. Der Unterschied ist nicht Kosmetik:
+    vorher musste man die ganze Klasse lesen, um zu wissen, was der Dialog anfasst;
+    jetzt steht es in seiner Signatur, und er ist ohne Panel konstruierbar.
+
+    Der Rumpf von show() ist unverändert der alte — die Abhängigkeiten haben nur eine
+    andere Herkunft.
+    """
+
+    def __init__(self, root, settings, store, dock, *, set_modal, restart, place):
+        self.root = root            # Tk-Root (Elternfenster des Dialogs)
+        self.settings = settings    # Deck-Einstellungen (Dict, wird in place mutiert)
+        self.store = store          # BindStore - speichert die Einstellungen
+        self.dock = dock            # EdgeDock, für die Andock-Auswahl
+        self._set_modal = set_modal    # pausiert den Auto-Fokus, solange offen
+        self.restart = restart         # Panel-Neustart (Knopf im Dialog)
+        self._place_dialog = place     # platziert das Fenster auf dem richtigen Monitor
+
+    def show(self):
         """Frost-gestyltes Einstellungs-Fenster (⚙ in der unteren Leiste). Steuert die
         vier Default-Werte fuer NEU gestartete Claude-Agenten direkt in Claude Codes
         globaler ~/.claude/settings.json (Modell, Permission-Modus, Effort, Antwort-

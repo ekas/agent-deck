@@ -50,7 +50,7 @@ from deck.ui.hover import HoverMixin
 from deck.ui.layout import LayoutMixin
 from deck.ui.refresh import RefreshMixin
 from deck.ui.reorder import ReorderMixin
-from deck.ui.settings_dialog import SettingsMixin
+from deck.ui.settings_dialog import SettingsDialog
 from deck.ui.ticket import TicketMixin
 from deck.ui.tile_draw import TileDrawMixin
 from deck.ui.tiles import TilesMixin
@@ -69,7 +69,7 @@ class AgentDeck(
         # Takt: Slot-Zustände lesen, Fenster/Slots pflegen, Thread-Rückweg
         RefreshMixin, WindowSyncMixin, UiThreadMixin,
         # Ticket-Arbeit und Dialoge
-        TicketMixin, WorktreeSweepMixin, SettingsMixin,
+        TicketMixin, WorktreeSweepMixin,
 ):
     def __init__(self):
         self.active_slot = None
@@ -312,6 +312,16 @@ class AgentDeck(
         self._apply_slim_layout()
 
     # ── Panel neu starten ───────────────────────────────
+    def _open_settings(self):
+        """Den Einstellungs-Dialog aufmachen.
+
+        Hier steht, was er anfasst - vier Werte und drei Rueckrufe. Als Mixin nahm er
+        sich das still aus dem Panel-Zustand; jetzt ist es eine Zeile Verdrahtung, die
+        man lesen kann."""
+        SettingsDialog(self.root, self.settings, self.store, self.dock,
+                       set_modal=self._set_modal, restart=self.restart,
+                       place=self._place_dialog).show()
+
     def restart(self):
         """Das ganze Panel neu starten: eine frische Instanz mit DEMSELBEN Interpreter
         und denselben Argumenten starten, dann die aktuelle beenden. Erst wenn der neue
