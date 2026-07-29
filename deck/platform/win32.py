@@ -6,6 +6,7 @@ untypisiert bleibt.
 """
 import ctypes
 from ctypes import wintypes
+from typing import Any
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -25,7 +26,7 @@ gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
 # Darum werden ALLE benutzten Funktionen typisiert – auch die, bei denen es
 # „bisher lief". Es lief, weil Handle-Werte meist klein sind; das ist Glueck, keine
 # Zusage. Die Deklarationen stehen bewusst hier zusammen und nicht verstreut.
-def _decl(lib, name, restype, *argtypes):
+def _decl(lib: Any, name: str, restype: Any, *argtypes: Any) -> None:
     """argtypes/restype setzen, aber an einer fehlenden Funktion nicht scheitern:
     der Name wird per getattr aufgeloest (eine aeltere Windows-Version kennt sie
     dann eben nicht, und der jeweilige Aufrufer faellt selbst zurueck). Ein

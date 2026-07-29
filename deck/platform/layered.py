@@ -82,7 +82,7 @@ except (AttributeError, OSError):
     pass
 
 
-def layer_probe(hwnd):
+def layer_probe(hwnd: int) -> str:
     """Zustand eines Fensters aus Sicht der Layer-APIs, als Text – fuer die Fehlersuche,
     wenn layered_push scheitert. Genau die drei Dinge, die UpdateLayeredWindow ablehnen
     lassen: Fenster weg, WS_EX_LAYERED nicht (mehr) gesetzt, oder das Fenster steckt im
@@ -103,7 +103,7 @@ def layer_probe(hwnd):
         return f"probe fehlgeschlagen: {e}"
 
 
-def layered_enable(hwnd, force=False):
+def layered_enable(hwnd: int, force: bool = False) -> bool:
     """Das Fenster fuer Per-Pixel-Alpha vorbereiten (WS_EX_LAYERED setzen).
 
     `force` legt das Bit NEU an: erst loeschen, dann wieder setzen. Das ist noetig,
@@ -135,7 +135,7 @@ def layered_enable(hwnd, force=False):
 LAST_ERROR = ""   # Grund des letzten layered_push-Fehlschlags (siehe dort)
 
 
-def _layer_fail(step):
+def _layer_fail(step: str) -> bool:
     """Fehlschlag festhalten. Ein stiller Rueckfall ist hier das Schlimmste, was
     passieren kann: das Fenster sieht dann anders aus als gedacht, und niemand weiss
     warum. Der Aufrufer gibt LAST_ERROR aus, wenn er aufgibt."""
@@ -144,7 +144,7 @@ def _layer_fail(step):
     return False
 
 
-def layered_push(hwnd, bits, w, h):
+def layered_push(hwnd: int, bits: bytes, w: int, h: int) -> bool:
     """Ein Bild MIT Alphakanal ins Fenster schieben (UpdateLayeredWindow).
 
     `bits` sind w*h*4 Bytes BGRA mit VORMULTIPLIZIERTEM Alpha. Die Fenster-POSITION

@@ -22,6 +22,7 @@ Prozess wird nicht mehr DPI-virtualisiert), die beiden Welten sind also direkt
 vergleichbar.
 """
 import tkinter as tk
+from typing import Any
 
 # Windows-Zugriff bewusst best effort: fehlt er (anderes OS, alter Build), liefert
 # work_area() None und die Aufrufer platzieren wie früher ungeklemmt.
@@ -52,7 +53,7 @@ if _user32 is not None:
     _user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
 
 
-def work_area(x, y):
+def work_area(x: int, y: int) -> tuple[int, int, int, int] | None:
     """Arbeitsfläche des Monitors unter dem Punkt (x, y) als (links, oben, rechts,
     unten) – Monitorfläche ohne Taskleiste, damit nichts hinter ihr landet.
 
@@ -84,7 +85,7 @@ def work_area(x, y):
 _pad_seen = (0, 0)
 
 
-def _frame_pad(win):
+def _frame_pad(win: Any) -> tuple[int, int]:
     """Um wie viel ein Fenster GRÖSSER ist als sein Inhalt: Rand + Titelleiste.
 
     Nötig, weil wm_geometry die AUSSENKANTE positioniert, winfo_reqwidth/height aber
@@ -113,7 +114,7 @@ def _frame_pad(win):
         return (0, 0)
 
 
-def _axis(anchor, size, off, lo, hi):
+def _axis(anchor: int, size: int, off: int, lo: int, hi: int) -> int:
     """Eine Achse platzieren: bevorzugt anchor+off; reicht das über hi hinaus, auf
     die andere Seite des Ankers spiegeln (anchor-off-size); passt es auch dort
     nicht ganz, an den näheren Rand klemmen."""
@@ -126,7 +127,9 @@ def _axis(anchor, size, off, lo, hi):
     return max(lo, hi - size)
 
 
-def fit(ax, ay, w, h, area, *, dx=0, dy=0):
+def fit(ax: int, ay: int, w: int, h: int,
+        area: tuple[int, int, int, int] | None, *,
+        dx: int = 0, dy: int = 0) -> tuple[int, int]:
     """(x, y) für ein Fenster der Größe w×h am Anker (ax, ay), versetzt um (dx, dy)
     und in <area> = (l, t, r, b) gehalten. area=None -> Anker + Versatz, ungeklemmt."""
     if not area:
@@ -135,7 +138,8 @@ def fit(ax, ay, w, h, area, *, dx=0, dy=0):
     return (int(_axis(ax, w, dx, left, right)), int(_axis(ay, h, dy, top, bottom)))
 
 
-def place(win, ax, ay, *, dx=0, dy=0):
+def place(win: Any, ax: int, ay: int, *,
+          dx: int = 0, dy: int = 0) -> tuple[int, int] | None:
     """<win> (Toplevel) an den Anker (ax, ay) legen, versetzt um (dx, dy), und dabei
     auf dem Monitor unter dem Anker halten. Gibt die gesetzte Position zurück
     (None, wenn das Fenster gerade nicht mehr existiert).

@@ -33,6 +33,7 @@ Windows-only wie das ganze Deck; jeder Aufruf ist best effort und faellt still
 auf Faktor 1.0 zurueck – lieber ein weich gezeichnetes Deck als gar keins.
 """
 import ctypes
+from typing import Any
 
 # Per-Monitor-V2: das Fenster bekommt seine DPI vom Monitor, auf dem es liegt,
 # und Windows skaliert nichts mehr fuer uns. Als Zeiger-Konstante uebergeben.
@@ -47,7 +48,7 @@ PT_PX = 96.0 / 72.0
 _ui = 1.0            # aktueller Oberflaechenfaktor (1.0 = 100 %, 1.5 = 150 %)
 
 
-def enable():
+def enable() -> bool:
     """Windows melden, dass wir selbst in Geraetepixeln zeichnen.
 
     MUSS vor dem ersten Tk-Aufruf stehen – danach steht die Awareness des
@@ -71,7 +72,7 @@ def enable():
         return False
 
 
-def system_factor():
+def system_factor() -> float:
     """Skalierung des Hauptmonitors (144 dpi -> 1.5). Fallback, solange es noch
     kein Fenster gibt."""
     try:
@@ -83,7 +84,7 @@ def system_factor():
     return 1.0
 
 
-def factor_for_window(hwnd):
+def factor_for_window(hwnd: int) -> float:
     """Skalierung des Monitors, auf dem <hwnd> gerade liegt.
 
     Das ist der Wert, der beim Verschieben zwischen unterschiedlich skalierten
@@ -99,7 +100,7 @@ def factor_for_window(hwnd):
     return system_factor()
 
 
-def set_ui(factor):
+def set_ui(factor: float) -> float:
     """Den Oberflaechenfaktor global setzen (das Panel tut das beim Start und bei
     jedem Monitorwechsel). Sehr kleine/kaputte Werte werden abgefangen, damit ein
     Messfehler nicht die ganze Oberflaeche zusammenfaltet."""
@@ -112,24 +113,24 @@ def set_ui(factor):
     return _ui
 
 
-def ui():
+def ui() -> float:
     """Aktueller Oberflaechenfaktor."""
     return _ui
 
 
-def px(v):
+def px(v: float) -> int:
     """Design-Einheit (Mass bei 100 %) -> Geraetepixel, ganzzahlig gerundet.
     Fuer feste Masse ausserhalb des Kachel-Renderers (Leistenhoehe, Griffdicke …)."""
     return round(v * _ui)
 
 
-def fpx(v):
+def fpx(v: float) -> float:
     """Wie px(), aber ohne Rundung – fuer Koordinaten, die weiterrechnen
     (Mittelpunkte, Radien), damit sich Rundungsfehler nicht aufaddieren."""
     return v * _ui
 
 
-def sync_tk_scaling(root):
+def sync_tk_scaling(root: Any) -> None:
     """Tks Punkt->Pixel-Umrechnung auf den aktuellen Oberflaechenfaktor bringen.
 
     Beim Start macht Tk das nach enable() von allein (es liest die DPI des
@@ -142,7 +143,8 @@ def sync_tk_scaling(root):
         pass
 
 
-def fontpx(pt, scale=1.0, family="Segoe UI", weight=None):
+def fontpx(pt: float, scale: float = 1.0, family: str = "Segoe UI",
+           weight: str | None = None) -> tuple[str, int] | tuple[str, int, str]:
     """Canvas-Schrift in festen PIXELN – unabhaengig von `tk scaling`.
 
     <pt> ist die Design-Punktgroesse (die Zahl, die frueher im Code stand),

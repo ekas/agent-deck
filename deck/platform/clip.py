@@ -9,6 +9,7 @@ gesetzt.
 """
 import ctypes
 from ctypes import wintypes
+from typing import Any
 
 from deck.platform.win32 import gdi32, user32
 
@@ -32,11 +33,11 @@ gdi32.CreateRectRgn.restype = wintypes.HRGN
 gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
 
 
-def monitor_rects():
+def monitor_rects() -> list[tuple[int, int, int, int]]:
     """Rechtecke aller Monitore in Bildschirmkoordinaten [(l, t, r, b), …]."""
-    out = []
+    out: list[tuple[int, int, int, int]] = []
 
-    def cb(_hmon, _hdc, lprc, _data):
+    def cb(_hmon: Any, _hdc: Any, lprc: Any, _data: Any) -> bool:
         r = lprc.contents
         out.append((r.left, r.top, r.right, r.bottom))
         return True
@@ -48,7 +49,7 @@ def monitor_rects():
     return out
 
 
-def screen_beyond(side, pos):
+def screen_beyond(side: str, pos: int) -> bool:
     """Liegt JENSEITS der Kante noch echte Monitorflaeche? `side` ist 'left',
     'right' oder 'top', `pos` deren Bildschirmkoordinate (x bzw. y).
 
@@ -62,7 +63,7 @@ def screen_beyond(side, pos):
     return False
 
 
-def clip_window(hwnd, side, cut, extent=0):
+def clip_window(hwnd: int, side: str, cut: float, extent: float = 0) -> None:
     """Die ersten `cut` px des Fensters an `side` unsichtbar machen; `cut` <= 0
     nimmt die Beschneidung wieder zurueck (und damit die DWM-Rundung zurueck).
 

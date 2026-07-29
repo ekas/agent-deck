@@ -37,7 +37,7 @@ except OSError:
 _timer_depth = 0
 
 
-def timer_precision_begin(ms=1):
+def timer_precision_begin(ms: int = 1) -> None:
     """1-ms-Timer anfordern (fuer die Dauer einer Animation). Immer paarweise mit
     timer_precision_end() verwenden."""
     global _timer_depth
@@ -51,7 +51,7 @@ def timer_precision_begin(ms=1):
     _timer_depth += 1
 
 
-def timer_precision_end(ms=1):
+def timer_precision_end(ms: int = 1) -> None:
     """Die mit timer_precision_begin() angeforderte Aufloesung wieder freigeben."""
     global _timer_depth
     if _winmm is None or _timer_depth <= 0:
@@ -113,7 +113,7 @@ class _DEVMODEW(ctypes.Structure):
                 ("dmPanningWidth", wintypes.DWORD), ("dmPanningHeight", wintypes.DWORD)]
 
 
-def refresh_hz(hwnd=None, default=60):
+def refresh_hz(hwnd: int | None = None, default: int = 60) -> int:
     """Bilder je Sekunde des Monitors unter `hwnd` (ohne hwnd: primaerer Schirm).
 
     `default`, wenn Windows nur „Hardware-Standard" meldet (0 oder 1) oder der Weg

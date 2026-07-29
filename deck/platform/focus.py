@@ -8,6 +8,7 @@ Modul.
 """
 import ctypes
 from ctypes import wintypes
+from typing import Any
 
 from deck.platform.win32 import dwmapi, kernel32, user32
 
@@ -20,7 +21,7 @@ user32.IsWindowVisible.argtypes = [wintypes.HWND]
 user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
 
 
-def _title(hwnd):
+def _title(hwnd: int) -> str:
     n = user32.GetWindowTextLengthW(hwnd)
     if n == 0:
         return ""
@@ -29,11 +30,11 @@ def _title(hwnd):
     return buf.value
 
 
-def find_window(*needles):
+def find_window(*needles: str) -> int | None:
     """HWND des ersten sichtbaren Fensters, dessen Titel ALLE needles enthaelt."""
     hits = []
 
-    def cb(hwnd, _):
+    def cb(hwnd: int, _: Any) -> bool:
         if user32.IsWindowVisible(hwnd):
             t = _title(hwnd)
             if t and all(nd.lower() in t.lower() for nd in needles):
@@ -44,14 +45,14 @@ def find_window(*needles):
     return hits[0] if hits else None
 
 
-def list_titles(*needles):
+def list_titles(*needles: str) -> list[str]:
     """Titel ALLER sichtbaren Fenster, deren Titel ALLE needles (case-insensitiv)
     enthaelt. Gedacht, um festzustellen, welche VS-Code-Fenster ueberhaupt noch offen
     sind (z.B. list_titles(VSCODE_MARKER)) – ein geschlossenes Fenster taucht nicht mehr
     auf, ein bloss neu ladendes/minimiertes schon (WS_VISIBLE bleibt bei minimiert)."""
     out = []
 
-    def cb(hwnd, _):
+    def cb(hwnd: int, _: Any) -> bool:
         if user32.IsWindowVisible(hwnd):
             t = _title(hwnd)
             if t and all(nd.lower() in t.lower() for nd in needles):
@@ -65,12 +66,12 @@ def list_titles(*needles):
 user32.GetForegroundWindow.restype = wintypes.HWND
 
 
-def foreground_hwnd():
+def foreground_hwnd() -> int:
     """HWND des aktuell aktiven Fensters (fuer 'klick-zum-Verbinden')."""
     return user32.GetForegroundWindow()
 
 
-def title_of(hwnd):
+def title_of(hwnd: int) -> str:
     """Fenstertitel zu einem HWND (leerer String, wenn keiner)."""
     return _title(hwnd) if hwnd else ""
 
@@ -81,7 +82,7 @@ user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
 user32.GetAncestor.restype = wintypes.HWND
 
 
-def toplevel_hwnd(child_id):
+def toplevel_hwnd(child_id: int) -> int:
     """Von der Tk-winfo_id zum echten Top-Level-Fensterhandle (GA_ROOT)."""
     return user32.GetAncestor(child_id, _GA_ROOT) or child_id
 
@@ -97,14 +98,14 @@ _DWMWCP_ROUND = 2
 _DWMWCP_ROUNDSMALL = 3                # kleiner Radius (~4 px) statt Standard (~8 px)
 
 
-def _colorref(hexstr):
+def _colorref(hexstr: str) -> int:
     """'#RRGGBB' -> Windows-COLORREF (0x00BBGGRR)."""
     h = hexstr.lstrip("#")
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return r | (g << 8) | (b << 16)
 
 
-def _dwm_set(hwnd, attr, value):
+def _dwm_set(hwnd: int, attr: int, value: Any) -> None:
     if not dwmapi:
         return
     val = ctypes.c_int(int(value))
@@ -115,8 +116,9 @@ def _dwm_set(hwnd, attr, value):
         pass   # aeltere Builds kennen das Attribut nicht -> leise ignorieren
 
 
-def style_titlebar(hwnd, *, dark=True, border=None, caption=None,
-                   text=None, round_corners=True):
+def style_titlebar(hwnd: int, *, dark: bool = True, border: str | None = None,
+                   caption: str | None = None, text: str | None = None,
+                   round_corners: bool = True) -> None:
     """Native Titelleiste (Win11-DWM) umstylen: Dark-Mode, farbiger Rand, runde
     Ecken, dunkle Caption + heller Titeltext. Jede Eigenschaft ist einzeln
     gekapselt und faellt auf aelteren Windows leise auf die Standard-Leiste
@@ -136,7 +138,7 @@ def style_titlebar(hwnd, *, dark=True, border=None, caption=None,
         _dwm_set(hwnd, _DWMWA_TEXT_COLOR, _colorref(text))
 
 
-def round_corners(hwnd, *, small=True):
+def round_corners(hwnd: int, *, small: bool = True) -> None:
     """Ecken eines Fensters per DWM runden – auch bei RAHMENLOSEN Fenstern
     (overrideredirect), die keine native Titelleiste/DWM-Kante mehr haben.
 
@@ -190,10 +192,10 @@ _get_wndproc.restype = ctypes.c_void_p
 # hwnd -> die alte Fensterprozedur (WNDPROC), damit sie beim Abraeumen
 # zurueckgesetzt werden kann. MUSS am Leben bleiben: gibt der GC den
 # Callback frei, stuerzt Windows beim naechsten Fensterereignis ab.
-_resize_hooks: dict[int, object] = {}
+_resize_hooks: dict[int, tuple[Any, Any]] = {}
 
 
-def restrict_resize_to_corner(hwnd):
+def restrict_resize_to_corner(hwnd: int) -> None:
     """Fenstergroesse nur noch an der Ecke unten-rechts ziehbar machen.
 
     Haengt sich per Subclassing in WM_NCHITTEST und wandelt jede Resize-Zone ausser
@@ -209,7 +211,7 @@ def restrict_resize_to_corner(hwnd):
     if not hwnd or hwnd in _resize_hooks:
         return
 
-    def _proc(h, msg, wp, lp):
+    def _proc(h: int, msg: int, wp: int, lp: int) -> int:
         _cb, old = _resize_hooks[hwnd]        # gehaltene Callback- + Alt-Proc-Refs
         res = user32.CallWindowProcW(old, h, msg, wp, lp)
         if msg == _WM_NCHITTEST and res in _HT_RESIZE and res != _HTBOTTOMRIGHT:
@@ -233,7 +235,7 @@ user32.IsIconic.argtypes = [wintypes.HWND]
 user32.IsIconic.restype = wintypes.BOOL
 
 
-def focus_window(hwnd):
+def focus_window(hwnd: int) -> None:
     """Holt hwnd zuverlaessig nach vorn (AttachThreadInput-Trick gegen die
     Windows-Sperre, die das Klauen des Vordergrunds normal verhindert).
 
@@ -255,7 +257,7 @@ def focus_window(hwnd):
         user32.AttachThreadInput(cur, tgt_thr, False)
 
 
-def windows_of_pid(pid):
+def windows_of_pid(pid: int) -> list[int]:
     """Alle sichtbaren Top-Level-Fenster dieses Prozesses (Liste von hwnd).
 
     Reine Abfrage OHNE Nebenwirkung – wichtig fuer den Waechter (watchdog.py):
@@ -264,7 +266,7 @@ def windows_of_pid(pid):
     Minuten den Fokus klauen)."""
     hits = []
 
-    def cb(hwnd, _):
+    def cb(hwnd: int, _: Any) -> bool:
         if user32.IsWindowVisible(hwnd):
             wpid = wintypes.DWORD()
             user32.GetWindowThreadProcessId(hwnd, ctypes.byref(wpid))
@@ -276,12 +278,12 @@ def windows_of_pid(pid):
     return hits
 
 
-def has_window(pid):
+def has_window(pid: int) -> bool:
     """True, wenn der Prozess mindestens ein sichtbares Fenster hat (nebenwirkungsfrei)."""
     return bool(windows_of_pid(pid))
 
 
-def focus_pid(pid):
+def focus_pid(pid: int) -> bool:
     """Erstes sichtbares Top-Level-Fenster des Prozesses <pid> nach vorn holen.
     True, wenn eins gefunden und fokussiert wurde, sonst False.
 
