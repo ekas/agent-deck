@@ -9,6 +9,7 @@ worktree bestaetigt.
 """
 import os
 import threading
+from typing import Any
 
 from deck.domain import config as cfg
 from deck.domain import slot_state as dc
@@ -20,7 +21,7 @@ from deck.ops import worktree as wtc
 class WorktreeSweepMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _cleanup_worktrees(self, slot):
+    def _cleanup_worktrees(self, slot) -> None:
         """Beim Schliessen eines Agenten dessen git worktree(s) entfernen. Auf dem
         Tk-Thread werden hier NUR die guenstigen Signale eingesammelt (solange Ticket/
         Marker noch da sind): der exakte Marker-Pfad dieses Slots, der Ticket-Branch +
@@ -45,7 +46,7 @@ class WorktreeSweepMixin:
                              args=(exact, branch, repo, others), daemon=True).start()
 
     @staticmethod
-    def _remove_worktrees_bg(exact, branch, repo, others):
+    def _remove_worktrees_bg(exact, branch, repo, others) -> None:
         """Hintergrund-Thread: worktree(s) dieses Slots entfernen (best effort). Ruft NICHT
         ins Tk zurueck -> nur Dateisystem/git, darum ungefaehrlich. Der Branch-Fallback
         (`git worktree list`) laeuft NUR hier (blockierender subprocess) und NUR, wenn der
@@ -53,7 +54,7 @@ class WorktreeSweepMixin:
         eines anderen Agenten am selben Branch. Von einem anderen Slot beanspruchte Pfade
         (`others`) werden uebersprungen, nicht geloescht."""
         paths = {}
-        def _add(p):
+        def _add(p) -> None:
             if p:
                 paths.setdefault(os.path.normpath(p), p)
         _add(exact)
@@ -71,7 +72,7 @@ class WorktreeSweepMixin:
             except Exception:
                 pass
 
-    def _sweep_orphan_worktrees(self, now):
+    def _sweep_orphan_worktrees(self, now) -> None:
         """Verwaiste git worktrees im Hintergrund abraeumen: fuer jeden gemeldeten
         worktree-Marker (state/<slot>.worktree) pruefen, ob der zugehoerige Agent noch
         LEBT (Slot unter den Terminals seines VERBUNDENEN Fensters). Fehlt er, ist der
@@ -124,7 +125,7 @@ class WorktreeSweepMixin:
             if slot not in markers:
                 self._wt_gone_since.pop(slot, None)
 
-    def _sweep_disk_worktrees(self, now, states):
+    def _sweep_disk_worktrees(self, now, states) -> None:
         """Zweiter, MARKER-UNABHAENGIGER Orphan-Sweep. Durchsucht ~minuetlich die
         '<repo>.wt/'-Ordner der bekannten Repos DIREKT auf der Platte nach worktrees,
         an denen kein lebender Agent mehr haengt, und raeumt sie ab. Faengt genau die
@@ -195,7 +196,7 @@ class WorktreeSweepMixin:
         disc_names = {(self.bindings.get(w) or "").lower() for w in bound_disc}
         skip_roots = set()
 
-        def _note_disc_root(slot, root):
+        def _note_disc_root(slot, root) -> None:
             if root and slot and slot[0] in bound_disc:
                 skip_roots.add(os.path.normcase(os.path.normpath(root)))
 
@@ -212,7 +213,7 @@ class WorktreeSweepMixin:
                   owned_paths, owned_slugs),
             daemon=True).start()
 
-    def _disk_sweep_bg(self, now, repos, disc_names, skip_roots, owned_paths, owned_slugs):
+    def _disk_sweep_bg(self, now, repos, disc_names, skip_roots, owned_paths, owned_slugs) -> None:
         """bg-Thread des Disk-Sweeps: das blockierende git/fs + das Loeschen. Bekommt
         einen unveraenderlichen Snapshot des Deck-Zustands uebergeben; von der Deck-Seite
         fasst er NUR _wt_disk_gone_since an (der Tk-Thread startet keinen zweiten Sweep,
@@ -232,6 +233,8 @@ class WorktreeSweepMixin:
                         or os.path.basename(root).lower() in disc_names:
                     continue
                 wt_dir = wtc.wt_dir_for_repo(root)
+                if not wt_dir:      # Pfad passt nicht auf '<repo>.wt' -> nichts zu fegen
+                    continue
                 examined.add(os.path.normcase(os.path.normpath(wt_dir)))
                 for d in wtc.list_child_dirs(wt_dir):
                     nd = os.path.normcase(os.path.normpath(d))
@@ -256,7 +259,7 @@ class WorktreeSweepMixin:
             self._disk_sweep_busy = False
 
     @staticmethod
-    def _remove_orphan_worktree(path, repo):
+    def _remove_orphan_worktree(path, repo) -> Any:
         """Einen als verwaist erkannten worktree-Ordner ueber die sichere wtc-Maschinerie
         entfernen; True, wenn er weg ist. Waehlt den Weg nach Form:
           • verlinkter worktree (registriert ODER mit haengender '.git -> …/worktrees/…'-

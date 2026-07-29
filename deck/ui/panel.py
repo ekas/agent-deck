@@ -27,6 +27,7 @@ import sys
 import threading
 import tkinter as tk
 import tkinter.font as tkfont
+from typing import Any
 
 from deck import i18n
 from deck.claude import summarize as cs
@@ -71,7 +72,7 @@ class AgentDeck(
         # Ticket-Arbeit und Dialoge
         TicketMixin, WorktreeSweepMixin,
 ):
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_slot = None
         self._await_new = None         # (win, slots-vorher, ts) – neuen "＋"-Chat auto-fokussieren
         self.slot_mode = {}            # Slot -> Permission-Mode-Index (Ist aus Hooks, sonst Annahme)
@@ -197,7 +198,7 @@ class AgentDeck(
         self.dock = EdgeDock(self)
         self.dock.apply_initial()
 
-    def _glow_self_heal(self):
+    def _glow_self_heal(self) -> None:
         """Ist der Ring aktiviert (deck_settings 'glow'), aber der Patch fehlt (z.B.
         nach einem VS-Code-Update, das die workbench.html ersetzt hat), ihn im
         Hintergrund still neu einspielen. Best effort: Fehler (VS Code offen / keine
@@ -207,7 +208,7 @@ class AgentDeck(
         if not self.settings.get("glow"):
             return
 
-        def work():
+        def work() -> None:
             try:
                 installed, n = rg.status()
                 if n and not installed:
@@ -217,13 +218,13 @@ class AgentDeck(
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _set_modal(self, v):
+    def _set_modal(self, v) -> None:
         # Der Ticket-/Einstellungs-Dialog ruft das, solange er offen ist -> refresh()
         # pausiert den Auto-Fokus (sonst klaut ein neu erscheinender Agent dem Dialog
         # den Tastaturfokus). In finally IMMER wieder False.
         self._modal = v
 
-    def _apply_icon(self):
+    def _apply_icon(self) -> None:
         """Roboterkopf als Fenster-/Taskbar-Icon (assets/robot.ico, gezeichnet im
         Frost-/Cyan-Look; siehe assets/make_robot.py zum Neu-Generieren).
 
@@ -258,7 +259,7 @@ class AgentDeck(
         except tk.TclError:
             pass
 
-    def _apply_transparency(self):
+    def _apply_transparency(self) -> None:
         """Windows: Hintergrund durchsichtig (transparentcolor = BG) und/oder ganzes
         Fenster halbtransparent (alpha). Faellt bei fehlender Unterstuetzung leise
         auf ein normales Fenster zurueck."""
@@ -275,7 +276,7 @@ class AgentDeck(
             pass
 
     # ── UI aufbauen ─────────────────────────────────────
-    def _build(self):
+    def _build(self) -> None:
         # Deck: pro verbundenem Fenster ein Block (kleiner Repo-Name als Kopf, darunter
         # die Agenten-Kacheln). Fuellt das Fenster und skaliert beim Resize.
         self.agent_area = tk.Frame(self.root, bg=BG)
@@ -329,14 +330,14 @@ class AgentDeck(
         self._apply_slim_layout()
 
     # ── Panel neu starten ───────────────────────────────
-    def _dragging(self):
+    def _dragging(self) -> Any:
         """Zieht der Nutzer gerade eine Kachel? Schmale Fassade auf TileDrag.
 
         Vier Stellen fragen das - Hover, Layout, der Poll-Takt und das Dock über
         app._dragging(). Keine davon soll wissen müssen, wo der Drag-Zustand liegt."""
         return self.drag.dragging()
 
-    def _open_settings(self):
+    def _open_settings(self) -> None:
         """Den Einstellungs-Dialog aufmachen.
 
         Hier steht, was er anfasst - vier Werte und drei Rueckrufe. Als Mixin nahm er
@@ -346,7 +347,7 @@ class AgentDeck(
                        set_modal=self._set_modal, restart=self.restart,
                        place=self._place_dialog).show()
 
-    def restart(self):
+    def restart(self) -> None:
         """Das ganze Panel neu starten: eine frische Instanz mit DEMSELBEN Interpreter
         und denselben Argumenten starten, dann die aktuelle beenden. Erst wenn der neue
         Prozess erfolgreich gestartet ist, wird der Broker-Socket geschlossen (Port 8765
@@ -377,7 +378,7 @@ class AgentDeck(
         log.note("--- Panel-Ende (Neustart, Kind uebernimmt) ---")
         os._exit(0)
 
-    def run(self):
+    def run(self) -> None:
         self.root.mainloop()
         # Regulaeres Ende: der mainloop kehrt zurueck, wenn das Fenster zerstoert
         # wurde (Schliessen/restart). Ein FEHLER kommt hier nicht durch – der fliegt

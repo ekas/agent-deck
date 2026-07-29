@@ -5,6 +5,7 @@ Vollneubau mit delete('all') setzt Farbe und Statuswert zurück, und dann blitze
 beim Auf- und Zuklappen alle Kacheln neu auf.
 """
 import tkinter as tk
+from typing import Any
 
 from deck import i18n
 from deck.domain import config as cfg
@@ -17,7 +18,7 @@ from deck.ui.theme import RAIL_IDLE
 class TilesMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _ordered_slots(self, w):
+    def _ordered_slots(self, w) -> Any:
         """Die Slots dieses Fensters in der vom Nutzer gewaehlten Reihenfolge (Drag&Drop).
         Basis ist die von der Extension gemeldete Liste (broker.terminals); die
         gespeicherte Reihenfolge (self.order) wird darueber gelegt, neue/unbekannte
@@ -30,7 +31,7 @@ class TilesMixin:
         seen = set(saved)
         return saved + [s for s in live if s not in seen]
 
-    def _layout_sig(self):
+    def _layout_sig(self) -> Any:
         """Signatur des gewuenschten Layouts – nur bei Aenderung neu zeichnen. Nutzt die
         vom Nutzer gewaehlte Reihenfolge, damit ein Umsortieren einen Redraw ausloest."""
         return tuple(
@@ -39,7 +40,7 @@ class TilesMixin:
             for w in cfg.WINDOWS
         )
 
-    def _render_agents(self):
+    def _render_agents(self) -> None:
         """Pro verbundenem Fenster ein Block: kleiner Repo-Name als Kopf, darunter die
         Agenten-Kacheln (die schlanke, skalierende Ansicht in _render_agents_slim).
         Inhalt aendert sich (Agent/Fenster zu ODER auf): AKTUELLEN Zoom halten und das
@@ -66,7 +67,7 @@ class TilesMixin:
     _SLIM_RAIL_X, _SLIM_RAIL_W = 2, 2   # Schiene links: Abstand vom Canvasrand, Breite.
                                         # Bleibt links vom Halo (der beginnt bei X0-RING = 6).
 
-    def _slim_extent(self):
+    def _slim_extent(self) -> Any:
         """Natuerliche (ungescalte) Ausdehnung des Slim-Layouts in Design-Einheiten –
         Basis fuer den Fit-Faktor. Spiegelt exakt die y-/x-Schritte von _render_agents_slim
         bei Faktor 1.0 (Name-Zeile, Kachelreihe inkl. Glow-Halo, Platzhalter). Misst den
@@ -104,7 +105,7 @@ class TilesMixin:
             y += 26
         return maxx + X0, max(y, 40)
 
-    def _render_agents_slim(self, scale=None):
+    def _render_agents_slim(self, scale=None) -> None:
         """Slim-Modus: pro verbundenem Fenster nur ein KLEINER Name (kein ⟳/✕/Punkt)
         und darunter die Agenten-Kacheln – kein Button-Raster, keine ＋-Kachel. Die
         Kacheln sind dieselben wie im Vollmodus (_draw_tile), Klick/Glow/Tooltip also
@@ -203,7 +204,7 @@ class TilesMixin:
     _CARRY_FIELDS = ("fill_hex", "fill_target", "glow_color", "glow_intensity",
                      "glow_pulse", "status_key", "bloom", "border", "border_w")
 
-    def _carry_tile_anim(self, prev):
+    def _carry_tile_anim(self, prev) -> None:
         """Anim-Zustand ueberlebender Slots aus <prev> in die frisch gezeichneten
         Kacheln uebernehmen. Ein Slot, den es vorher NICHT gab (frisch per ＋ oder
         neu verbundenes Fenster), fehlt in <prev> -> er faedt bewusst normal ein.

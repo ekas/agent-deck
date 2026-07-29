@@ -12,7 +12,7 @@ from deck.platform import focus as wf
 class FramelessMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _enter_frameless(self):
+    def _enter_frameless(self) -> None:
         try:
             self.root.overrideredirect(True)
         except tk.TclError:
@@ -29,7 +29,7 @@ class FramelessMixin:
         self._round_corners()
         self._reassert_topmost()
 
-    def _round_corners(self):
+    def _round_corners(self) -> None:
         """Leicht runde Ecken auch im rahmenlosen Zustand (per DWM, weich gerendert).
         Ohne native Titelleiste kaeme sonst ein hart eckiger Slab heraus.
 
@@ -41,7 +41,7 @@ class FramelessMixin:
         except Exception:
             pass
 
-    def _undock(self):
+    def _undock(self) -> None:
         """Zurück in den schwebenden Zustand: Griff weg, Rahmen + native Titelleiste
         zurück, an die gemerkte Position stellen."""
         self._stop_poll()
@@ -84,14 +84,14 @@ class FramelessMixin:
             pass
         self.expanded = False
 
-    def _refresh_hwnd(self):
+    def _refresh_hwnd(self) -> None:
         try:
             self.root.update_idletasks()
             self.app.my_hwnd = wf.toplevel_hwnd(self.root.winfo_id())
         except Exception:
             pass
 
-    def _reassert_topmost(self):
+    def _reassert_topmost(self) -> None:
         try:
             self.root.attributes("-topmost", True)
             self.root.lift()

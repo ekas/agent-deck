@@ -8,6 +8,7 @@ UpdateLayeredWindow-Aufrufe unten.
 """
 import sys
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import (
     HANDLE_THICK,
@@ -28,13 +29,13 @@ from deck.render import fluid as hwave
 class WaveMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _wave_seconds(self):
+    def _wave_seconds(self) -> Any:
         """Sekunden seit dem letzten Anstoß (echte Uhr, siehe _wave_t0)."""
         if self._wave_t0 is None:
             self._wave_t0 = self._now_ms()
         return (self._now_ms() - self._wave_t0) / 1000.0
 
-    def _wave_profile(self, n):
+    def _wave_profile(self, n) -> Any:
         """Das Wellen-Profil für ein Bild der Länge n – oder None.
 
         None heißt „Ruhezustand": zwischen zwei Stößen steht das Wasser still, und
@@ -53,7 +54,7 @@ class WaveMixin:
             return None
         return hwave.profile(n, t)
 
-    def _wave_kick(self):
+    def _wave_kick(self) -> None:
         """Neu anstoßen: die Schwingung fängt von vorn an.
 
         Gerufen, wenn der Status DRINGLICHER wird – dieselbe Stelle, an der der Griff
@@ -62,7 +63,7 @@ class WaveMixin:
         wird eine Spur."""
         self._wave_t0 = self._now_ms()
 
-    def _paint_handle(self):
+    def _paint_handle(self) -> None:
         """Griff in der aktuellen Statusfarbe einfärben. Reine itemconfig-/bg-Änderung
         auf vorhandenen Items -> flackerfrei."""
         c = self.handle_canvas
@@ -83,7 +84,7 @@ class WaveMixin:
         except tk.TclError:
             pass                                      # Griff gerade neu gezeichnet -> egal
 
-    def _paint_layered(self, col, eff):
+    def _paint_layered(self, col, eff) -> None:
         """Alpha-Pfad: das RGBA-Bild für (Größe, Farbe, Leuchtkraft, Zeiger) holen und
         per Win32 ins Griff-Fenster schieben.
 
@@ -119,7 +120,7 @@ class WaveMixin:
             if bits is self._last_bits:
                 return
             if wlayer.layered_push(self._handle_hwnd, bits, w, h):
-                self._last_bits = bits
+                self._last_bits: bytes | None = bits
                 return
             # Zweiter Versuch mit frisch gemessenem HWND und NEU angelegtem Layer-
             # Zustand (force): Tk baut Fenster gelegentlich neu auf, und nach einem
@@ -139,7 +140,7 @@ class WaveMixin:
         self._draw_handle(w, h)
         self._handle_drawn = (w, h)
 
-    def _report_layer_failure(self, w, h):
+    def _report_layer_failure(self, w, h) -> None:
         """Den Rückfall auf den Linien-Pfad AKTENKUNDIG machen.
 
         Warum eine Datei und nicht nur stderr: das Deck läuft normal unter `pythonw`,
@@ -162,7 +163,7 @@ class WaveMixin:
         except OSError:
             pass                      # Diagnose darf den Griff nie kippen
 
-    def _glow_needed(self):
+    def _glow_needed(self) -> Any:
         """Timer nur, solange es wirklich etwas zu bewegen gibt: der Griff ist sichtbar
         (= eingeklappt) und es atmet, ein Aufblitzen klingt ab – oder der Kern schwappt.
 
@@ -179,14 +180,14 @@ class WaveMixin:
         return (self._glow_pulse or self._bloom >= 0.01
                 or (WAVE_ON and self._layered))
 
-    def _start_glow(self):
+    def _start_glow(self) -> None:
         if self._glow_job is None and self._glow_needed():
             try:
                 self._glow_job = self.root.after(NEON_MS, self._glow_tick)
             except tk.TclError:
                 self._glow_job = None
 
-    def _stop_glow(self):
+    def _stop_glow(self) -> None:
         if self._glow_job:
             try:
                 self.root.after_cancel(self._glow_job)
@@ -194,7 +195,7 @@ class WaveMixin:
                 pass
             self._glow_job = None
 
-    def _glow_tick(self):
+    def _glow_tick(self) -> None:
         self._glow_job = None
         self._pulse_i += 1
         self._bloom = self._bloom * NEON_DECAY if self._bloom >= 0.01 else 0.0
@@ -207,7 +208,7 @@ class WaveMixin:
             self._paint_handle()
         self._start_glow()          # hört von selbst auf, sobald nichts mehr atmet
 
-    def _show_handle(self):
+    def _show_handle(self) -> None:
         if self.handle is None:
             return
         try:
@@ -236,7 +237,7 @@ class WaveMixin:
         self._paint_handle()        # mit dem aktuellen Status auftauchen, nicht mit dem alten
         self._start_glow()
 
-    def _hide_handle(self):
+    def _hide_handle(self) -> None:
         if self.handle is None:
             return
         self._set_accent_hot(False)   # nicht „hot" wegblenden (<Leave> kommt bei withdraw nicht sicher)

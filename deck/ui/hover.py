@@ -6,6 +6,7 @@ winfo_screenwidth geklemmt werden - das ist die Breite ALLER Monitore.
 """
 import os
 import tkinter as tk
+from typing import Any
 
 from deck import i18n
 from deck.claude import summarize as cs
@@ -18,7 +19,7 @@ from deck.ui.theme import PREFETCH_EVERY_S, RAIL_DIM, RAIL_HOT, RAIL_IDLE, TICKE
 class HoverMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _highlight_group(self, win):
+    def _highlight_group(self, win) -> None:
         """Den Repo-Block <win> hervorheben (None = alle in den Ruhezustand).
 
         Das ist die Antwort auf die eigentliche Frage beim Hovern: "zu welchem Repo
@@ -46,7 +47,7 @@ class HoverMixin:
             except tk.TclError:
                 pass          # Items schon weg (Redraw dazwischen) -> nichts zu tun
 
-    def _hover_enter(self, slot):
+    def _hover_enter(self, slot) -> None:
         """Zeiger betritt ein Item der Kachel. Wegen des geteilten t_-Tags feuert Tk das
         AUCH beim Wechsel zwischen den gestapelten Items DERSELBEN Kachel – dann ist
         slot == _hover_slot und wir tun nichts (kein Timer-Neustart, kein Flackern). Ein
@@ -65,7 +66,7 @@ class HoverMixin:
         self._tip_show_job = self.root.after(
             cfg.HOVER_TIP_MS, lambda s=slot: self._show_prompt_tip(s))
 
-    def _hover_leave(self):
+    def _hover_leave(self) -> None:
         """Zeiger verlaesst ein Item der Kachel. Feuert auch beim Wechsel auf ein Nachbar-
         Item DERSELBEN Kachel -> NICHT sofort ausblenden, sondern verzoegert: ein unmittel-
         bar folgendes _hover_enter derselben Kachel bricht das Ausblenden ab. Bleibt es aus
@@ -73,7 +74,7 @@ class HoverMixin:
         self._cancel_tip_hide()
         self._tip_hide_job = self.root.after(cfg.TIP_LEAVE_MS, self._do_hide_tip)
 
-    def _do_hide_tip(self):
+    def _do_hide_tip(self) -> None:
         """Verzoegertes Ausblenden faellig -> wir sind wirklich weg von der Kachel:
         geplanten Show abbrechen, Hover-Zustand loeschen, Tooltip verstecken."""
         self._tip_hide_job = None
@@ -83,7 +84,7 @@ class HoverMixin:
         self._highlight_group(None)
         self.prompt_tip.hide()
 
-    def _cancel_tip_show(self):
+    def _cancel_tip_show(self) -> None:
         if self._tip_show_job is not None:
             try:
                 self.root.after_cancel(self._tip_show_job)
@@ -91,7 +92,7 @@ class HoverMixin:
                 pass
             self._tip_show_job = None
 
-    def _cancel_tip_hide(self):
+    def _cancel_tip_hide(self) -> None:
         if self._tip_hide_job is not None:
             try:
                 self.root.after_cancel(self._tip_hide_job)
@@ -99,7 +100,7 @@ class HoverMixin:
                 pass
             self._tip_hide_job = None
 
-    def _hide_prompt_tip(self, *, keep_hover=False):
+    def _hide_prompt_tip(self, *, keep_hover=False) -> None:
         """Tooltip hart ausblenden (Klick / Neu-Rendern / Fokusverlust): beide Timer weg,
         Tooltip versteckt. keep_hover=True behaelt _hover_slot -> ein durch die Klick-
         Animation (Skalieren der Kachel-Items) ausgeloestes erneutes Enter DERSELBEN Kachel
@@ -116,7 +117,7 @@ class HoverMixin:
         self._highlight_group(None)
         self.prompt_tip.hide()
 
-    def _on_focus_out(self, _e):
+    def _on_focus_out(self, _e) -> None:
         """Ganze App hat den Fokus verloren (z.B. Alt+Tab OHNE Mausbewegung -> es feuert
         kein <Leave>): sonst bliebe ein sichtbarer Tooltip ueber dem neuen Fenster haengen.
         focus_displayof() ist None NUR, wenn der Fokus wirklich aus der App raus ist (nicht
@@ -131,7 +132,7 @@ class HoverMixin:
         except (tk.TclError, KeyError):
             pass
 
-    def _tip_refs(self, sid):
+    def _tip_refs(self, sid) -> Any:
         """Im Chat erkannte Bezuege dieser Session: {"ticket": …, "pr": …} (leer =
         keine/Erkennung aus). Erst aus dem In-Memory-Cache (vom Hintergrund-Job
         gefuellt), sonst EINMAL aus der Cache-Datei nachladen – die ueberlebt einen
@@ -146,7 +147,7 @@ class HoverMixin:
         return refs
 
     @staticmethod
-    def _refs_label(refs):
+    def _refs_label(refs) -> Any:
         """Bezugs-Zeile fuer den Tooltip ("Ticket: ABC-1 · PR #62"); ohne beides ein
         leerer String."""
         parts = []
@@ -157,7 +158,7 @@ class HoverMixin:
         return " · ".join(parts)
 
     @staticmethod
-    def _refs_card_label(refs, max_chars=TICKET_MAX_CHARS):
+    def _refs_card_label(refs, max_chars=TICKET_MAX_CHARS) -> Any:
         """Kompakte Fassung derselben Bezuege fuer die KARTE: "PROJ-2691 #62" – ohne das
         Wort 'Ticket' (die Zeile ist an ihrem Platz erkennbar) und nur, solange beides
         nebeneinander passt; sonst gewinnt das Ticket, weil es das Dauerhaftere ist."""
@@ -168,7 +169,7 @@ class HoverMixin:
             return both
         return tid or both[:max_chars - 1] + "…"
 
-    def _origin_lines(self, slot):
+    def _origin_lines(self, slot) -> Any:
         """Herkunft dieser Kachel als Tooltip-Kopf: "agent-deck · Fenster A · A2" und –
         wenn der Agent per Ticket in einem eigenen worktree sitzt – darunter "↳ wt/<slug>".
 
@@ -188,7 +189,7 @@ class HoverMixin:
             lines.append("↳ wt/" + os.path.basename(os.path.normpath(wt)))
         return lines
 
-    def _tip_text(self, ids, sid, slot=""):
+    def _tip_text(self, ids, sid, slot="") -> Any:
         """Text des Hover-Tooltips zusammenbauen: zuerst die Herkunft (Repo/Fenster/Slot,
         siehe _origin_lines), dann erkanntes Ticket / erkannter PR (was im
         Chat steht) und darunter die KI-Kurzzusammenfassung 'worum es geht' bzw. – solange
@@ -211,7 +212,7 @@ class HoverMixin:
             lines.append(i18n.L("Zusammenfassung wird erstellt …", "Generating summary …"))
         return "\n".join(lines)
 
-    def _show_prompt_tip(self, slot):
+    def _show_prompt_tip(self, slot) -> None:
         """Show-Timer abgelaufen -> Tooltip zeigen (Inhalt siehe _tip_text) und im
         Hintergrund Ticket/Zusammenfassung sicherstellen; was dabei neu dazukommt, zieht
         _chat_info_ready live nach. Nur, wenn die Kachel noch gehovert ist."""
@@ -228,7 +229,7 @@ class HoverMixin:
         # Ohne sid (Agent verbunden, aber noch kein Hook) gibt es nichts zu HOLEN – die
         # Herkunftszeile steht trotzdem, die kennt das Deck aus sich selbst.
 
-    def _tip_at_pointer(self, text):
+    def _tip_at_pointer(self, text) -> None:
         """Tooltip mit text leicht unter/rechts vom Mauszeiger zeigen. Zeiger-Koordinaten
         (winfo_pointer*) statt Canvas-Offset: gleiches Schirm-Koordinatensystem wie
         wm_geometry -> korrekt ueber mehrere Monitore und bei DPI-Skalierung.
@@ -241,7 +242,7 @@ class HoverMixin:
                              text, dx=dpi.px(14), dy=dpi.px(18))
         self._tip_visible = True
 
-    def _prefetch_summaries(self, now):
+    def _prefetch_summaries(self, now) -> None:
         """Chat-Infos offener Agenten schon VOR dem Hover holen -> der Hover ist dann
         sofort da (ein claude-Aufruf dauert ~8-13 s, fast nur CLI-Startup) und die
         erkannte Ticket-ID steht ohne Hover auf der Karte. Gedrosselt auf alle

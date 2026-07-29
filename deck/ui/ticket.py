@@ -5,6 +5,7 @@ genau diesen worktree wieder ab - mit Guard gegen fremde Slots.
 """
 import os
 import tkinter as tk
+from typing import Any
 
 from deck import i18n
 from deck.domain import config as cfg
@@ -21,7 +22,7 @@ from deck.render.kit import BG, INK, INK_2
 class TicketMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def assign_ticket(self, slot):
+    def assign_ticket(self, slot) -> None:
         """Einem laufenden Agenten ein Ticket umhaengen und ihn anweisen, in einem eigenen
         git worktree fuer den Ticket-Branch zu arbeiten -> er kommt den anderen Agenten am
         selben Repo nicht in die Quere. Der Agent legt den worktree selbst an (Variante B),
@@ -55,7 +56,7 @@ class TicketMixin:
             self._clear_worktree_marker(slot)   # der Agent legt gleich einen neuen an
             self.cmds.send_text(slot, self._ticket_prompt(slot, ticket, task), submit=True)
 
-    def clear_ticket(self, slot):
+    def clear_ticket(self, slot) -> None:
         """Zugewiesenes/gemeldetes Ticket dieses Slots vergessen (nur Anzeige/Merkung;
         Agent und sein worktree bleiben unangetastet)."""
         if self.tickets.pop(slot, None) is not None:
@@ -63,27 +64,27 @@ class TicketMixin:
         self._clear_found_ticket(slot)
         self._found.pop(slot, None)             # sofort aus der Anzeige (bis zum naechsten Poll)
 
-    def _clear_found_ticket(self, slot):
+    def _clear_found_ticket(self, slot) -> None:
         """Die Marker-Datei (state/<slot>.ticket) des Slots loeschen, falls vorhanden."""
         try:
             os.remove(dp.found_ticket_path(slot))
         except OSError:
             pass
 
-    def _clear_worktree_marker(self, slot):
+    def _clear_worktree_marker(self, slot) -> None:
         """Die worktree-Marker-Datei (state/<slot>.worktree) des Slots loeschen."""
         try:
             os.remove(dp.worktree_marker_path(slot))
         except OSError:
             pass
 
-    def _slots_for_window(self, win):
+    def _slots_for_window(self, win) -> Any:
         """Alle Slots dieses Fensters, an denen (moeglicherweise) ein worktree haengt –
         aus Ticket-Merkung, gemeldeter ID und worktree-Marker zusammengetragen."""
         slots = set(self.tickets) | set(self._found) | set(dc.read_found_worktrees())
         return sorted(s for s in slots if s and s[0] == win)
 
-    def _ticket_prompt(self, slot, ticket, task):
+    def _ticket_prompt(self, slot, ticket, task) -> Any:
         """Den EINZEILIGEN Worktree-Prompt aus der config-Vorlage bauen. Der Task wird
         auf eine Zeile geglaettet – ein \\n wuerde per sendText(execute=True) im pty
         sofort absenden und den Prompt zerreissen. {wt_marker} = wohin der Agent den
@@ -107,7 +108,7 @@ class TicketMixin:
                     f"into the file {wt_marker}. Then look up ticket {jira} in Jira "
                     f"(Atlassian/Jira MCP) and give me a short summary. Task: {task}")
 
-    def _ticket_search_prompt(self, slot, task):
+    def _ticket_search_prompt(self, slot, task) -> Any:
         """EINZEILIGER Prompt fuer die 'Im Chat suchen'-Zuweisung: der Agent findet die
         ID selbst und schreibt sie in die Marker-Datei (Vorwaerts-Slashes -> shell-/
         tool-unabhaengig zuverlaessig). Das Deck kennt die ID vorher nicht."""
@@ -125,7 +126,7 @@ class TicketMixin:
                     f"found ID into the file {marker} and the absolute worktree path "
                     f"into the file {wt_marker}. Task: {task}")
 
-    def _place_dialog(self, dlg):
+    def _place_dialog(self, dlg) -> None:
         """Einen fertig aufgebauten, noch withdrawn Dialog neben das Panel legen und
         zeigen. Anker ist die obere linke Panel-Ecke; passt der Dialog rechts/unten
         nicht mehr auf den Monitor, klappt screen_fit ihn auf die andere Seite des
@@ -145,7 +146,7 @@ class TicketMixin:
             return
         monitor.place(dlg, *anchor, dx=dpi.px(30), dy=dpi.px(60))
 
-    def _ticket_dialog(self, slot):
+    def _ticket_dialog(self, slot) -> Any:
         """Kleiner, modaler Dialog mit EINEM Feld: die Ticketnummer. Gibt zurueck:
           • ("manual", ticket, "") – Nummer getippt und "Zuweisen"/Enter,
           • None                   – Abbruch / Escape / leer bestaetigt.
@@ -171,13 +172,13 @@ class TicketMixin:
                             width=20)
         id_entry.grid(row=1, column=0, sticky="we", padx=12)
 
-        def save(*_):
+        def save(*_) -> None:
             tid = id_var.get().strip()
             if tid:                              # leere Nummer -> stillschweigend verwerfen
                 result["val"] = ("manual", tid, "")
             dlg.destroy()
 
-        def cancel(*_):
+        def cancel(*_) -> None:
             dlg.destroy()
 
         btns = tk.Frame(dlg, bg=BG)

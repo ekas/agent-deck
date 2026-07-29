@@ -14,6 +14,7 @@ Bildperiode des Monitors (frame_tick_ms), nicht an einem festen Intervall.
 """
 import math
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import (
     ANIM_DEADLINE_MS,
@@ -36,7 +37,7 @@ from deck.render.kit import mix as _mix
 class AnimationMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _anim_hold(self):
+    def _anim_hold(self) -> None:
         """Für die DAUER eines Slides zwei Dinge sichern, die sonst die Frames fressen:
 
         1. Die Windows-Timer-Auflösung (timeBeginPeriod). Ohne sie tickt Windows nur
@@ -60,7 +61,7 @@ class AnimationMixin:
             except Exception:
                 pass
 
-    def _anim_release(self):
+    def _anim_release(self) -> None:
         """Gegenstück zu _anim_hold – MUSS auf jedem Weg aus der Animation laufen,
         sonst bliebe der Prozess im 1-ms-Timer-Takt und die Kacheln für immer
         eingefroren. Darum gibt es mit _anim_finish nur einen einzigen Ausgang."""
@@ -75,7 +76,7 @@ class AnimationMixin:
             except Exception:
                 pass
 
-    def _anim_to(self, direction):
+    def _anim_to(self, direction) -> None:
         """Slide starten – oder mitten in der Bewegung umkehren (+1 auf, -1 zu).
 
         Beim Umkehren wird NUR das Federziel getauscht; Position und Geschwindigkeit
@@ -94,7 +95,7 @@ class AnimationMixin:
             pos, vel = (0.0, 0.0) if direction > 0 else (1.0, 0.0)
         now = self._now_ms()
         response = REVEAL_RESPONSE_MS if direction > 0 else COLLAPSE_RESPONSE_MS
-        self._anim = {"dir": direction, "pos": pos, "vel": vel,
+        self._anim: dict[str, Any] | None = {"dir": direction, "pos": pos, "vel": vel,
                       "target": 1.0 if direction > 0 else 0.0,
                       "omega": 2.0 * math.pi / (response / 1000.0),
                       "last": now, "job": None, "held": True, "sized": False,
@@ -105,7 +106,7 @@ class AnimationMixin:
                       "deadline": now + ANIM_DEADLINE_MS}
         self._anim_step()
 
-    def _anim_cancel(self):
+    def _anim_cancel(self) -> None:
         """Slide abbrechen, ohne einen Endzustand herzustellen (Rand-Wechsel, Abdocken,
         hartes Einklappen – die setzen ihn selbst)."""
         a, self._anim = self._anim, None
@@ -119,7 +120,7 @@ class AnimationMixin:
         if a.get("held"):
             self._anim_release()
 
-    def _anim_finish(self, a, direction):
+    def _anim_finish(self, a, direction) -> None:
         """Der EINZIGE Ausgang aus einer laufenden Animation: Zustand löschen,
         Haltegriffe freigeben, Endzustand herstellen. Alle drei Wege (regulär fertig,
         Notbremse, Fehler beim Bewegen) laufen hier durch – so bleibt weder ein halb
@@ -129,7 +130,7 @@ class AnimationMixin:
             self._anim_release()
         self._anim_done(direction)
 
-    def _anim_step(self):
+    def _anim_step(self) -> None:
         """Ein Frame: verstrichene Zeit → Feder weiterrechnen → Position setzen.
         Zeitbasiert (nicht pro Frame ein fester Schritt), damit die Bewegung stimmt,
         wenn Tk hinterherhinkt."""
@@ -178,7 +179,7 @@ class AnimationMixin:
         except tk.TclError:
             self._anim_finish(a, a["dir"])
 
-    def _slide_to(self, v, a=None):
+    def _slide_to(self, v, a=None) -> Any:
         """Fenster auf den sichtbaren Anteil v setzen (Position + Beschneidung).
         Rückgabe False, wenn Tk die Geometrie nicht annahm."""
         x, y, w, h = self._slide_geom(v)
@@ -208,7 +209,7 @@ class AnimationMixin:
             self._apply_clip(v)
         return True
 
-    def _anim_watchdog(self):
+    def _anim_watchdog(self) -> None:
         """Vom Poll gerufen, solange eine Animation läuft: ist ihr Frame-Timer
         abhandengekommen, holt sie das hier zurück.
 
@@ -223,7 +224,7 @@ class AnimationMixin:
             return
         self._anim_finish(a, a["dir"])
 
-    def _anim_done(self, direction):
+    def _anim_done(self, direction) -> None:
         # Hat sich der Inhalt während des Slides geändert (Agent kam/ging), wurde das
         # Nachziehen bewusst aufgeschoben – jetzt ist der Moment dafür.
         if self._retarget:
@@ -240,7 +241,7 @@ class AnimationMixin:
             self._collapse_now()
 
     # ── Landung: Rand leuchtet kurz in der Griff-Farbe nach ─
-    def _flash_border(self):
+    def _flash_border(self) -> None:
         """Der Rand des angekommenen Decks übernimmt kurz die Farbe des Griffs und
         verblasst auf sein Ruhe-Cyan – der glühende Balken am Rand gibt seine Farbe
         an das Deck ab, das aus ihm herausgefahren ist.
@@ -254,7 +255,7 @@ class AnimationMixin:
         self._land_i = BORDER_LAND_FRAMES
         self._border_tick()
 
-    def _border_tick(self):
+    def _border_tick(self) -> None:
         self._land_job = None
         if self.edge == "off":
             return
@@ -275,7 +276,7 @@ class AnimationMixin:
         except tk.TclError:
             self._land_job = None
 
-    def _cancel_border_flash(self):
+    def _cancel_border_flash(self) -> None:
         """Nachleuchten abbrechen und den Rand auf seine Ruhefarbe stellen."""
         if self._land_job:
             try:
@@ -285,7 +286,7 @@ class AnimationMixin:
             self._land_job = None
         self._land_i = 0
 
-    def _settle_expanded(self):
+    def _settle_expanded(self) -> None:
         """Nach dem Aufklappen einmal NACHMESSEN, ob das Fenster wirklich am Ziel steht
         – und es sonst geradeziehen.
 
@@ -313,7 +314,7 @@ class AnimationMixin:
                 return
         self._clear_clip()          # am Ziel liegt nichts mehr jenseits der Kante
 
-    def _slide_off(self, v):
+    def _slide_off(self, v) -> Any:
         """Um wieviel px die Position beim sichtbaren Anteil v gegen das Ziel
         zurückliegt. Eigene Methode, weil ihn zwei Dinge brauchen: die Position
         (_slide_geom) und das Wegschneiden (_apply_clip, dort minus EDGE_GAP – das
@@ -324,7 +325,7 @@ class AnimationMixin:
         Startstreifen um EDGE_GAP breiter heraus als der Griff, den er ersetzt."""
         return round(self._slide_span() * (1.0 - self._clamp(v, 0.0, 1.0)))
 
-    def _slide_span(self):
+    def _slide_span(self) -> Any:
         """Weglänge des Slides in px – vom Griffstreifen bis aufs Ziel. Auch die
         Feder braucht sie: ihre Abbruchschwelle ist in PIXELN gedacht (unter einem
         Pixel sieht man nichts mehr), gerechnet wird aber im Anteil 0..1."""
@@ -333,7 +334,7 @@ class AnimationMixin:
         _x, _y, w, h = self._slide_target
         return max(0, (w if self._is_vertical() else h) - handle_thick() + EDGE_GAP)
 
-    def _slide_geom(self, v):
+    def _slide_geom(self, v) -> Any:
         """Fenster-Geometrie beim sichtbaren Anteil v: 0 = nur HANDLE_THICK ragt über
         den Rand (genau die Griff-Position), 1 = aufgeklappt, EDGE_GAP vom Rand weg.
         Nur die Position wandert, die Größe steht."""

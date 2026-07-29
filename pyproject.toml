@@ -92,10 +92,7 @@ filterwarnings = [
 # ── mypy ─────────────────────────────────────────────────────────────────────
 [tool.mypy]
 python_version = "3.12"
-# Zunächst nur die anzeigefreien Schichten. ui/ und dock/ hängen an tkinter, wo
-# Annotationen wenig tragen und viele Ignores nötig wären.
-files = ["deck/domain", "deck/net", "deck/platform", "deck/claude", "deck/ops",
-         "deck/render"]
+files = ["deck"]   # alles - ui und dock inbegriffen
 ignore_missing_imports = true      # PIL und tkinter bringen keine vollständigen Stubs
 warn_unused_ignores = true
 warn_redundant_casts = true
@@ -107,6 +104,34 @@ no_implicit_optional = true
 # so bleibt der Fortschritt geprüft statt behauptet.
 module = ["deck.domain.*", "deck.net.*", "deck.platform.*", "deck.ops.*", "deck.claude.*", "deck.render.*"]
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+# Hier steht der Preis der Mixin-Form, und er ist bewusst bezahlt (siehe CLAUDE.md,
+# "Mixin oder eigenes Objekt?"). Vier Fehlerklassen erzeugt sie strukturell, nicht durch
+# Fehler im Code — 590 von 599 Meldungen:
+#
+#   attr-defined   LayoutMixin greift auf self.agent_area zu, gesetzt wird es in
+#                  AgentDeck. Formal hat die Mixin-Klasse das Attribut nicht, zur
+#                  Laufzeit hat die zusammengesetzte Klasse es immer.   (523)
+#   has-type,      Dieselbe Ursache von der anderen Seite: mypy prüft jede Mixin-Klasse
+#   var-annotated  ISOLIERT. Eine Deklaration in AgentDeck.__init__ hilft ihr nicht —
+#                  probiert, 37 Attribute typisiert, 5 Meldungen weniger, dafür neue
+#                  Konflikte zwischen Basis- und abgeleiteter Klasse.      (34)
+#   assignment     Ein Attribut beginnt als Widget und wird beim Abräumen None
+#                  (self.hwin = tk.Toplevel(…) … self.hwin = None).        (24)
+#   misc           Lambda-Defaults in Tk-Bindings (command=lambda s=slot: …), plus zwei
+#                  Attribute, die zwei Mixins mit verschieden abgeleitetem Typ setzen. (9)
+#
+# Die saubere Alternative wäre ein Protocol mit den ~40 geteilten Attributen, das jedes
+# Mixin als `self`-Typ deklariert. Das ist ein eigener Umbau und lohnt erst, wenn die
+# Mixins weniger teilen als heute.
+#
+# Was scharf BLEIBT: arg-type, return-value, operator, name-defined, type-var. Genau die
+# haben hier drei echte Fehler gefunden, alle behoben — darunter ein `global _tick_ms` in
+# controller.py, das nach dem Aufteilen von edge_dock.py auf die falsche Modulvariable
+# zeigte: die Animation lief nach einem Monitorwechsel mit dem Takt des alten Schirms.
+module = ["deck.ui.*", "deck.dock.*"]
+disable_error_code = ["attr-defined", "has-type", "var-annotated", "assignment", "misc"]
 
 [[tool.mypy.overrides]]
 # ctypes-Aufrufe sind von Natur aus untypisiert; hier trägt eine Annotation nichts.

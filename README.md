@@ -6,7 +6,7 @@
 
 ![Plattform](https://img.shields.io/badge/Plattform-Windows-0078d4)
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab)
-![Tests](https://img.shields.io/badge/Tests-148%20passing-2ea44f)
+![Tests](https://img.shields.io/badge/Tests-158%20passing-2ea44f)
 ![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue)
 
 ---
@@ -287,12 +287,12 @@ Die anzeigefreie Logik ist unit-getestet — Statusmodell, Ticket-/PR-Erkennung,
 Farb- und Text-Helfer, Worktree-Parsing, Usage-Auswertung, Watchdog-Urteile:
 
 ```powershell
-python tests/run.py                   # alle 148 Tests, kein pytest nötig
+python tests/run.py                   # alle 158 Tests, kein pytest nötig
 python tests/test_dock_animation.py   # eine Datei allein läuft auch
 python -m pytest tests/               # geht ebenfalls
 ```
 
-Stand: **148/148** in 21 Dateien, die `deck/` spiegeln. Läuft in der
+Stand: **158/158** in 22 Dateien, die `deck/` spiegeln. Läuft in der
 [CI](.github/workflows/ci.yml) bei jedem Push, dort zusammen mit einer Syntaxprüfung
 aller Module (`python -m compileall`).
 

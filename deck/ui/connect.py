@@ -18,7 +18,7 @@ from deck.platform import focus as wf
 class ConnectMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def start_bind(self, group):
+    def start_bind(self, group) -> None:
         if self.binding_group == group:          # nochmal geklickt -> abbrechen
             self.binding_group = None
             return
@@ -26,7 +26,7 @@ class ConnectMixin:
         self._bind_deadline = time.time() + 20
         self.root.after(250, self._poll_bind)
 
-    def _poll_bind(self):
+    def _poll_bind(self) -> None:
         if not self.binding_group:
             return
         if time.time() > self._bind_deadline:
@@ -56,7 +56,7 @@ class ConnectMixin:
             return
         self.root.after(250, self._poll_bind)
 
-    def forget_window(self, win):
+    def forget_window(self, win) -> None:
         """Bindung dieses Buchstabens vergessen (Kontextmenue per Rechtsklick auf den
         Namen). Entfernt Phantom-/Altkacheln – auch eine verbundene, aber bindungslose
         (der Extension wird gesagt, ihren Buchstaben zu vergessen; sonst taucht der
@@ -73,7 +73,7 @@ class ConnectMixin:
         # active_slot NICHT hart nullen: _render_agents raeumt es auf, sobald die
         # Kachel wirklich weg ist – bei einem lebenden Fenster bleibt die Auswahl.
 
-    def _forget_menu(self, win, ev):
+    def _forget_menu(self, win, ev) -> None:
         """Rechtsklick-Kontextmenue am Fensternamen – macht die 'vergessen'-Geste
         auffindbar und dient zugleich als Bestaetigung (ein Klick zum Ausloesen)."""
         repo = self.bindings.get(win) or f"{i18n.L('Fenster', 'Window')} {win}"
@@ -88,7 +88,7 @@ class ConnectMixin:
         finally:
             m.grab_release()
 
-    def _confirm_menu(self, header, action_label, action, *, x=None, y=None):
+    def _confirm_menu(self, header, action_label, action, *, x=None, y=None) -> None:
         """Ein wiederverwendbares Bestaetigungs-Kontextmenue fuer destruktive Aktionen.
         Erster Eintrag ist eine DEAKTIVIERTE Kopfzeile (liegt direkt unter dem Zeiger):
         so trifft der zweite Klick eines gewohnheitsmaessigen Doppelklicks auf den ✕-
@@ -110,7 +110,7 @@ class ConnectMixin:
         finally:
             m.grab_release()
 
-    def _close_window_menu(self, win):
+    def _close_window_menu(self, win) -> None:
         """Bestaetigungsmenue zum Schliessen des ganzen VS-Code-Fensters (inkl. aller
         Agenten darin) – ausgeloest vom ✕ im Fensterkopf."""
         repo = self.bindings.get(win) or f"{i18n.L('Fenster', 'Window')} {win}"
@@ -118,7 +118,7 @@ class ConnectMixin:
                            i18n.L("Ja, VS-Code-Fenster schließen", "Yes, close the VS Code window"),
                            lambda g=win: self.close_window(g))
 
-    def _card_menu(self, slot, ev):
+    def _card_menu(self, slot, ev) -> None:
         """Rechtsklick auf eine Agenten-Kachel: Model, Ticket, Effort und Mode dieses
         Agenten anpassen (je ein Untermenue) oder ihn schliessen. Ein bewusst per
         Rechtsklick gewaehlter Eintrag ist Absicht genug -> Schliessen hier direkt (der
@@ -175,7 +175,7 @@ class ConnectMixin:
         finally:
             m.grab_release()
 
-    def _set_slot_model(self, slot, value):
+    def _set_slot_model(self, slot, value) -> None:
         """Model dieses Slots umschalten: /model <value> an den Agenten schicken (die
         Extension fokussiert den Ziel-Pane vorher selbst -> landet im richtigen Chat).
         Die statusLine zeigt danach das neue Modell auf der Karte."""
@@ -184,7 +184,7 @@ class ConnectMixin:
         self.active_slot = slot                 # Auswahl auf die angeklickte Kachel
         self.cmds.send_text(slot, "/model " + value)
 
-    def _set_slot_effort(self, slot, label):
+    def _set_slot_effort(self, slot, label) -> None:
         """Reasoning-Effort dieses Slots setzen: /effort <level> schicken und den Wert
         merken. Das Merken ist noetig, weil die statusLine fuer xhigh UND ultracode nur
         'xhigh' meldet – nur mit dem gemerkten Wert bleibt die Karte korrekt (siehe
@@ -198,7 +198,7 @@ class ConnectMixin:
         self.slot_effort[slot] = level
         self.store.save_effort()
 
-    def _menu_set_mode(self, slot, target, cycle):
+    def _menu_set_mode(self, slot, target, cycle) -> None:
         """Permission-Mode aus dem Kachel-Menue setzen: Auswahl auf die Kachel legen und
         gezielt in den Ziel-Modus schalten (_set_slot_mode schickt die noetigen Shift+Tab
         und merkt den neuen Modus)."""

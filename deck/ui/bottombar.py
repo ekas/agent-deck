@@ -20,6 +20,7 @@ self.poller None, die Leiste samt Zahnrad bleibt aber bestehen.
 import tkinter as tk
 import tkinter.font as tkfont
 import webbrowser
+from typing import Any
 
 from deck import i18n
 from deck.platform import dpi
@@ -49,7 +50,7 @@ class BottomBar:
     selbst mit side='bottom', fill='x')."""
 
     def __init__(self, parent, root, *, on_settings, show_usage=True,
-                 poll_seconds=120, refresh_ms=1000, url=_URL):
+                 poll_seconds=120, refresh_ms=1000, url=_URL) -> None:
         self.root = root
         self.on_settings = on_settings
         self.url = url
@@ -80,7 +81,7 @@ class BottomBar:
 
         # Nutzungs-Poller defensiv starten – faellt er aus, bleibt die Leiste heil.
         self.poller = None
-        self._snap = None
+        self._snap: Any = None
         if show_usage:
             try:
                 from deck.claude.usage import UsagePoller
@@ -97,7 +98,7 @@ class BottomBar:
         self.root.after(self.refresh_ms, self._tick)
 
     # ── Anzeige-Timer ────────────────────────────────────
-    def _tick(self):
+    def _tick(self) -> None:
         """Snapshot lesen und nur bei geaenderter Anzeige neu zeichnen (Signatur-
         Vergleich). Reschedule wie die uebrigen Deck-Timer (after)."""
         if not self._alive:
@@ -117,12 +118,12 @@ class BottomBar:
         self.root.after(self.refresh_ms, self._tick)
 
     # ── Layout / Zeichnen ────────────────────────────────
-    def _on_configure(self, e):
+    def _on_configure(self, e) -> None:
         # Nur bei echter Breitenaenderung neu zeichnen (kein Redraw-Sturm).
         if e.width != self._last_w:
             self._draw()
 
-    def apply_ui_scale(self):
+    def apply_ui_scale(self) -> None:
         """Nach einem Monitorwechsel (andere Skalierung) die Leiste neu vermessen:
         Hoehe in Geraetepixeln setzen und neu zeichnen. Das Panel ruft das aus
         _sync_ui_scale."""
@@ -132,7 +133,7 @@ class BottomBar:
             return
         self._draw()
 
-    def _draw(self):
+    def _draw(self) -> None:
         c = self.canvas
         w = c.winfo_width()
         if w <= 1:                               # vor der ersten Realisierung
@@ -190,7 +191,7 @@ class BottomBar:
                       font=self._set_font, tags=("settings", "settings_txt"))
 
     # ── Hover / Klick ────────────────────────────────────
-    def _enter(self, which):
+    def _enter(self, which) -> None:
         self._hovering = which
         self.canvas.configure(cursor="hand2")
         if which == "usage":
@@ -200,7 +201,7 @@ class BottomBar:
             self.canvas.itemconfig("settings_hl", fill=_HOVER)
             self.canvas.itemconfig("settings_txt", fill="#ffffff")
 
-    def _leave(self, which):
+    def _leave(self, which) -> None:
         self._hovering = None
         self.canvas.configure(cursor="")
         if which == "usage":
@@ -211,7 +212,7 @@ class BottomBar:
             self.canvas.itemconfig("settings_hl", fill=_BAR_BG)
             self.canvas.itemconfig("settings_txt", fill=INK_2)
 
-    def _show_tip(self):
+    def _show_tip(self) -> None:
         if not self._tip:
             return
         try:
@@ -227,19 +228,19 @@ class BottomBar:
         except Exception:
             pass
 
-    def _open_usage(self):
+    def _open_usage(self) -> None:
         try:
             webbrowser.open(self.url)
         except Exception:
             pass
 
-    def _click_settings(self):
+    def _click_settings(self) -> None:
         try:
             self.on_settings()
         except Exception:
             pass
 
-    def _on_destroy(self):
+    def _on_destroy(self) -> None:
         self._alive = False
         if self.poller is not None:
             try:

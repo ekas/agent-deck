@@ -206,3 +206,22 @@ def test_dock_spring_reversal_is_velocity_continuous():
     assert max(fein) - pos_wechsel < 0.05               # aber auch kein Ausschlag
     # ... und danach sauber zurueck auf null, ohne durchzuschlagen.
     assert fein[-1] < 0.005 and min(fein) > -1e-9
+
+
+def test_monitorwechsel_verwirft_den_gemerkten_frame_takt():
+    """apply_ui_scale() muss den gemessenen Bildtakt wegwerfen - der neue Monitor kann
+    eine andere Bildrate haben.
+
+    Dieser Test existiert wegen eines Bugs, den das Aufteilen von edge_dock.py erzeugt
+    hat: controller.py machte `global _tick_ms; _tick_ms = None`, aber die Variable lebt
+    in metrics.py. Das global erzeugte eine EIGENE Modulvariable in controller - die
+    gemerkte in metrics blieb stehen, und die Animation lief nach einem Monitorwechsel
+    mit dem Takt des alten Schirms weiter. Nichts meldete das; gefunden hat es erst die
+    Typprüfung (Name "_tick_ms" is not defined).
+    """
+    dockm._tick_ms = 42                     # gemessener Takt des "alten" Monitors
+    dockm.forget_tick()
+    assert dockm._tick_ms is None, "der gemerkte Takt muss weg sein"
+    # Und der nächste Aufruf misst wieder (Wert kommt vom Rechner, darum nur die Grenzen)
+    tick = dockm.frame_tick_ms()
+    assert dockm.ANIM_TICK_MIN_MS <= tick <= dockm.ANIM_TICK_MAX_MS, tick

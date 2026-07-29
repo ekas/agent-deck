@@ -6,6 +6,7 @@ geometry, wenn kein update_idletasks dazwischen liegt.
 """
 import math
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import CLIP_QUANT, EDGE_GAP
 from deck.platform import clip as wclip
@@ -14,11 +15,11 @@ from deck.platform import clip as wclip
 class ClippingMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _edge_pos(self):
+    def _edge_pos(self) -> Any:
         """Bildschirmkoordinate der Andock-Kante (x bei links/rechts, y bei oben)."""
         return self.root.winfo_screenwidth() if self.edge == "right" else 0
 
-    def _update_clip_need(self):
+    def _update_clip_need(self) -> None:
         """Je Slide einmal klären, ob überhaupt beschnitten werden muss: nur wenn
         JENSEITS der Andock-Kante ein weiterer Monitor liegt, würde der über die
         Kante hinausgeschobene Teil dort als Geisterbild mitfliegen. Sonst
@@ -29,7 +30,7 @@ class ClippingMixin:
         except Exception:
             self._clip_on = False
 
-    def _clip_for(self, v):
+    def _clip_for(self, v) -> Any:
         """Wieviel beim Slide-Fortschritt v weggeschnitten gehört (0 = nichts).
 
         Der Positions-Versatz MINUS EDGE_GAP: um diese Luft ist das Ziel schon von
@@ -50,7 +51,7 @@ class ClippingMixin:
         q = max(1, CLIP_QUANT)
         return int(math.ceil(float(cut) / q) * q)
 
-    def _apply_clip(self, v):
+    def _apply_clip(self, v) -> None:
         """Den Teil jenseits der Kante wegschneiden – passend zum Slide-Fortschritt v.
         Unveränderte Breite -> kein Aufruf: SetWindowRgn zeichnet das Fenster neu."""
         cut = self._clip_for(v)
@@ -74,7 +75,7 @@ class ClippingMixin:
             pass
         self._clip_px = cut
 
-    def _clear_clip(self):
+    def _clear_clip(self) -> None:
         """Beschneidung aufheben (bündig aufgeklappt, abgedockt, Rand gewechselt)."""
         if not self._clip_px:
             return
@@ -85,7 +86,7 @@ class ClippingMixin:
         self._clip_px = 0
 
     @staticmethod
-    def _spring_at(d0, v0, omega, dt):
+    def _spring_at(d0, v0, omega, dt) -> Any:
         """Kritisch gedämpfte Feder um dt Sekunden weiterrechnen – ANALYTISCH, nicht
         Schritt für Schritt integriert. Rein: Abstand zum Ziel und Geschwindigkeit
         jetzt. Raus: beides nach dt.

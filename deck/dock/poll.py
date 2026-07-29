@@ -6,6 +6,7 @@ nach - sonst reagiert der Griff gelegentlich gar nicht.
 """
 import time
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import COLLAPSE_DELAY_MS, INSIDE_MARGIN, POLL_MS, capsule_extent
 
@@ -13,11 +14,11 @@ from deck.dock.metrics import COLLAPSE_DELAY_MS, INSIDE_MARGIN, POLL_MS, capsule
 class PollMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _start_poll(self):
+    def _start_poll(self) -> None:
         if self._poll_job is None:
             self._schedule_poll()
 
-    def _stop_poll(self):
+    def _stop_poll(self) -> None:
         if self._poll_job:
             try:
                 self.root.after_cancel(self._poll_job)
@@ -25,13 +26,13 @@ class PollMixin:
                 pass
             self._poll_job = None
 
-    def _schedule_poll(self):
+    def _schedule_poll(self) -> None:
         try:
             self._poll_job = self.root.after(POLL_MS, self._poll)
         except tk.TclError:
             self._poll_job = None
 
-    def _poll(self):
+    def _poll(self) -> None:
         self._poll_job = None
         if self.edge == "off":
             return
@@ -41,7 +42,7 @@ class PollMixin:
             return
         self._schedule_poll()
 
-    def _poll_once(self):
+    def _poll_once(self) -> None:
         if self._anim is not None:
             # Während des Gleitens nicht dazwischenfahren – aber nachsehen, ob die
             # Bewegung überhaupt noch lebt (der Poll ist die einzige Instanz, die
@@ -72,7 +73,7 @@ class PollMixin:
         elif now - self._outside_since >= COLLAPSE_DELAY_MS:
             self.collapse()
 
-    def _poll_reveal(self):
+    def _poll_reveal(self) -> None:
         """Eingeklappt: aufklappen, sobald der Zeiger auf dem Griff steht – als
         ZWEITER, ereignisunabhängiger Weg neben den <Enter>/<Motion>-Bindings.
 
@@ -105,14 +106,14 @@ class PollMixin:
             return                      # Polster: hier wird gegriffen, nicht geöffnet
         self.reveal()
 
-    def _app_dragging(self):
+    def _app_dragging(self) -> Any:
         try:
             return bool(self.app._dragging())
         except Exception:
             return False
 
     @staticmethod
-    def _now_ms():
+    def _now_ms() -> Any:
         """Monotone Uhr in Millisekunden (float).
 
         Bewusst perf_counter statt Tks `clock milliseconds`: das liest die Systemuhr
@@ -125,7 +126,7 @@ class PollMixin:
         mikrosekundengenau."""
         return time.perf_counter() * 1000.0
 
-    def _pointer_in_window(self, px, py):
+    def _pointer_in_window(self, px, py) -> Any:
         try:
             x = self.root.winfo_rootx()
             y = self.root.winfo_rooty()

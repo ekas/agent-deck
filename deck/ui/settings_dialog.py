@@ -24,7 +24,7 @@ class SettingsDialog:
     andere Herkunft.
     """
 
-    def __init__(self, root, settings, store, dock, *, set_modal, restart, place):
+    def __init__(self, root, settings, store, dock, *, set_modal, restart, place) -> None:
         self.root = root            # Tk-Root (Elternfenster des Dialogs)
         self.settings = settings    # Deck-Einstellungen (Dict, wird in place mutiert)
         self.store = store          # BindStore - speichert die Einstellungen
@@ -33,7 +33,7 @@ class SettingsDialog:
         self.restart = restart         # Panel-Neustart (Knopf im Dialog)
         self._place_dialog = place     # platziert das Fenster auf dem richtigen Monitor
 
-    def show(self):
+    def show(self) -> None:
         """Frost-gestyltes Einstellungs-Fenster (⚙ in der unteren Leiste). Steuert die
         vier Default-Werte fuer NEU gestartete Claude-Agenten direkt in Claude Codes
         globaler ~/.claude/settings.json (Modell, Permission-Modus, Effort, Antwort-
@@ -80,7 +80,7 @@ class SettingsDialog:
         lang_var = tk.StringVar(
             value=_lang_v2d.get(i18n.normalize(cur["language"]), lang_display[0][0]))
 
-        def _row(r, label, var, labels):
+        def _row(r, label, var, labels) -> None:
             tk.Label(dlg, text=label, bg=BG, fg=INK_2, font=("Segoe UI", 10)).grid(
                 row=r, column=0, sticky="w", padx=(16, 10), pady=4)
             om = tk.OptionMenu(dlg, var, *labels)
@@ -112,7 +112,7 @@ class SettingsDialog:
         # selbst wieder ein (_glow_self_heal). VS Code danach jeweils neu laden.
         glow_var = tk.BooleanVar(value=bool(self.settings.get("glow")))
 
-        def _toggle_glow():
+        def _toggle_glow() -> None:
             on = glow_var.get()
             self.settings["glow"] = on
             self.store.save_settings()
@@ -175,7 +175,7 @@ class SettingsDialog:
             self.settings.get("dock_edge", "off")
         dock_var = tk.StringVar(value=_dock_v2l.get(cur_edge, DOCK_CHOICES[0][0]))
 
-        def _on_dock(label):
+        def _on_dock(label) -> None:
             edge = _dock_l2v.get(label, "off")
             if not self.dock:
                 return
@@ -188,7 +188,7 @@ class SettingsDialog:
             # dieser Reihenfolge: wir stecken hier noch im command-Callback des
             # OptionMenus (ein destroy mittendrin zerreisst das Menue-Widget), und
             # erst nach dem Schliessen ist der grab weg, wenn der Dock-Poll anlaeuft.
-            def _close_then_dock():
+            def _close_then_dock() -> None:
                 dlg.destroy()
                 self.root.after_idle(
                     lambda: self.dock.set_edge(edge) if self.dock else None)
@@ -212,7 +212,7 @@ class SettingsDialog:
             pass
         dock_om.grid(row=8, column=1, sticky="w", padx=(0, 16), pady=4)
 
-        def _save():
+        def _save() -> None:
             try:
                 # Deck-eigene Werte zuerst persistieren (unabhaengig von den Claude-
                 # Settings unten). Jira-Praefix gross geschrieben, wie ein Projekt-Key.

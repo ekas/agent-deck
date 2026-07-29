@@ -10,6 +10,7 @@ laeuft ueber handle_thick(), nie ueber die Fensterbreite.
 """
 import math
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import (
     DRAG_THRESH,
@@ -32,7 +33,7 @@ from deck.render import capsule as hrender
 class HandleMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def _ensure_handle(self):
+    def _ensure_handle(self) -> None:
         if self.handle is not None:
             return
         h = tk.Toplevel(self.root)
@@ -62,7 +63,7 @@ class HandleMixin:
         self._enable_alpha()
         self._hide_handle()
 
-    def _enable_alpha(self, force=False):
+    def _enable_alpha(self, force=False) -> None:
         """Das Griff-Fenster auf Per-Pixel-Alpha umstellen (WS_EX_LAYERED).
 
         `force` legt den Layer-Zustand NEU an – nötig nach jedem Einblenden, siehe
@@ -87,7 +88,7 @@ class HandleMixin:
             self._handle_hwnd = None
             self._layered = False
 
-    def _destroy_handle(self):
+    def _destroy_handle(self) -> None:
         self._stop_glow()
         self._handle_shown = False
         if self.handle is not None:
@@ -106,7 +107,7 @@ class HandleMixin:
         self._bloom = 0.0
 
     # ── Zonen quer zum Griff: Kapsel vs. Polster ────────────
-    def _across(self, x, y, w=None, h=None):
+    def _across(self, x, y, w=None, h=None) -> Any:
         """Abstand des Punktes von der DOCKKANTE, quer zum Griff (px).
 
         Bei „links" und „oben" liegt die Kante bei 0, bei „rechts" am anderen Ende –
@@ -119,21 +120,21 @@ class HandleMixin:
             return (w - 1) - x
         return y if self.edge == "top" else x
 
-    def _in_grip(self, ev):
+    def _in_grip(self, ev) -> Any:
         """True, wenn der Zeiger im unsichtbaren Polster steht – dort wird GEGRIFFEN
         (verschieben), nicht aufgeklappt. Auf der Kapsel ist es umgekehrt."""
         return self._across(ev.x, ev.y) >= capsule_extent()
 
     # ── Griff-Events: Hover / Klick / Ziehen ────────────────
-    def _h_enter(self, ev):
+    def _h_enter(self, ev) -> None:
         self._hover_zone(ev)
 
-    def _h_hover_motion(self, ev):
+    def _h_hover_motion(self, ev) -> None:
         # Bewegung OHNE gedrückte Taste (mit Taste gewinnt das spezifischere
         # <B1-Motion>); der Guard in _hover_zone deckt den Rest ab.
         self._hover_zone(ev)
 
-    def _hover_zone(self, ev):
+    def _hover_zone(self, ev) -> None:
         """Zone unter dem Zeiger auswerten.
 
         Im unsichtbaren Polster passiert bewusst NICHTS: kein Aufklappen (dort will man
@@ -165,7 +166,7 @@ class HandleMixin:
         except tk.TclError:
             self._reveal_job = None
 
-    def _h_leave(self, _ev):
+    def _h_leave(self, _ev) -> None:
         if self._drag:
             return          # Ziehen läuft (Tk hält den Grab über den Rand hinaus) ->
                             # Zeiger/Leuchten NICHT zurücksetzen, es geht ja weiter
@@ -173,7 +174,7 @@ class HandleMixin:
         self._set_grip_hot(False)
         self._cancel_reveal()
 
-    def _set_grip_hot(self, hot):
+    def _set_grip_hot(self, hot) -> None:
         """Zeiger im Polster (Zieh-Zone): Zeigerform auf 'fleur'. Das ist der EINZIGE
         Hinweis – die Zone ist unsichtbar und soll es bleiben, ein Aufleuchten dort
         würde eine Fläche behaupten, die man nicht sieht."""
@@ -187,7 +188,7 @@ class HandleMixin:
                 pass
         self._paint_handle()
 
-    def _set_accent_hot(self, hot):
+    def _set_accent_hot(self, hot) -> None:
         """Röhren-Kern aufhellen/verbreitern, solange der Zeiger auf dem Griff steht.
         Bleibt in der aktuellen STATUSFARBE (nur mehr Weißanteil) – ein festes Cyan
         würde die Rückfrage-/Ungelesen-Farbe genau im Moment des Hinschauens
@@ -197,12 +198,12 @@ class HandleMixin:
         self._hot = hot
         self._paint_handle()
 
-    def _reveal_from_hover(self):
+    def _reveal_from_hover(self) -> None:
         self._reveal_job = None
         if not self._drag:
             self.reveal()
 
-    def _cancel_reveal(self):
+    def _cancel_reveal(self) -> None:
         if self._reveal_job:
             try:
                 self.root.after_cancel(self._reveal_job)
@@ -210,7 +211,7 @@ class HandleMixin:
                 pass
             self._reveal_job = None
 
-    def _h_press(self, ev):
+    def _h_press(self, ev) -> None:
         # Greifen: geplantes Hover-Aufklappen abbrechen, Ziehen vorbereiten (noch
         # kein Ziehen, bis die Schwelle überschritten ist). NUR in der Zieh-Zone –
         # ausserhalb ist der Griff schon am Aufklappen, da würde ein Drag ins Leere
@@ -221,7 +222,7 @@ class HandleMixin:
         self._drag = {"start": self._pointer_along(),
                       "anchor0": self._get_along(), "moved": False}
 
-    def _h_motion(self, _ev):
+    def _h_motion(self, _ev) -> None:
         d = self._drag
         if not d:
             return
@@ -235,7 +236,7 @@ class HandleMixin:
         self._set_along(self._clamp(d["anchor0"] + delta, 0, max(0, limit)))
         self._position_handle()
 
-    def _h_release(self, _ev):
+    def _h_release(self, _ev) -> None:
         d = self._drag
         self._drag = None
         if d and d["moved"]:
@@ -243,17 +244,17 @@ class HandleMixin:
         else:
             self.reveal()              # reiner Klick → sofort aufklappen
 
-    def _pointer_along(self):
+    def _pointer_along(self) -> Any:
         return (self.root.winfo_pointery() if self._is_vertical()
                 else self.root.winfo_pointerx())
 
     # ── Griff zeichnen / positionieren ──────────────────────
-    def _handle_len(self):
+    def _handle_len(self) -> Any:
         win_w, win_h = self._last_size if self._last_size[0] else self._content_size()
         base = win_h if self._is_vertical() else win_w
         return int(self._clamp(base, HANDLE_MIN_LEN, HANDLE_MAX_LEN))
 
-    def _handle_geom(self):
+    def _handle_geom(self) -> Any:
         """(x, y, w, h) des Griffs: quer handle_thick() dünn, längs an der Fenster-
         Oberkante/-Vorderkante (= Anker) ausgerichtet, begrenzt aufs Sichtbare."""
         sw = self.root.winfo_screenwidth()
@@ -268,7 +269,7 @@ class HandleMixin:
         x = int(self._clamp(along, 0, max(0, sw - length)))
         return x, 0, length, thick
 
-    def _position_handle(self):
+    def _position_handle(self) -> None:
         if self.handle is None:
             return
         x, y, w, h = self._handle_geom()
@@ -280,7 +281,7 @@ class HandleMixin:
             self._draw_handle(w, h)
             self._handle_drawn = (w, h)
 
-    def _draw_handle(self, w, h):
+    def _draw_handle(self, w, h) -> None:
         """Die Griff-Grafik ANLEGEN (nur bei Größenänderung). Gefärbt wird hier nichts
         – das macht _paint_handle je Frame; ein delete('all') pro Frame flimmert am
         Rand.
@@ -316,13 +317,13 @@ class HandleMixin:
         self._paint_handle()
 
     # ── Neon: färben + atmen ────────────────────────────────
-    def _eff_intensity(self):
+    def _eff_intensity(self) -> Any:
         """Aktuelle Leuchtkraft: Ruhe-Intensität (bei 'pulse' atmend) – nie unter
         NEON_FLOOR, damit der Griff greifbar bleibt – plus das abklingende Aufblitzen."""
         base = self._glow_int * (self._pulse_factor() if self._glow_pulse else 1.0)
         return max(base, NEON_FLOOR) + self._bloom
 
-    def _pulse_factor(self):
+    def _pulse_factor(self) -> Any:
         """Sanftes Atmen 0.60..1.00 (Cosinus) – dieselbe Kurve wie GlowAnimator."""
         ang = 2 * math.pi * (self._pulse_i % NEON_PULSE_TICKS) / NEON_PULSE_TICKS
         return 0.60 + 0.40 * (0.5 - 0.5 * math.cos(ang))

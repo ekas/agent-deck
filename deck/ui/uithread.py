@@ -18,7 +18,7 @@ from deck.render.kit import CARD_BORDER, INK_3
 class UiThreadMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _post(self, fn):
+    def _post(self, fn) -> None:
         """Aus einem Hintergrund-Thread etwas auf dem Tk-Thread ausfuehren lassen.
 
         NICHT self.root.after(0, …) aus dem Thread benutzen, auch wenn es meistens
@@ -31,7 +31,7 @@ class UiThreadMixin:
         put() ist thread-safe und faellt nicht ins Tcl."""
         self._ui_q.put(fn)
 
-    def _ui_pump(self):
+    def _ui_pump(self) -> None:
         """Tk-Thread: abarbeiten, was die Threads hinterlegt haben (eigener Takt,
         damit das nicht am refresh-Poll haengt, der beim Kachel-Drag pausiert).
         Ein Fehler in einem Callback darf die Pumpe nie anhalten."""
@@ -46,7 +46,7 @@ class UiThreadMixin:
                 log.exc("_ui_pump")
         self.root.after(cfg.UI_PUMP_MS, self._ui_pump)
 
-    def _ensure_chat_info(self, sid, cwd, summary=True):
+    def _ensure_chat_info(self, sid, cwd, summary=True) -> None:
         """Im Hintergrund Ticket-ID + Zusammenfassung dieser Session sicherstellen.
         Beides liest das Transcript (und generate() startet zusaetzlich claude) -> Daemon-
         Thread, NIE auf dem Tk-Thread. Pro Session laeuft hoechstens ein Job gleichzeitig.
@@ -59,7 +59,7 @@ class UiThreadMixin:
         threading.Thread(target=self._chat_info_worker,
                          args=(sid, cwd, summary), daemon=True).start()
 
-    def _chat_info_worker(self, sid, cwd, summary=True):
+    def _chat_info_worker(self, sid, cwd, summary=True) -> None:
         """Daemon-Thread: erst Ticket/PR (billig, reine Regex -> sofort nachziehen),
         dann die Zusammenfassung (teuer, claude). Fasst hier KEIN Tk an – der Rueckweg
         laeuft ueber _post (Queue), NICHT ueber root.after; siehe dort, warum."""
@@ -78,7 +78,7 @@ class UiThreadMixin:
                 text = None
         self._post(lambda: self._chat_info_ready(sid, text))
 
-    def _refs_ready(self, sid, refs):
+    def _refs_ready(self, sid, refs) -> None:
         """Zurueck auf dem Tk-Thread: erkanntes Ticket/PR merken (die Karte liest sie im
         Poll von hier) und einen gerade sichtbaren Tooltip derselben Session nachziehen."""
         if self._auto_refs.get(sid) == refs:
@@ -86,14 +86,14 @@ class UiThreadMixin:
         self._auto_refs[sid] = refs
         self._refresh_tip_for(sid)
 
-    def _chat_info_ready(self, sid, summary):
+    def _chat_info_ready(self, sid, summary) -> None:
         """Zusammenfassung ist da -> Tooltip nachziehen (nur wenn er gerade sichtbar ist
         und noch dieselbe Session gehovert wird, siehe _refresh_tip_for)."""
         self._summary_jobs.discard(sid)
         if summary:
             self._refresh_tip_for(sid)
 
-    def _refresh_tip_for(self, sid):
+    def _refresh_tip_for(self, sid) -> None:
         """Sichtbaren Tooltip mit frischem Inhalt neu zeichnen, ABER nur, wenn er GERADE
         sichtbar ist und die gehoverte Kachel noch zu dieser Session gehoert. Der
         _tip_visible-Check ist wichtig: nach einem Klick haelt focus_slot _hover_slot
@@ -110,7 +110,7 @@ class UiThreadMixin:
         if text:
             self._tip_at_pointer(text)
 
-    def _draw_add(self, c, win, x, y, W, H, R):
+    def _draw_add(self, c, win, x, y, W, H, R) -> None:
         rect = ck.round_rect(c, x, y, x + W, y + H, R,
                                 fill="#191921", outline=CARD_BORDER, width=1)
         plus = c.create_text(x + W / 2, y + H / 2, text="＋", fill=INK_3,

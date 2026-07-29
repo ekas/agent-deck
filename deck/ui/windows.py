@@ -10,6 +10,7 @@ erst ein Readiness-Gate (der erste Hook muss da sein), dann Bestaetigen und Nach
 sonst bleibt er auf dem Weg haengen.
 """
 import time
+from typing import Any
 
 from deck.claude import settings as cset
 from deck.domain import config as cfg
@@ -23,7 +24,7 @@ from deck.platform import focus as wf
 class WindowSyncMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _sync_bindings(self):
+    def _sync_bindings(self) -> None:
         """Auto-Verknuepfung + Auto-Bind: eine gemerkte Extension bekommt ihren
         Buchstaben; jede verbundene Extension OHNE Buchstaben das naechste freie
         Fenster -> alles verbindet sich selbst."""
@@ -49,7 +50,7 @@ class WindowSyncMixin:
             self.broker.assign(ws, free)
             self._last_sig = None
 
-    def _open_vscode_repos(self):
+    def _open_vscode_repos(self) -> Any:
         """Repo-/Ordnernamen (lowercased) ALLER aktuell offenen VS-Code-Fenster, aus den
         Fenstertiteln gezogen. None, wenn die Win32-Enumeration fehlschlaegt -> der Aufrufer
         raeumt dann NICHT ab (lieber eine tote Kachel stehen lassen als eine lebende
@@ -65,7 +66,7 @@ class WindowSyncMixin:
                 repos.add(repo.lower())
         return repos
 
-    def _cleanup_closed_windows(self):
+    def _cleanup_closed_windows(self) -> None:
         """Ein gebundenes Fenster automatisch abraeumen (Bindung vergessen -> Kachel weg),
         sobald sein VS-Code-Fenster WIRKLICH geschlossen wurde. Abgrenzung zum blossen
         Reload/kurzen Verbindungsabriss: bei einem Reload bleibt das native VS-Code-Fenster
@@ -115,7 +116,7 @@ class WindowSyncMixin:
             self.store.save_bindings()
             self._last_sig = None                   # Layout sofort neu zeichnen
 
-    def _autofocus_new(self):
+    def _autofocus_new(self) -> None:
         """Neuen "＋"-Chat automatisch auswaehlen + fokussieren, sobald sein Slot da ist.
         Das Vormerken fuer den Auto-Startmodus (_register_pending_auto: nur Dict-Eintrag +
         Datei-Lesen, KEIN Fokus) geschieht sofort bei Erst-Erkennung — moeglichst FRUEH, vor
@@ -135,7 +136,7 @@ class WindowSyncMixin:
         elif not self._modal and time.time() - ts > 8:
             self._await_new = None             # nichts erschienen -> aufgeben
 
-    def _register_pending_auto(self, slots):
+    def _register_pending_auto(self, slots) -> None:
         """Frisch per ＋ angelegte Slots fuer den Auto-Startmodus (config.NEW_AGENT_MODE)
         vormerken. Je Slot ein Fortschritts-Dict:
           • base_ts  = ts einer evtl. noch herumliegenden ALTEN Zustands-Datei (0, wenn
@@ -169,7 +170,7 @@ class WindowSyncMixin:
                 "ready_ts": 0.0, "sent_ts": 0.0, "tries": 0,
             }
 
-    def _apply_pending_auto(self, states, now, cycle):
+    def _apply_pending_auto(self, states, now, cycle) -> None:
         """Neu per ＋ erzeugte Agenten in den Wunsch-Startmodus (config.NEW_AGENT_MODE,
         z.B. 'auto') treiben, sobald ihr erster Hook feuert (mit SessionStart-Hook beim
         Oeffnen, sonst beim ersten Prompt) – NICHT feuern-und-vergessen, sondern:
@@ -234,7 +235,7 @@ class WindowSyncMixin:
                 p["sent_ts"] = now                  # kurz gelandet -> vom Ist-Modus nachtreiben
                 p["tries"] += 1
 
-    def _adopt_hook_modes(self, states, cycle):
+    def _adopt_hook_modes(self, states, cycle) -> None:
         """Ist-Permission-Mode aus den Hooks uebernehmen (self-correcting): jeder
         neue Hook-Event (neuere ts) mit gueltigem Modus setzt die Deck-Annahme."""
         for slot, st in states.items():

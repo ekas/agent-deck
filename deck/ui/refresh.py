@@ -30,7 +30,7 @@ from deck.ui.theme import (
 class RefreshMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Poll-Schleife (alle cfg.POLL_MS): Zweitstart-Wunsch bedienen, Verbindungen
         synchronisieren, Layout bei Bedarf neu zeichnen, neuen Chat auto-fokussieren,
         dann Zustaende einlesen und jede Kachel aktualisieren. In benannte Schritte
@@ -84,7 +84,7 @@ class RefreshMixin:
         self._prefetch_summaries(now)   # Ticket-ID + Zusammenfassung im Hintergrund vorwaermen
         self.root.after(cfg.POLL_MS, self.refresh)
 
-    def _beat(self):
+    def _beat(self) -> None:
         """Lebenszeichen fuer den Waechter (watchdog.py), gedrosselt auf BEAT_EVERY_S.
 
         Bewusst hier in der Poll-Schleife und nicht in einem eigenen Timer: der
@@ -97,7 +97,7 @@ class RefreshMixin:
         self._last_beat = now
         si.beat()
 
-    def _serve_reveal_request(self):
+    def _serve_reveal_request(self) -> None:
         """Den Wunsch eines zurueckgetretenen Zweitstarts bedienen: »zeig dich«.
 
         Ein erneuter Programmstart oeffnet absichtlich KEIN zweites Panel
@@ -118,7 +118,7 @@ class RefreshMixin:
         except Exception:
             pass
 
-    def _mark_seen_read(self):
+    def _mark_seen_read(self) -> None:
         """Panes, die du direkt in VS Code angeklickt hast, als gelesen markieren.
         Die Extension meldet solche Fokuswechsel als 'seen' an den Broker; hier holen
         wir die Slots ab und schalten 'ungelesen' (done) -> 'idle' – dieselbe Geste
@@ -134,7 +134,7 @@ class RefreshMixin:
             if st and st.get("status") == "done":
                 dc.write_state(slot, "idle")
 
-    def _update_tiles(self, states, live, now, cycle):
+    def _update_tiles(self, states, live, now, cycle) -> None:
         """Pro Kachel den Status interpretieren (status_model) und die Optik setzen:
         Glow-Ziele + Farbton-Ziel, betonte Kante, Modell/Effort/Status/Modus-Text.
         Das Faden/Atmen selbst macht der GlowAnimator (wir setzen nur die Ziele)."""
@@ -181,7 +181,7 @@ class RefreshMixin:
                 border, bw = _mix(gcolor, CARD_BORDER, 0.5), 1
             # Karteninhalt: Modell (statusLine) + Effort (Hooks) + Status unten links.
             # Textfarben sind fest (INK/INK_2) – der Status läuft über den Glow.
-            model = _short_model(lv.get("model"))
+            model = _short_model(lv.get("model") or "")
             live_eff = lv.get("effort") or (st or {}).get("effort") or ""
             effort = sm.resolve_effort(live_eff, self.slot_effort.get(slot))
             mi = self.slot_mode.get(slot)
@@ -231,7 +231,7 @@ class RefreshMixin:
             self.deck.itemconfig(ids["mode"], text=mode)
         self._update_dock_glow(skeys)
 
-    def _update_dock_glow(self, skeys):
+    def _update_dock_glow(self, skeys) -> None:
         """Den Griff-Balken des angedockten Decks in der Farbe des DRINGLICHSTEN
         Kachel-Status leuchten lassen (Rueckfrage > ungelesen > getrennt > denkt >
         idle): eingeklappt sieht man so am Rand, ob einer etwas von dir will.

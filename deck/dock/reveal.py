@@ -4,6 +4,7 @@
 klappt darum per Marker-Datei auf (reveal_for_request mit Haltefrist).
 """
 import tkinter as tk
+from typing import Any
 
 from deck.dock.metrics import REQUEST_HOLD_MS, REVEAL_LOCK_MS
 
@@ -11,7 +12,7 @@ from deck.dock.metrics import REQUEST_HOLD_MS, REVEAL_LOCK_MS
 class RevealMixin:
     """Wird in EdgeDock eingemischt (siehe controller.py)."""
 
-    def reveal(self):
+    def reveal(self) -> None:
         """Deck aus dem Griff heraus hervorgleiten lassen (endet EDGE_GAP vor dem Rand).
 
         Idempotent: laeuft der Slide schon in diese Richtung, passiert NICHTS. Frueher
@@ -50,7 +51,7 @@ class RevealMixin:
         self._round_corners()           # vor dem Slide: die Ecken sind gleich rund
         self._anim_to(+1)
 
-    def reveal_for_request(self, hold_ms=REQUEST_HOLD_MS):
+    def reveal_for_request(self, hold_ms=REQUEST_HOLD_MS) -> None:
         """Aufklappen auf Zuruf von außen (Zweitstart-Wunsch, agent_deck) – und
         anders als beim Hover-Reveal eine Weile offen HALTEN.
 
@@ -63,7 +64,7 @@ class RevealMixin:
         self.reveal()
         self._reassert_topmost()        # es soll VOR dem Fenster stehen, das gerade den Fokus hat
 
-    def collapse(self):
+    def collapse(self) -> None:
         """Deck hinter den Rand zurückgleiten lassen und auf den Griff einklappen."""
         self._hold_until = 0            # tatsächlich eingeklappt -> Haltefrist verbraucht
         self._cancel_reveal()
@@ -80,7 +81,7 @@ class RevealMixin:
         self._update_clip_need()        # auch ohne vorheriges reveal() (set_edge)
         self._anim_to(-1)
 
-    def _collapse_now(self):
+    def _collapse_now(self) -> None:
         """Ohne Animation einklappen (Start, Rand-Wechsel, Abbruch)."""
         self._anim_cancel()
         self._cancel_reveal()
@@ -97,7 +98,7 @@ class RevealMixin:
         except tk.TclError:
             pass
 
-    def _is_shown(self):
+    def _is_shown(self) -> Any:
         try:
             return self.root.state() != "withdrawn"
         except tk.TclError:

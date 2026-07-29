@@ -7,6 +7,8 @@ Die Flaeche und der Halo kommen aus Pillow (render/card.py), nicht aus Canvas-Po
 Tk kann kein Antialiasing, und eine harte Rundung sieht auf 150%-Displays ausgefranst
 aus.
 """
+from typing import Any
+
 from deck.domain import config as cfg
 from deck.platform import dpi
 from deck.render import card as cr
@@ -31,7 +33,7 @@ class TileRenderer:
     """
 
     def __init__(self, tiles, add_width, *, on_new, on_close,
-                 on_press, on_menu, on_enter, on_leave):
+                 on_press, on_menu, on_enter, on_leave) -> None:
         self.tiles = tiles              # geteiltes Kachel-Dict (nie ersetzen, nur clear)
         self._SLIM_ADD_W = add_width    # Breite der Geister-＋ am Reihenende
         self.create_agent = on_new      # Klick auf ＋  -> neues Claude-Terminal
@@ -41,7 +43,7 @@ class TileRenderer:
         self._hover_enter = on_enter    # Zeiger drauf  -> Gruppe hervorheben, Tooltip
         self._hover_leave = on_leave    # Zeiger weg    -> beides zurücknehmen
 
-    def draw_add(self, c, win, x, y, H, s):
+    def draw_add(self, c, win, x, y, H, s) -> None:
         """Slim-Weg zum Starten eines Agenten (Mockup-Option #2 »Geister-＋ am Reihenende«):
         ein blasses, schmales ＋ hinter der letzten Kachel der Reihe – KEINE volle ＋-Kachel
         wie im Vollmodus, damit der ruhige Slim-Look bleibt. Die gefuellte (BG = im Ruhe-
@@ -76,7 +78,7 @@ class TileRenderer:
                    (c.itemconfig(p, fill=INK_3), c.itemconfig(b, outline=""),
                     c.configure(cursor="")))
 
-    def draw_tile(self, c, slot, x, y, W, H, R, scale=1.0, step=None):
+    def draw_tile(self, c, slot, x, y, W, H, R, scale=1.0, step=None) -> Any:
         # Frostpane-Karte: dunkle Graphitfläche, heller Text, ruhiger Status-GLOW
         # (weicher Halo ringsum). BEWUSST WEGGELASSEN (nach Vorgabe): der Leucht-
         # Streifen an der linken Kante und der Status-Punkt in der Ecke – den Status
@@ -91,7 +93,7 @@ class TileRenderer:
         # Faktor wie die Koordinaten. Eine Punktangabe wuerde zusaetzlich ueber
         # `tk scaling` mit der Monitor-Skalierung wachsen -> doppelt, und der Text
         # liefe aus der Karte.
-        def fs(b, w=None):
+        def fs(b, w=None) -> Any:
             return dpi.fontpx(b, s, weight=w)
         # Flaeche + Halo + Kante: EIN gerendertes Bild (weiche Rundung, echter
         # Verlauf) – Tk-Canvas selbst kann kein Antialiasing, seine Rundungen

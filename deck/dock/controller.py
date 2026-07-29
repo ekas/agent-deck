@@ -87,12 +87,14 @@ Schließen im angedockten Zustand: es gibt keine Titelleiste/kein ✕. Zum Beend
 im ⚙-Dialog „Am Rand andocken" auf „Aus" stellen – dann ist die Titelleiste
 (inkl. Schließen) wieder da.
 """
+from typing import Any
+
 from deck.dock.animation import AnimationMixin
 from deck.dock.clipping import ClippingMixin
 from deck.dock.frameless import FramelessMixin
 from deck.dock.geometry import GeometryMixin
 from deck.dock.handle import HandleMixin
-from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, scale_metrics
+from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, forget_tick, scale_metrics
 from deck.dock.poll import PollMixin
 from deck.dock.reveal import RevealMixin
 from deck.dock.wave import WaveMixin
@@ -122,7 +124,7 @@ class EdgeDock(
     _wave_t0 = None
     _last_bits = None
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         scale_metrics()               # Griffmasse in Geraetepixel (HiDPI, siehe oben)
         self.app = app
         self.root = app.root
@@ -146,6 +148,9 @@ class EdgeDock(
         self._land_i = 0              # verbleibende Frames dieses Nachleuchtens
         self._land_color = BORDER_COLOR
         self._clip_on = False         # jenseits der Kante liegt ein Monitor -> beschneiden
+        # Zieht der Nutzer gerade den Griff? frameless setzt es zurueck, handle fuehrt
+        # es - der Zustand gehoert also beiden und wird darum HIER deklariert.
+        self._drag = None
         self._clip_px = 0             # derzeit weggeschnittene Breite (0 = keine Region)
         # Neon-Zustand des Griffs (Farbe kommt per set_glow vom Panel).
         self._layered = False         # Griff-Fenster trägt Alpha je Pixel (dann kein Canvas)
@@ -169,10 +174,10 @@ class EdgeDock(
         self._last_bits = None        # zuletzt geschobenes Bild (nicht zweimal pushen)
 
     # ── öffentlich ──────────────────────────────────────────
-    def current_edge(self):
+    def current_edge(self) -> Any:
         return self.edge
 
-    def sliding(self):
+    def sliding(self) -> Any:
         """Gleitet das Deck gerade herein oder heraus?
 
         Das Panel fragt danach, um seinen Poll für die Dauer der Bewegung auszusetzen
@@ -180,7 +185,7 @@ class EdgeDock(
         wegnehmen – dasselbe Argument, mit dem _anim_hold den Kachel-Animator anhält."""
         return self._anim is not None
 
-    def apply_initial(self):
+    def apply_initial(self) -> None:
         """Beim Start den in den Settings gespeicherten Rand anwenden. Ist ein Rand
         gesetzt, wird sofort auf den Griff eingeklappt."""
         edge = self._norm(self.app.settings.get("dock_edge", "off"))
@@ -194,7 +199,7 @@ class EdgeDock(
         self._collapse_now()           # beim Start ohne Slide (nichts ist sichtbar)
         self._start_poll()
 
-    def set_edge(self, edge):
+    def set_edge(self, edge) -> None:
         """Rand live setzen (aus dem ⚙-Dialog). Persistiert 'dock_edge' selbst."""
         edge = self._norm(edge)
         if edge == self.edge:
@@ -241,7 +246,7 @@ class EdgeDock(
             else:
                 self._collapse_now()       # setzt Griff + versteckt das Fenster
 
-    def on_resized(self):
+    def on_resized(self) -> None:
         """Vom Deck nach _fit_slim_window gerufen: wächst/schrumpft der Inhalt, das
         aufgeklappte Fenster wieder an den Rand rücken (EDGE_GAP davor)."""
         if self.edge == "off":
@@ -257,15 +262,14 @@ class EdgeDock(
         if self.expanded:
             self._reposition_expanded()
 
-    def apply_ui_scale(self):
+    def apply_ui_scale(self) -> None:
         """Monitorwechsel: die Griffmasse neu in Geraetepixel umrechnen und den
         Griff mit den neuen Massen neu setzen. Das Panel ruft das aus
         _sync_ui_scale; das aufgeklappte Fenster ruecken auf_resized/_reposition
         ohnehin nach."""
-        global _tick_ms
         scale_metrics()
         self._handle_drawn = (0, 0)      # erzwingt ein Neuzeichnen mit neuer Groesse
-        _tick_ms = None                  # anderer Monitor -> ggf. andere Bildrate
+        forget_tick()                    # anderer Monitor -> ggf. andere Bildrate
         hrender.clear_cache()            # Masken/Bilder gelten fuer die ALTEN Masse
         if self._anim is not None:
             # Mitten im Slide aendern sich gerade die Masse, aus denen er seine
@@ -275,7 +279,7 @@ class EdgeDock(
         if self.edge != "off" and self.handle is not None:
             self._position_handle()      # setzt Geometrie + zeichnet die Roehre neu
 
-    def set_glow(self, color, intensity=1.0, pulse=False, flash=False):
+    def set_glow(self, color, intensity=1.0, pulse=False, flash=False) -> None:
         """Neon-Farbe des Griff-Balkens setzen (vom Panel je Poll gerufen, siehe
         AgentDeck._update_dock_glow). `intensity` 0..1 = Ruhe-Leuchtkraft, `pulse` =
         atmen, `flash` = kurz aufblitzen (nur sinnvoll, wenn der Zustand DRINGLICHER

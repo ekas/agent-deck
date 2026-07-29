@@ -4,6 +4,7 @@ VS Code gibt die Reihenfolge seiner Terminals nicht preis, darum ist die
 Reihenfolge deck-eigen und liegt in slot_order.json.
 """
 import tkinter as tk
+from typing import Any
 
 
 class TileDrag:
@@ -20,7 +21,7 @@ class TileDrag:
     """
 
     def __init__(self, root, canvas, tiles, order, store, *,
-                 focus, repaint, ordered_slots, hide_tip):
+                 focus, repaint, ordered_slots, hide_tip) -> None:
         self.root = root                    # Tk-Root (für die Animations-Timer)
         self.deck = canvas                  # der Deck-Canvas, auf dem gezogen wird
         self.tiles = tiles                  # geteiltes Kachel-Dict (nie ersetzen)
@@ -30,26 +31,26 @@ class TileDrag:
         self._paint_once = repaint          # nach dem Ablegen neu zeichnen
         self._ordered_slots = ordered_slots # aktuelle Reihenfolge eines Fensters
         self._hide_prompt_tip = hide_tip    # Tooltip weg, sobald es wirklich zieht
-        self._tile_drag = None              # laufender Drag (None = keiner)
+        self._tile_drag: dict[str, Any] | None = None   # laufender Drag (None = keiner)
 
     # VS Code gibt die visuelle Terminal-/Pane-Reihenfolge NICHT preis (kein Positions-/
     # Gruppen-API), also kann das Deck sie nicht spiegeln. Stattdessen ist das Deck die
     # Quelle der Wahrheit: die Kacheln lassen sich per Drag&Drop tauschen, die anderen
     # ruecken dabei zusammen und machen Platz (klassische Sortier-Animation). Die neue
     # Reihenfolge landet in self.order (persistiert via BindStore) und ueberlebt Neustarts.
-    def dragging(self):
+    def dragging(self) -> Any:
         """True, sobald ein Kachel-Drag wirklich zieht (Bewegung ueber der Schwelle).
         Ein blosser Press ohne Bewegung zaehlt NICHT -> ein normaler Klick bleibt moeglich."""
         return bool(self._tile_drag and self._tile_drag.get("moved"))
 
-    def press(self, slot, ev):
+    def press(self, slot, ev) -> None:
         """Maustaste auf einer Kachel gedrueckt: nur den Drag-Kandidaten merken (noch
         kein Drag). Bewegt sich der Zeiger nicht ueber die Schwelle, wertet _tile_release
         es als Klick -> focus_slot (Verhalten wie zuvor)."""
         self._tile_drag = {"slot": slot, "win": slot[0],
                            "sx": ev.x, "sy": ev.y, "moved": False}
 
-    def motion(self, ev):
+    def motion(self, ev) -> None:
         d = self._tile_drag
         if not d:
             return
@@ -71,7 +72,7 @@ class TileDrag:
             d["target"] = tgt
             self._reflow_drag(d)           # Ziel-Positionen der anderen Kacheln neu setzen
 
-    def _begin_tile_drag(self, d, ev):
+    def _begin_tile_drag(self, d, ev) -> Any:
         """Ersten echten Zug vorbereiten: Reihenfolge + Geometrie der Reihe erfassen,
         Kachel optisch anheben, den Sanft-Ease der Nachbarn starten. False, wenn es nichts
         zu ziehen gibt (Kachel inzwischen weg -> als Klick behandeln)."""
@@ -104,7 +105,7 @@ class TileDrag:
         self._drag_anim()
         return True
 
-    def _drag_target_index(self, d, ev_x):
+    def _drag_target_index(self, d, ev_x) -> Any:
         """Aktuelle Zielposition (0..n-1) aus der Lage der gezogenen Kachel: ihre linke
         Kante relativ zum Reihenanfang, auf die naechste Spalte gerundet. Bezug auf die
         Kachel (nicht den blossen Zeiger) -> der Griff-Offset bleibt korrekt."""
@@ -113,7 +114,7 @@ class TileDrag:
         raw = (cur_left - d["x0"]) / step
         return max(0, min(len(d["order"]) - 1, round(raw)))
 
-    def _reflow_drag(self, d):
+    def _reflow_drag(self, d) -> None:
         """Ziel-x aller NICHT gezogenen Kacheln fuer die aktuelle Einfuege-Position
         berechnen: sie ruecken zusammen und lassen an d['target'] genau eine Luecke fuer
         die gezogene Kachel frei (die klassische 'Platz machen'-Anordnung)."""
@@ -129,7 +130,7 @@ class TileDrag:
             p += 1
         d["want"] = want
 
-    def _drag_anim(self):
+    def _drag_anim(self) -> None:
         """Sanftes Nachziehen der Nachbarkacheln zu ihren Ziel-x (ease), im 16-ms-Takt,
         solange gezogen wird. Die gezogene Kachel selbst folgt in _tile_motion direkt dem
         Zeiger; hier bewegen sich nur die anderen, um Platz zu machen bzw. wieder zu
@@ -152,7 +153,7 @@ class TileDrag:
             pass
         d["job"] = self.root.after(16, self._drag_anim)
 
-    def release(self, ev):
+    def release(self, ev) -> None:
         """Loslassen: war es ein Klick (keine Bewegung), fokussieren; war es ein Drag, die
         neue Reihenfolge festschreiben, speichern und die Reihe sauber einrasten (auch bei
         No-Op zurueck an den Start -> Kachel schnappt in ihr Raster)."""

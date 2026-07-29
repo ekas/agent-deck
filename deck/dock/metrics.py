@@ -8,6 +8,7 @@ Merkregel fuer die Umrechnungen: Punkte sind Widget-Maass, Pixel sind Canvas-Maa
 """
 
 import os
+from typing import Any
 
 from deck.domain import config as cfg
 from deck.domain import paths as dp
@@ -258,7 +259,7 @@ _SCALED_PX = ("HANDLE_THICK", "HANDLE_PAD", "HANDLE_MIN_LEN", "HANDLE_MAX_LEN",
 _design = {}
 
 
-def scale_metrics():
+def scale_metrics() -> None:
     """Design-Masse -> Geraetepixel (siehe Kommentar oben). Idempotent."""
     g = globals()
     for name in _SCALED_PX:
@@ -272,7 +273,21 @@ def scale_metrics():
                              for lw, fade in _design["NEON_LAYERS"])
 
 
-def frame_tick_ms(hwnd=None):
+def forget_tick() -> None:
+    """Den gemerkten Frame-Takt verwerfen - der naechste Aufruf misst neu.
+
+    Gebraucht beim Monitorwechsel: ein anderer Schirm hat womoeglich eine andere
+    Bildrate. Das MUSS eine Funktion sein: der Aufrufer sitzt in controller.py, und ein
+    `global _tick_ms` dort erzeugt eine Modulvariable IN CONTROLLER - die hiesige bleibt
+    stehen. Genau das war nach dem Aufteilen von edge_dock.py der Fall (vorher lagen
+    beide in einer Datei, da griff das global noch). Die Animation lief danach mit dem
+    Takt des alten Monitors weiter, ohne dass etwas gemeldet wurde.
+    """
+    global _tick_ms
+    _tick_ms = None
+
+
+def frame_tick_ms(hwnd=None) -> Any:
     """Ziel-Abstand zweier Animations-Frames in ms = Bildperiode des Monitors, unter
     dem das Fenster liegt (ausführlich bei ANIM_TICK_FALLBACK_MS oben).
 
@@ -289,7 +304,7 @@ def frame_tick_ms(hwnd=None):
     return _tick_ms
 
 
-def handle_thick():
+def handle_thick() -> Any:
     """Dicke des GRIFF-FENSTERS quer zum Rand: Röhre + Luft für ihren Leuchthof.
 
     Alles Geometrische rechnet damit – wo der Griff liegt (_handle_geom), wie weit das
@@ -303,7 +318,7 @@ def handle_thick():
     return HANDLE_THICK + HANDLE_PAD
 
 
-def capsule_extent():
+def capsule_extent() -> Any:
     """Bis hierher (px von der Dockkante quer nach innen) reicht die sichtbare Kapsel;
     dahinter liegt das unsichtbare Polster. Das ist die Grenze zwischen Aufklapp- und
     Greif-Zone. Der Wert kommt aus dem Renderer, damit Zone und Bild EINE Quelle haben;
@@ -311,7 +326,7 @@ def capsule_extent():
     return min(handle_thick() - 1, cmask.capsule_extent(HANDLE_THICK))
 
 
-def neon_color(color, fade, eff, hot=False):
+def neon_color(color, fade, eff, hot=False) -> Any:
     """Farbe EINER Röhren-Schicht: von der Statusfarbe weich nach HANDLE_BG verblassen
     (`fade` = Ruhe-Anteil der Schicht), skaliert mit der Leuchtkraft `eff` – genau wie
     die Glow-Ringe der Kacheln. Die Kern-Schicht (fade 0) wird zusätzlich Richtung Weiß
@@ -322,7 +337,7 @@ def neon_color(color, fade, eff, hot=False):
     return _mix(color, HANDLE_BG, 1 - (1 - fade) * eff)
 
 
-def neon_tint(color, eff):
+def neon_tint(color, eff) -> Any:
     """Grundton der Griff-Fläche: HANDLE_BG leicht in die Statusfarbe getaucht (wie die
     Kartenflächen im Deck), damit der ganze Balken glüht und nicht nur die Linie."""
     return _mix(HANDLE_BG, color, NEON_TINT * min(eff, 1.0))

@@ -11,6 +11,8 @@ Zahl kopierten, gab es sie mehrfach: ein Testpatch am falschen Ort blieb still
 wirkungslos. Solche Werte liest jetzt jede Stelle direkt als `cfg.POLL_MS`.
 """
 
+from typing import Any
+
 from deck import i18n
 from deck.render.kit import BG, CARD_BORDER, CARD_FILL, INK_3
 from deck.render.kit import mix as _mix
@@ -31,7 +33,7 @@ STATUS_LABEL = {
 }
 
 
-def status_label(status):
+def status_label(status) -> Any:
     """Lokalisierter Status-Anzeigetext (schaltet mit der Deck-Sprache)."""
     return i18n.L(*STATUS_LABEL.get(status, ("idle", "idle")))
 # Status -> (Glow-Farbe, Glow-Intensität 0..1, atmet?, Füll-Tönung 0..1). Die Karte

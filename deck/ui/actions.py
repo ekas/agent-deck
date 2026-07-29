@@ -6,6 +6,7 @@ gerade aktiven statt im angeklickten Chat.
 """
 import time
 import tkinter as tk
+from typing import Any
 
 from deck.claude import settings as cset
 from deck.domain import config as cfg
@@ -18,7 +19,7 @@ from deck.ui.theme import SEL_BORDER
 class ActionsMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
-    def _raise_window(self, win_key):
+    def _raise_window(self, win_key) -> Any:
         """Das verknuepfte VS-Code-Fenster per Win32 nach vorn holen."""
         repo = self.bindings.get(win_key)
         if not repo:
@@ -29,7 +30,7 @@ class ActionsMixin:
         wf.focus_window(hwnd)
         return True
 
-    def focus_slot(self, slot):
+    def focus_slot(self, slot) -> None:
         win = slot[0]
         if not self.bindings.get(win):
             return
@@ -57,7 +58,7 @@ class ActionsMixin:
         self._raise_window(win)              # verknuepftes VS-Code-Fenster nach vorn (Win32)
         self.cmds.focus_pane(slot)
 
-    def _set_slot_mode(self, slot, target, cycle, current=None):
+    def _set_slot_mode(self, slot, target, cycle, current=None) -> Any:
         """Permission-Mode eines BESTIMMTEN Slots gezielt setzen: so viele Shift+Tab vom
         angenommenen aktuellen bis zum Ziel schicken und die Annahme merken. `current` =
         angenommener Ist-Modus-Index; None -> gemerkter slot_mode (bzw. MODE_START, falls
@@ -80,7 +81,7 @@ class ActionsMixin:
             return True
         return False
 
-    def create_agent(self, win):
+    def create_agent(self, win) -> None:
         """＋-Kachel: die Extension oeffnet EIN weiteres Claude-Terminal.
         Der neu erscheinende Slot wird automatisch fokussiert (Deck + VS Code).
 
@@ -97,13 +98,13 @@ class ActionsMixin:
             # Ausgangsbestand merken -> neu hinzugekommenen Slot in refresh() auto-fokussieren.
             self._await_new = (win, set(self.broker.terminals(win)), time.time())
 
-    def reload_window(self, win):
+    def reload_window(self, win) -> None:
         """Loest 'Developer: Reload Window' im VS-Code-Fenster dieses Buchstabens aus."""
         if not self.broker.connected(win):
             return
         self.cmds.reload(win)
 
-    def close_agent(self, slot):
+    def close_agent(self, slot) -> None:
         """Einen einzelnen Agenten schliessen: die Extension beendet dessen Terminal
         (und damit die Claude-Session). Ihr onDidCloseTerminal meldet die neue
         Terminalliste zurueck -> die Kachel verschwindet beim naechsten refresh()."""
@@ -119,7 +120,7 @@ class ActionsMixin:
             if self.active_slot == slot:
                 self.active_slot = None      # Auswahl auf die verschwindende Kachel loesen
 
-    def _forget_slot(self, slot):
+    def _forget_slot(self, slot) -> None:
         """Beim Schliessen eines Agenten dessen Deck-seitige Spuren tilgen, damit ein
         spaeter WIEDERVERWENDETER Slot-Name (die Extension vergibt <Fenster><max+1>,
         recycelt also den Namen des geschlossenen hoechsten Agenten) NICHT den angenommenen
@@ -130,7 +131,7 @@ class ActionsMixin:
         self._pending_auto.pop(slot, None)
         dc.clear_state(slot)
 
-    def close_window(self, win):
+    def close_window(self, win) -> None:
         """Das ganze VS-Code-Fenster dieses Buchstabens schliessen (inkl. aller Agenten
         darin). Die Extension trennt sich danach vom Broker; sobald auch das native
         Fenster zu ist, raeumt _cleanup_closed_windows die Bindung nach kurzem Grace
