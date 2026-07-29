@@ -129,6 +129,68 @@ def test_domain_bleibt_ohne_anzeige():
     assert not bad, "Anzeige-Abhaengigkeit in domain/:\n  " + "\n  ".join(bad)
 
 
+def test_jeder_import_findet_seinen_namen():
+    """`from deck.x import y` muss ein y treffen, das es gibt.
+
+    Diese Prüfung existiert wegen eines konkreten Beinahe-Unfalls: beim Aufteilen von
+    usage.py wanderten severity_color und tooltip_text nach usage_view, aber
+    ui/bottombar.py holte sie weiter aus usage — und zwar in einem Import INNERHALB einer
+    Funktion. Syntaxprüfung und Testlauf sahen davon nichts; geknallt wäre es erst beim
+    Zeichnen der Bottom-Bar, also im Betrieb.
+
+    Geprüft wird statisch (ohne die Module zu importieren): Was bindet die Zieldatei auf
+    Modulebene?
+    """
+    bound = {}          # 'deck.claude.usage' -> {gebundene Namen}
+    for base, dirs, files in os.walk(DECK):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for name in sorted(files):
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(base, name)
+            rel = os.path.relpath(path, DECK).replace("\\", "/")
+            mod = "deck." + rel[:-3].replace("/", ".")
+            if mod.endswith(".__init__"):
+                mod = mod[:-len(".__init__")]
+            tree = ast.parse(open(path, encoding="utf-8").read())
+            names = set()
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    names.add(node.name)
+                elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+                    names.add(node.id)
+                elif isinstance(node, ast.Import):
+                    names |= {a.asname or a.name.split(".")[0] for a in node.names}
+                elif isinstance(node, ast.ImportFrom):
+                    names |= {a.asname or a.name for a in node.names}
+            bound[mod] = names
+
+    bad = []
+    for base, dirs, files in os.walk(helpers.ROOT):
+        dirs[:] = [d for d in dirs if d not in ("__pycache__", ".git", ".venv")]
+        for name in sorted(files):
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(base, name)
+            rel = os.path.relpath(path, helpers.ROOT).replace("\\", "/")
+            tree = ast.parse(open(path, encoding="utf-8").read())
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.ImportFrom) or not node.module:
+                    continue
+                if node.module not in bound:
+                    continue
+                for a in node.names:
+                    if a.name == "*":
+                        continue
+                    # Ein Untermodul ist auch ein gültiges Ziel (from deck.claude import hooks)
+                    if a.name in bound[node.module]:
+                        continue
+                    if f"{node.module}.{a.name}" in bound:
+                        continue
+                    bad.append(f"{rel}:{node.lineno}  from {node.module} import {a.name}")
+    assert not bad, "Import zeigt auf einen Namen, den es nicht gibt:\n  " + "\n  ".join(bad)
+
+
 def test_hooks_haengen_nicht_an_der_anzeige():
     """Die Hooks laufen als eigener Prozess bei JEDEM Tool-Aufruf.
 

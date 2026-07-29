@@ -10,7 +10,9 @@ import sys
 import tkinter as tk
 
 from deck.platform import focus as wf
+from deck.platform import layered as wlayer
 from deck.render import capsule as hrender
+from deck.render import capsule_masks as cmask
 from deck.render import fluid as hwave
 
 from deck.dock.metrics import HANDLE_THICK, LAYER_ERR_PATH, NEON_DECAY, NEON_LAYERS, NEON_MS, WAVE_ON, neon_color, neon_tint
@@ -99,7 +101,7 @@ class WaveMixin:
         # Die Länge des Profils ist die KANONISCHE Höhe des Bildes (am oberen Rand
         # liegt der Griff quer, dort sind Breite und Höhe getauscht). Bewusst aus
         # derselben Quelle wie der Renderer, damit die beiden nie auseinanderlaufen.
-        prof = self._wave_profile(hrender._canon(w, h, self.edge)[1])
+        prof = self._wave_profile(cmask._canon(w, h, self.edge)[1])
         bits = hrender.handle_bits(w, h, self.edge, HANDLE_THICK, col, eff,
                                    hot=self._hot, prof=prof)
         if bits is not None:
@@ -109,7 +111,7 @@ class WaveMixin:
             # 30x je Sekunde ein UpdateLayeredWindow an Windows.
             if bits is self._last_bits:
                 return
-            if wf.layered_push(self._handle_hwnd, bits, w, h):
+            if wlayer.layered_push(self._handle_hwnd, bits, w, h):
                 self._last_bits = bits
                 return
             # Zweiter Versuch mit frisch gemessenem HWND und NEU angelegtem Layer-
@@ -118,7 +120,7 @@ class WaveMixin:
             # steht – ohne force liefe der Versuch ins Leere (genau daran ist es
             # einmal gescheitert, siehe win_focus.layered_enable).
             self._enable_alpha(force=True)
-            if self._layered and wf.layered_push(self._handle_hwnd, bits, w, h):
+            if self._layered and wlayer.layered_push(self._handle_hwnd, bits, w, h):
                 self._last_bits = bits
                 return
         # Aufgeben heisst: der Griff sieht ab jetzt anders aus als entworfen (dunkler
@@ -139,9 +141,9 @@ class WaveMixin:
         aus als entworfen und nichts sagte, warum. Die Datei wird bei jedem Fehlschlag
         überschrieben (kein Wachstum) und ist der erste Ort, an dem man nachsieht, wenn
         der Griff wieder als dunkler Kasten erscheint."""
-        msg = (f"layered_push fehlgeschlagen: {wf.LAST_ERROR}\n"
+        msg = (f"layered_push fehlgeschlagen: {wlayer.LAST_ERROR}\n"
                f"  Bild {w}x{h}, Kante {self.edge}, sichtbar={self._handle_shown}\n"
-               f"  {wf.layer_probe(self._handle_hwnd)}\n"
+               f"  {wlayer.layer_probe(self._handle_hwnd)}\n"
                f"  -> Griff zeichnet ab jetzt den Linien-Rückfall (dunkler Balken)\n")
         try:
             print("[edge_dock] " + msg, file=sys.stderr, flush=True)

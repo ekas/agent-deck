@@ -9,6 +9,7 @@ import helpers  # setzt sys.path und die Deck-Sprache
 
 from deck import i18n
 from deck.claude import summarize as cs
+from deck.claude import refs
 
 
 def _line(rec):
@@ -120,43 +121,43 @@ def test_enc_cwd():
 
 # ── chat_summary: Ticketnummer aus dem Chat lesen ────────
 def test_find_ticket_plain_key():
-    assert cs.find_ticket([("user", "Wir machen PROJ-2691 fertig")], "PROJ") == "PROJ-2691"
+    assert refs.find_ticket([("user", "Wir machen PROJ-2691 fertig")], "PROJ") == "PROJ-2691"
     # ohne konfiguriertes Projekt trotzdem: jeder Key in Jira-Form zaehlt
-    assert cs.find_ticket([("user", "bitte ABC-123 anschauen")]) == "ABC-123"
-    assert cs.find_ticket([]) == "" and cs.find_ticket("kein Ticket hier") == ""
+    assert refs.find_ticket([("user", "bitte ABC-123 anschauen")]) == "ABC-123"
+    assert refs.find_ticket([]) == "" and refs.find_ticket("kein Ticket hier") == ""
 
 
 def test_find_ticket_ignores_tech_lookalikes():
     """UTF-8 & Co. sehen aus wie ein Key, sind aber keiner – sonst steht Muell im Hover."""
     noise = "UTF-8, SHA-256, ISO-8601, RFC-2119, CVE-2021, AES-256, GPT-5, python-3, top-10"
-    assert cs.find_ticket([("user", noise)], "PROJ") == ""
+    assert refs.find_ticket([("user", noise)], "PROJ") == ""
 
 
 def test_find_ticket_project_lowercase_and_bare_number():
     # das konfigurierte Projekt wird auch klein erkannt (Branch-/Pfadnamen) …
-    assert cs.find_ticket([("user", "schau in ticket/proj-2691")], "PROJ") == "PROJ-2691"
+    assert refs.find_ticket([("user", "schau in ticket/proj-2691")], "PROJ") == "PROJ-2691"
     # … und eine blosse Nummer nach 'Ticket'/'Issue' bekommt den Projekt-Praefix
-    assert cs.find_ticket([("user", "Ticket 2701 bitte")], "PROJ") == "PROJ-2701"
-    assert cs.find_ticket([("user", "Issue #42 ist offen")], "PROJ") == "PROJ-42"
+    assert refs.find_ticket([("user", "Ticket 2701 bitte")], "PROJ") == "PROJ-2701"
+    assert refs.find_ticket([("user", "Issue #42 ist offen")], "PROJ") == "PROJ-42"
     # ohne Projekt-Key gibt es aus einer blossen Nummer nichts zu machen
-    assert cs.find_ticket([("user", "Ticket 2701 bitte")]) == ""
+    assert refs.find_ticket([("user", "Ticket 2701 bitte")]) == ""
 
 
 def test_find_ticket_context_allows_single_digit():
     # einstellige Nummer nur mit 'Ticket …' davor (sonst waere UTF-8 wieder drin)
-    assert cs.find_ticket([("user", "Ticket PROJ-1 bitte")]) == "PROJ-1"
-    assert cs.find_ticket([("user", "der Wert PROJ-1 steht da")]) == ""
+    assert refs.find_ticket([("user", "Ticket PROJ-1 bitte")]) == "PROJ-1"
+    assert refs.find_ticket([("user", "der Wert PROJ-1 steht da")]) == ""
 
 
 def test_find_ticket_picks_the_one_it_is_about():
     """Haeufigkeit schlaegt Reihenfolge: ein nebenbei erwaehnter Key gewinnt nicht."""
     turns = [("user", "nebenbei ABC-12"), ("assistant", "ok"),
              ("user", "eigentlich geht es um XYZ-77"), ("assistant", "XYZ-77, verstanden")]
-    assert cs.find_ticket(turns) == "XYZ-77"
+    assert refs.find_ticket(turns) == "XYZ-77"
     # gleiche Punktzahl -> der ZULETZT erwaehnte gewinnt (das Gespraech ist weitergezogen)
-    assert cs.find_ticket([("user", "erst ABC-11"), ("user", "jetzt ABC-22")]) == "ABC-22"
+    assert refs.find_ticket([("user", "erst ABC-11"), ("user", "jetzt ABC-22")]) == "ABC-22"
     # das konfigurierte Projekt sticht einen fremden Key derselben Haeufigkeit
-    assert cs.find_ticket([("user", "PROJ-2691 vs FOO-2692")], "PROJ") == "PROJ-2691"
+    assert refs.find_ticket([("user", "PROJ-2691 vs FOO-2692")], "PROJ") == "PROJ-2691"
 
 
 def test_find_ticket_needs_more_than_a_side_remark():
@@ -164,48 +165,48 @@ def test_find_ticket_needs_more_than_a_side_remark():
     keine ID im Hover als eine falsche. Nennt der Nutzer sie (oder faellt sie mehrfach),
     steht sie da."""
     side = [("assistant", "das behebt uebrigens ABC-99")]
-    assert cs.find_ticket(side) == ""
-    assert cs.find_ticket(side + [("assistant", "ABC-99 ist damit durch")]) == "ABC-99"
-    assert cs.find_ticket([("user", "mach ABC-99")]) == "ABC-99"
+    assert refs.find_ticket(side) == ""
+    assert refs.find_ticket(side + [("assistant", "ABC-99 ist damit durch")]) == "ABC-99"
+    assert refs.find_ticket([("user", "mach ABC-99")]) == "ABC-99"
 
 
 def test_find_ticket_no_key_inside_longer_code():
     # Regel-/Normkennungen wie Dockle "CIS-DI-0006" duerfen nicht als "DI-0006" durch
-    assert cs.find_ticket([("user", "Dockle meldet CIS-DI-0006"),
+    assert refs.find_ticket([("user", "Dockle meldet CIS-DI-0006"),
                            ("user", "CIS-DI-0006 behoben")]) == ""
 
 
 def test_find_ticket_robust_against_junk_turns():
-    assert cs.find_ticket([None, ("user",), ("user", None), 42,
+    assert refs.find_ticket([None, ("user",), ("user", None), 42,
                            ("user", "ABC-123")]) == "ABC-123"
 
 
 # ── chat_summary: PR-Nummer aus dem Chat lesen ───────────
 def test_find_pr_keyword_and_url():
-    assert cs.find_pr([("user", "Fix die Bugs aus PR #62")]) == "62"
-    assert cs.find_pr([("user", "siehe https://github.com/acme/webapp/pull/128")]) == "128"
-    assert cs.find_pr([("user", "pull request 903 reviewen")]) == "903"
-    assert cs.find_pr([("user", "merge request 12 anschauen")]) == "12"
-    assert cs.find_pr([("user", "nichts davon hier")]) == "" and cs.find_pr([]) == ""
+    assert refs.find_pr([("user", "Fix die Bugs aus PR #62")]) == "62"
+    assert refs.find_pr([("user", "siehe https://github.com/acme/webapp/pull/128")]) == "128"
+    assert refs.find_pr([("user", "pull request 903 reviewen")]) == "903"
+    assert refs.find_pr([("user", "merge request 12 anschauen")]) == "12"
+    assert refs.find_pr([("user", "nichts davon hier")]) == "" and refs.find_pr([]) == ""
 
 
 def test_find_pr_bare_hash_needs_two_mentions():
     """Ein blosses '#62' kann alles sein (Issue, Kommentar) -> erst ab der zweiten
     Nennung glauben wir es; mit 'PR' davor reicht eine."""
     once = [("user", "schau dir #62 an")]
-    assert cs.find_pr(once) == ""
-    assert cs.find_pr(once + [("user", "#62 ist noch offen")]) == "62"
-    assert cs.find_pr([("user", "schau dir PR #62 an")]) == "62"
+    assert refs.find_pr(once) == ""
+    assert refs.find_pr(once + [("user", "#62 ist noch offen")]) == "62"
+    assert refs.find_pr([("user", "schau dir PR #62 an")]) == "62"
 
 
 def test_find_pr_ignores_non_pr_hashes():
     # 'Issue #42'/'Zeile #42' ist kein Pull Request; Hex-Farben schon gar nicht
-    assert cs.find_pr([("user", "Issue #42 offen"), ("user", "Issue #42 noch offen")]) == ""
-    assert cs.find_pr([("user", "in Zeile #42"), ("user", "Zeile #42 nochmal")]) == ""
-    assert cs.find_pr([("user", "Farbe #6289ab"), ("user", "wieder #6289ab")]) == ""
+    assert refs.find_pr([("user", "Issue #42 offen"), ("user", "Issue #42 noch offen")]) == ""
+    assert refs.find_pr([("user", "in Zeile #42"), ("user", "Zeile #42 nochmal")]) == ""
+    assert refs.find_pr([("user", "Farbe #6289ab"), ("user", "wieder #6289ab")]) == ""
 
 
 def test_find_refs_can_return_both():
-    refs = cs.find_refs([("user", "Bugs aus PR #62 zum Ticket PROJ-2651 fixen")], "PROJ")
-    assert refs == {"ticket": "PROJ-2651", "pr": "62"}
-    assert cs.find_refs([("user", "nur reden")], "PROJ") == {"ticket": "", "pr": ""}
+    got = refs.find_refs([("user", "Bugs aus PR #62 zum Ticket PROJ-2651 fixen")], "PROJ")
+    assert got == {"ticket": "PROJ-2651", "pr": "62"}
+    assert refs.find_refs([("user", "nur reden")], "PROJ") == {"ticket": "", "pr": ""}

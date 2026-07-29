@@ -156,7 +156,7 @@ class BottomBar:
             snap = self._snap
             pct = snap.get("session_percent") if snap else None
             sev = snap.get("session_severity") if snap else ""
-            from deck.claude.usage import severity_color
+            from deck.claude.usage_view import severity_color
             color = severity_color(sev, pct)
             value = f"{pct} %" if pct is not None else "—"
             wl = self._lbl_font.measure("Claude")
@@ -216,7 +216,7 @@ class BottomBar:
         if not self._tip:
             return
         try:
-            from deck.claude.usage import tooltip_text
+            from deck.claude.usage_view import tooltip_text
             # Anker = Ecke der Leiste; der Versatz geht als dx/dy mit, damit der Tooltip
             # am unteren Bildschirmrand nach OBEN klappt statt halb hinter der Taskleiste
             # zu verschwinden (screen_fit).

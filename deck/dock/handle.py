@@ -12,6 +12,7 @@ import math
 import tkinter as tk
 
 from deck.platform import focus as wf
+from deck.platform import layered as wlayer
 from deck.render import capsule as hrender
 
 from deck.dock.metrics import DRAG_THRESH, HANDLE_BG, HANDLE_MAX_LEN, HANDLE_MIN_LEN, HANDLE_THICK, HOVER_REVEAL_MS, NEON_FLOOR, NEON_LAYERS, NEON_PULSE_TICKS, capsule_extent, handle_thick
@@ -70,7 +71,7 @@ class HandleMixin:
         try:
             self.handle.update_idletasks()
             self._handle_hwnd = wf.toplevel_hwnd(self.handle.winfo_id())
-            self._layered = wf.layered_enable(self._handle_hwnd, force=force)
+            self._layered = wlayer.layered_enable(self._handle_hwnd, force=force)
         except Exception:
             self._handle_hwnd = None
             self._layered = False

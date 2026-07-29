@@ -7,7 +7,9 @@ from helpers import HR_W, HR_TUBE, HR_LEN
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
 from deck.platform import focus as wf
+from deck.platform import timing as wtime
 from deck.render import capsule as hrender
+from deck.render import capsule_masks as cmask
 
 
 # Getestet wird handle_rgba/handle_bits – beides braucht kein Fenster. Was NICHT
@@ -104,7 +106,7 @@ def test_handle_body_is_brighter_in_the_middle():
         return
     img = _hr()
     h = img.size[1]
-    x = int(HR_TUBE * hrender.OUT) + HR_TUBE // 2
+    x = int(HR_TUBE * cmask.OUT) + HR_TUBE // 2
     mid = sum(img.getpixel((x, h // 2))[:3])
     near_end = sum(img.getpixel((x, int(h * 0.12)))[:3])
     assert mid > near_end * 1.05
@@ -124,7 +126,7 @@ def test_handle_hot_and_flash_brighten():
     das ist gerade der Sinn – es soll im Augenwinkel auffallen."""
     if not hrender.AVAILABLE:
         return
-    x, y = int(HR_TUBE * hrender.OUT) + HR_TUBE // 2, HR_LEN // 2
+    x, y = int(HR_TUBE * cmask.OUT) + HR_TUBE // 2, HR_LEN // 2
     body = sum(_hr().getpixel((x, y))[:3])
     assert sum(_hr(hot=True).getpixel((x, y))[:3]) > body * 1.03
     assert _hr_light(_hr(eff=1.9)) > _hr_light(_hr()) * 1.10
@@ -151,7 +153,7 @@ def test_handle_has_a_glass_edge_toward_the_dock_side():
         return
     img = _hr()
     y = img.size[1] // 2
-    x0 = int(HR_TUBE * hrender.OUT)
+    x0 = int(HR_TUBE * cmask.OUT)
     inner = [sum(img.getpixel((x0 + d, y))[:3]) for d in range(HR_TUBE)]
     sheen = max(inner[:HR_TUBE // 3])              # helle Spalte auf der Dockseite
     plain = inner[HR_TUBE // 2]                    # Kapselmitte
@@ -177,7 +179,7 @@ def test_handle_bits_are_premultiplied_bgra():
     # BGRA, nicht RGBA: Amber (255,196,138) hat mehr Rot als Blau, im Puffer steht
     # Blau also VOR Rot – sonst waere der Griff blau statt amber. Gemessen in der
     # KAPSEL, nicht im Bloom: dort ist die Farbe unverwaessert.
-    x = int(HR_TUBE * hrender.OUT) + HR_TUBE // 2
+    x = int(HR_TUBE * cmask.OUT) + HR_TUBE // 2
     mid = ((h // 2) * w + x) * 4
     assert bits[mid + 2] > bits[mid]
 
@@ -224,15 +226,15 @@ def test_dock_frame_tick_is_one_frame_per_screen_refresh():
     tick = dockm.frame_tick_ms()
     assert dockm.ANIM_TICK_MIN_MS <= tick <= dockm.ANIM_TICK_MAX_MS, tick
     if dockm.ANIM_TICK_MIN_MS < tick < dockm.ANIM_TICK_MAX_MS:      # nicht an die Grenze geklemmt
-        assert tick == int(1000.0 / float(wf.refresh_hz())), tick
+        assert tick == int(1000.0 / float(wtime.refresh_hz())), tick
     assert dockm.frame_tick_ms() == tick        # gemerkt, kein Win32-Aufruf je Frame
     # Eine unbrauchbar gemeldete Rate darf nie einen Takt von 0 ergeben (Timer-Sturm).
     dockm._tick_ms = None
-    real, wf.refresh_hz = wf.refresh_hz, lambda *a, **k: 0
+    real, wtime.refresh_hz = wtime.refresh_hz, lambda *a, **k: 0
     try:
         assert dockm.frame_tick_ms() == dockm.ANIM_TICK_FALLBACK_MS
     finally:
-        wf.refresh_hz = real
+        wtime.refresh_hz = real
         dockm._tick_ms = None
 
 
@@ -243,8 +245,8 @@ def test_handle_cache_reuse_and_clear():
     if not hrender.AVAILABLE:
         return
     hrender.clear_cache()
-    first = hrender._masks(HR_W, HR_LEN, "left", HR_TUBE, False)
-    assert hrender._masks(HR_W, HR_LEN, "left", HR_TUBE, False) is first
-    assert hrender._masks(HR_W, HR_LEN, "left", HR_TUBE, True) is not first
+    first = cmask._masks(HR_W, HR_LEN, "left", HR_TUBE, False)
+    assert cmask._masks(HR_W, HR_LEN, "left", HR_TUBE, False) is first
+    assert cmask._masks(HR_W, HR_LEN, "left", HR_TUBE, True) is not first
     hrender.clear_cache()
-    assert hrender._masks(HR_W, HR_LEN, "left", HR_TUBE, False) is not first
+    assert cmask._masks(HR_W, HR_LEN, "left", HR_TUBE, False) is not first

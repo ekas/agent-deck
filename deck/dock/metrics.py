@@ -13,7 +13,9 @@ from deck.domain import config as cfg
 from deck.domain import paths as dp
 from deck.platform import dpi
 from deck.platform import focus as wf
+from deck.platform import timing as wtime
 from deck.render import capsule as hrender
+from deck.render import capsule_masks as cmask
 from deck.render.kit import mix as _mix
 
 
@@ -136,7 +138,7 @@ SPRING_SETTLE_PX = 1.0
 # leicht verspäteter Frame noch vor dem Bildwechsel ankommt.
 #
 # Damit der Takt überhaupt eingehalten werden KANN, hebt der Slide für seine Dauer
-# die Windows-Timer-Auflösung an (wf.timer_precision_begin): sonst tickt Windows nur
+# die Windows-Timer-Auflösung an (wtime.timer_precision_begin): sonst tickt Windows nur
 # alle 15,6 ms und after(16) käme mal nach 15, mal nach 31 ms.
 ANIM_TICK_FALLBACK_MS = 16     # 60 Hz, wenn die Rate nicht zu erfragen ist
 ANIM_TICK_MIN_MS = 6           # darunter lohnt nichts: ein Move kostet mehr (s.o.)
@@ -282,7 +284,7 @@ def frame_tick_ms(hwnd=None):
     global _tick_ms
     if _tick_ms is None:
         try:
-            hz = float(wf.refresh_hz(hwnd))
+            hz = float(wtime.refresh_hz(hwnd))
             tick = int(1000.0 / hz) if hz > 1 else ANIM_TICK_FALLBACK_MS
         except Exception:
             tick = ANIM_TICK_FALLBACK_MS
@@ -309,7 +311,7 @@ def capsule_extent():
     dahinter liegt das unsichtbare Polster. Das ist die Grenze zwischen Aufklapp- und
     Greif-Zone. Der Wert kommt aus dem Renderer, damit Zone und Bild EINE Quelle haben;
     im Linien-Rückfall gilt derselbe Aufbau (siehe _draw_handle)."""
-    return min(handle_thick() - 1, hrender.capsule_extent(HANDLE_THICK))
+    return min(handle_thick() - 1, cmask.capsule_extent(HANDLE_THICK))
 
 
 def neon_color(color, fade, eff, hot=False):

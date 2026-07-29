@@ -8,6 +8,7 @@ from deck.dock import controller as ed
 from deck.dock import metrics as dockm
 from deck.dock import wave as dockwave
 from deck.render import capsule as hrender
+from deck.render import capsule_masks as cmask
 from deck.render import fluid as hwave
 
 
@@ -19,7 +20,7 @@ WAVE_PEAK = 0.4        # s nach dem Anstoss: erste Kippbewegung am Umkehrpunkt
 
 def _wave_light(img, at):
     """Mittlere Helligkeit der Kapsel auf einem Bruchteil `at` ihrer Laenge."""
-    x = int(HR_TUBE * hrender.OUT) + HR_TUBE // 2
+    x = int(HR_TUBE * cmask.OUT) + HR_TUBE // 2
     y = int(img.size[1] * at)
     return sum(img.getpixel((x, y))[:3])
 
@@ -68,16 +69,20 @@ def test_wave_needs_all_three_levers_to_be_visible():
     prof = hwave.profile(HR_LEN, WAVE_PEAK)
 
     def spanne(**aus):
-        alt = {k: getattr(hrender, k) for k in aus}
+        # Gepatcht wird in capsule_masks, NICHT in capsule: die drei Hebel werden in
+        # _wave_layers gelesen, und das liegt dort. Ein Patch auf capsule bliebe
+        # wirkungslos - und weil hier per setattr gepatcht wird, findet das keine
+        # statische Suche, nur der Testlauf.
+        alt = {k: getattr(cmask, k) for k in aus}
         try:
             for k, v in aus.items():
-                setattr(hrender, k, v)
+                setattr(cmask, k, v)
             img = hrender.handle_rgba(HR_W, HR_LEN, "left", HR_TUBE, "#ffc48a", 1.0,
                                       prof=prof)
             return (_wave_light(img, 0.15) - _wave_light(img, 0.85)) / 3.0
         finally:
             for k, v in alt.items():
-                setattr(hrender, k, v)
+                setattr(cmask, k, v)
 
     voll = spanne()
     nur_warm = spanne(WAVE_DARK=0.0, WAVE_WHITE=0.0, WAVE_BLOOM=0.0)
@@ -135,7 +140,7 @@ def test_wave_bits_stay_premultiplied_bgra():
         assert max(b, g, r) <= a, i // 4
     assert bits[0:3] == b"\x00\x00\x00" and bits[3] == hrender.HIT_ALPHA
     # Und weiterhin BGRA, nicht RGBA: Amber hat mehr Rot als Blau.
-    x = int(HR_TUBE * hrender.OUT) + HR_TUBE // 2
+    x = int(HR_TUBE * cmask.OUT) + HR_TUBE // 2
     mid = ((HR_LEN // 2) * HR_W + x) * 4
     assert bits[mid + 2] > bits[mid]
     # Ein Wellenbild darf NICHT im Cache landen: es traefe nie wieder und wuerde nur

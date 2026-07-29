@@ -53,7 +53,7 @@ Entwurfsentscheidungen:
         das Deck stand zu weit über der Kante („klappt nicht ganz aus").
   • Damit die Bewegung GLEICHMÄSSIG läuft, zählt weniger die Kurve als der Takt.
     Vier Dinge haben ihn zerhackt: Windows tickt Timer standardmäßig nur alle 15,6 ms
-    (dagegen wf.timer_precision_begin für die Dauer des Slides), Tks `clock
+    (dagegen wtime.timer_precision_begin für die Dauer des Slides), Tks `clock
     milliseconds` hat dieselbe Granularität und liefert abwechselnd 0 und 16 ms
     Fortschritt (dagegen perf_counter), der Kachel-Animator rendert im selben Thread
     ganze Bilder (dagegen anim.pause für die Dauer des Slides) – und der ZIELTAKT war
@@ -98,6 +98,7 @@ from deck.dock.poll import PollMixin
 from deck.dock.geometry import GeometryMixin
 from deck.dock.handle import HandleMixin
 from deck.dock.wave import WaveMixin
+from deck.platform import timing as wtime
 
 
 class EdgeDock(

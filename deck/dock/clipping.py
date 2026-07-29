@@ -8,6 +8,7 @@ import math
 import tkinter as tk
 
 from deck.platform import focus as wf
+from deck.platform import clip as wclip
 
 from deck.dock.metrics import CLIP_QUANT, EDGE_GAP
 
@@ -26,7 +27,7 @@ class ClippingMixin:
         übernimmt der Bildschirmrand das Abschneiden von selbst – und das Fenster
         behält seine weiche DWM-Rundung (eine Region ersetzt sie durch harte Ecken)."""
         try:
-            self._clip_on = wf.screen_beyond(self.edge, self._edge_pos())
+            self._clip_on = wclip.screen_beyond(self.edge, self._edge_pos())
         except Exception:
             self._clip_on = False
 
@@ -70,7 +71,7 @@ class ClippingMixin:
             _x, _y, w, h = self._slide_target
             extent = w if self._is_vertical() else h
         try:
-            wf.clip_window(self.app.my_hwnd, self.edge, cut, extent)
+            wclip.clip_window(self.app.my_hwnd, self.edge, cut, extent)
         except Exception:
             pass
         self._clip_px = cut
@@ -80,7 +81,7 @@ class ClippingMixin:
         if not self._clip_px:
             return
         try:
-            wf.clip_window(self.app.my_hwnd, self.edge, 0)
+            wclip.clip_window(self.app.my_hwnd, self.edge, 0)
         except Exception:
             pass
         self._clip_px = 0

@@ -16,6 +16,7 @@ import math
 import tkinter as tk
 
 from deck.platform import focus as wf
+from deck.platform import timing as wtime
 from deck.render.kit import mix as _mix
 
 from deck.dock.metrics import ANIM_DEADLINE_MS, BORDER_COLOR, BORDER_LAND_FRAMES, BORDER_LAND_MS, BORDER_LAND_WHITE, COLLAPSE_RESPONSE_MS, EDGE_GAP, POLL_MS, REVEAL_RESPONSE_MS, SPRING_SETTLE_PX, frame_tick_ms, handle_thick
@@ -38,7 +39,7 @@ class AnimationMixin:
 
         Beides ist gezählt (siehe dort), Doppelaufrufe sind also harmlos."""
         try:
-            wf.timer_precision_begin()
+            wtime.timer_precision_begin()
         except Exception:
             pass
         anim = getattr(self.app, "anim", None)
@@ -53,7 +54,7 @@ class AnimationMixin:
         sonst bliebe der Prozess im 1-ms-Timer-Takt und die Kacheln für immer
         eingefroren. Darum gibt es mit _anim_finish nur einen einzigen Ausgang."""
         try:
-            wf.timer_precision_end()
+            wtime.timer_precision_end()
         except Exception:
             pass
         anim = getattr(self.app, "anim", None)
