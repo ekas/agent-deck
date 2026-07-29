@@ -26,10 +26,10 @@ Copy-Item "$src\*" $dst -Recurse -Force   # nur Inhalt -> idempotent
 
 Dann in **beiden** VS-Code-Fenstern: Command Palette → **„Developer: Reload Window"**.
 
-> Kein `agentDeck.window`-Setting und kein Ordnername in `config.py` von Hand nötig —
+> Kein `agentDeck.window`-Setting und kein Ordnername in `deck/domain/config.py` von Hand nötig —
 > welches Fenster A bzw. B ist, legst du **im Panel per Klick** fest (Schritt 5).
 > Deine erkannten Ordner (`my-frontend`, `my-backend`) sind
-> in [`config.py`](config.py) als **Auto-Default** hinterlegt, damit es meist sofort passt.
+> in [`domain/config.py`](../deck/domain/config.py) als **Auto-Default** hinterlegt, damit es meist sofort passt.
 
 ## Schritt 2 – Hooks (Status), gehärtet
 
@@ -123,7 +123,7 @@ Wenn dort dauerhaft „—" steht, sagt der Hover-Tooltip warum:
 > Der Endpunkt (`api.anthropic.com/api/oauth/usage`) ist **nicht dokumentiert** und
 > gehört Anthropic. Ändert er sich, zeigt das Badge „—" und sonst passiert nichts —
 > die Datenschicht ist durchgehend defensiv. Abschalten mit `SHOW_USAGE = False` in
-> `config.py`; dann wird auch keine der Token-Dateien angefasst.
+> `deck/domain/config.py`; dann wird auch keine der Token-Dateien angefasst.
 
 ---
 
@@ -183,7 +183,7 @@ korrekt – es fehlt nur die Injektion. Zwei Wege, ihn zurückzuholen:
   per Rechtsklick zugewiesenes Ticket (mit worktree) steht; passt es nicht in die schmale
   Zeile, gewinnt das Ticket. Abschaltbar über `TICKET_AUTODETECT` /
   `TICKET_AUTODETECT_ON_CARD` (und `HOVER_SUMMARY = False` → Tooltip zeigt wieder nur die
-  zuletzt gestellte Frage) in `config.py`. Grau erkannte Sessions ohne Hook-Meldung zeigen
+  zuletzt gestellte Frage) in `deck/domain/config.py`. Grau erkannte Sessions ohne Hook-Meldung zeigen
   nichts.
 - **🔔 Nächster** → springt zum Agent mit Status „wartet".
 - **✅ Approve / ❌ Reject** → Enter / Esc an den zuletzt gewählten Agent (ohne Fokus-Klau).

@@ -21,20 +21,44 @@ der Standardbibliothek.
 Der Code liegt im Paket `deck/`. Abhängigkeiten zeigen **nur nach unten** — wer eine
 Datei anlegt, entscheidet zuerst, in welche Schicht sie gehört:
 
-| Schicht | Enthält | Darf NICHT importieren |
+| Schicht | Enthält | Darf importieren |
 |---|---|---|
-| `deck/domain/` | Anzeigefreie Domäne: Statusmodell, Pfade, Protokoll, Slot-Zustand, Zuordnung, Konfiguration | alles andere |
-| `deck/platform/` | Win32: Fokus, DPI, Monitor-Arbeitsbereich | `render`, `ui`, `dock`, `claude` |
-| `deck/render/` | Zeichnerei (Pillow/Canvas): Kachel, Kapsel, Welle, Glow, Bottom-Bar | `ui`, `dock`, `claude` |
-| `deck/claude/` | Claude-Code-Spezifisches: Usage, Zusammenfassung, Settings, **Hooks** | `ui`, `dock`, `render` |
-| `deck/net/` | Broker (TCP) und Kommando-Vokabular zur Extension | `ui`, `dock`, `render` |
-| `deck/dock/` | Andocken am Rand, Griff-Fenster, Slide-Animation | `ui` |
-| `deck/ui/` | Panel-Fenster, Kacheln, Interaktion — die oberste Schicht | — |
-| `deck/ops/` | Betrieb: Log, Zweitstart-Guard, Wächter, Worktrees, VS-Code-Patch | `ui`, `dock`, `render` |
+| `deck/domain/` | Anzeigefreie Domäne: Statusmodell, Pfade, Protokoll, Slot-Zustand, Zuordnung, Konfiguration | — |
+| `deck/platform/` | Win32: Fokus, DPI, Monitor-Arbeitsbereich | — |
+| `deck/render/` | Zeichnerei (Pillow/Canvas): Kachel, Kapsel, Welle, Glow | `domain`, `platform` |
+| `deck/net/` | Broker (TCP) und Kommando-Vokabular zur Extension | `domain` |
+| `deck/claude/` | Claude-Code-Spezifisches: Usage, Zusammenfassung, Settings, **Hooks** | `domain`, `i18n` |
+| `deck/ops/` | Betrieb: Log, Zweitstart-Guard, Wächter, Worktrees, VS-Code-Patch | `domain`, `platform`, `i18n` |
+| `deck/dock/` | Andocken am Rand, Griff-Fenster, Slide-Animation | `domain`, `platform`, `render` |
+| `deck/ui/` | Panel-Fenster, Kacheln, Interaktion — die oberste Schicht | alle |
+| `deck/i18n.py` | Deutsch/Englisch. Querschnitt, liegt auf der Paketwurzel und ist die **einzige** erlaubte Abhängigkeit nach oben (der Sprachregler steht in Claudes `settings.json`) | `claude` |
+
+**Diese Tabelle ist getestet**, nicht behauptet: `tests/test_architecture.py` liest die
+echten Importe und wird rot, sobald einer nach oben zeigt — mit Datei und Zeile. Die
+Erlaubnisliste dort ist knapp gehalten und nennt nur, was heute wirklich importiert
+wird. Ein neuer Import macht den Test also auch dann rot, wenn er die Ordnung einhält;
+dann trägt man ihn ein und hat einmal darüber nachgedacht. Mitgetestet wird außerdem,
+dass `domain/` ohne `tkinter`/`PIL`/`ctypes` bleibt und die Hooks nicht die Anzeige
+nachziehen — sie starten bei jedem Tool-Aufruf neu.
 
 **Faustregel:** Rechnen gehört nach `domain/` und wird getestet; Zeichnen gehört nach
 `render/` oder `ui/` und wird angeschaut. Wenn eine Methode in `ui/` etwas ausrechnet,
 das man auf Papier nachprüfen könnte, gehört sie nach `domain/`.
+
+### Wo fasse ich was an?
+
+| Ich will … | … dann hierhin |
+|---|---|
+| Kachel-Aussehen, Farben, Beschriftung | `ui/tiles.py`, Werte in `ui/theme.py` |
+| Statusfarbe oder -text ändern | `ui/theme.py` (`GLOW_STYLE`, `STATUS_LABEL`) |
+| wann ein Status kippt | `domain/status_model.py` |
+| Poll-Verhalten, Bindungen, Auto-Startmodus | `ui/refresh.py` |
+| Tooltip-Inhalt | `ui/hover.py`, Zusammenfassung in `claude/summarize.py` |
+| Ein-/Ausklappen, Griff, Animation | `dock/` — Maße in `dock/metrics.py` |
+| ein neues Kommando an die Extension | `domain/protocol.py` **und** `extension/extension.js` |
+| Hook-Verhalten (was gemeldet wird) | `claude/hooks/report.py` |
+| Usage-Zahlen | `claude/usage.py`, Anzeige in `ui/bottombar.py` |
+| Ticket → worktree | `ui/ticket.py`, Aufräumen in `ops/worktree.py` |
 
 ### Die Einsprungpunkte im Wurzelverzeichnis sind Verträge
 

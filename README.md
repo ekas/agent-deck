@@ -6,7 +6,7 @@
 
 ![Plattform](https://img.shields.io/badge/Plattform-Windows-0078d4)
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab)
-![Tests](https://img.shields.io/badge/Tests-144%20passing-2ea44f)
+![Tests](https://img.shields.io/badge/Tests-148%20passing-2ea44f)
 ![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue)
 
 ---
@@ -62,7 +62,7 @@ Warum diese Aufteilung:
 | **Fenster** nach vorn | Win32 `SetForegroundWindow` | die Extension kann ihr eigenes Fenster nicht aktivieren |
 | Panel ↔ Extension | TCP, newline-getrennte JSON-Zeilen | kein Build-Step, keine Abhängigkeiten |
 
-Das Wire-Vokabular liegt in [`protocol.py`](protocol.py). Es gibt bewusst keinen
+Das Wire-Vokabular liegt in [`protocol.py`](deck/domain/protocol.py). Es gibt bewusst keinen
 Build-Step, darum spiegelt [`extension/extension.js`](extension/extension.js) die
 Strings von Hand — wer dort etwas ändert, muss beide Seiten anfassen.
 
@@ -126,7 +126,7 @@ Copy-Item ".\extension\*" $dst -Recurse -Force
 Schritt 2 ist der einzige mit Handarbeit: sechs Hook-Einträge, in denen der Pfad zu
 `report.py` steht. Die Zuordnung aus Schritt 4 merkt sich das Deck in `bindings.json`.
 
-Anfassen muss man sonst nur [`config.py`](config.py) — und auch das nur, wenn man die
+Anfassen muss man sonst nur [`domain/config.py`](deck/domain/config.py) — und auch das nur, wenn man die
 Vorgaben ändern will (Jira-Projekt-Key, Startmodus neuer Agenten, Abschalter für
 Tooltip-Zusammenfassung und Ticket-Erkennung).
 
@@ -154,7 +154,7 @@ Claude-Oberflächen benutzen. Zwei Dinge sollte man dazu wissen:
 
 **Der Endpunkt ist nicht dokumentiert.** Er gehört Anthropic, nicht diesem Projekt,
 und kann sich jederzeit ändern. Bricht er, zeigt das Badge „—" und sonst passiert
-nichts — [`claude_usage.py`](claude_usage.py) ist durchgehend defensiv, ein Ausfall
+nichts — [`claude_usage.py`](deck/claude/usage.py) ist durchgehend defensiv, ein Ausfall
 kostet nie das Deck.
 
 **Das Token kommt aus zwei Quellen**, beide werden gelesen und der Reihe nach
@@ -173,7 +173,7 @@ also nicht nötig** — die CLI allein genügt.
 Das Token wird ausschließlich für diesen einen Abruf verwendet, nirgends
 hingeschrieben und an niemanden sonst gesendet — es steht nur im Arbeitsspeicher des
 Panels. Wer das nicht will, setzt `SHOW_USAGE = False` in
-[`config.py`](config.py); dann wird keine der beiden Dateien je angefasst und das
+[`domain/config.py`](deck/domain/config.py); dann wird keine der beiden Dateien je angefasst und das
 Deck läuft ansonsten vollständig.
 
 ## Projektstruktur
@@ -181,51 +181,92 @@ Deck läuft ansonsten vollständig.
 Bewusst **flache Module ohne Package**: `restart()` startet sich über `sys.argv[0]`
 neu, ein `python -m`-Layout würde das brechen.
 
+Der Code liegt im Paket `deck/`, geschnitten in Schichten. Abhängigkeiten zeigen **nur
+nach unten** — und das ist keine Absichtserklärung, sondern
+[getestet](tests/test_architecture.py): ein Import nach oben macht die Suite rot und
+nennt Datei und Zeile.
+
+Im Wurzelverzeichnis liegen nur fünf Einsprungpunkte mit je einem `runpy`-Aufruf. Ihre
+Namen sind Verträge: `report.py` und `statusline.py` stehen mit absolutem Pfad in
+`~/.claude/settings.json`, `agent_deck.py` in `start.bat` und im Wächter, `watchdog.py`
+in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
+
 <details>
-<summary><b>Panel und Darstellung</b></summary>
+<summary><b>deck/domain</b> — anzeigefreier Kern, ohne tkinter/Pillow/ctypes</summary>
 
 | Datei | Aufgabe |
 |---|---|
-| `agent_deck.py` | Hauptfenster, Kachel-Aufbau, Refresh-Loop |
-| `edge_dock.py` | Andocken am Rand, Auto-Hide, Slide-Animation, Griff |
-| `handle_render.py` | Griff als freistehende Neon-Kapsel (Per-Pixel-Alpha) |
-| `card_render.py` | Kachelfläche und Halo (Pillow, Masken-Cache) |
-| `canvas_kit.py` | Palette, Zeichen-Primitive, pure Farb-/Text-Helfer |
-| `glow_animator.py` | Puls, Crossfade, Bloom, Press-Pop |
-| `bottom_bar.py` | Dauer-UI: Usage links, Einstellungen rechts |
-| `hidpi.py` · `screen_fit.py` | DPI-Skalierung · Fenster im Monitor halten |
-| `win_focus.py` | Win32: Fokus, Layered Windows, Fenster-Identität |
-
-</details>
-
-<details>
-<summary><b>Kommunikation und Zustand</b></summary>
-
-| Datei | Aufgabe |
-|---|---|
-| `broker.py` · `broker_commands.py` | TCP-Server · Fassade über die Wire-Dicts |
+| `status_model.py` | reine Statusinterpretation |
+| `paths.py` | Repo-Wurzel, State-Ordner, atomares JSON |
 | `protocol.py` | Wire-Vokabular (die eine Quelle der Wahrheit) |
-| `extension/` | VS-Code-Extension (reines JS, kein Build) |
-| `report.py` · `statusline.py` | Claude-Code-Hooks (schreiben den Slot-Status) |
-| `hookstate.py` | Slot-Auflösung über die Prozesskette |
-| `status_model.py` | reine Statusinterpretation — ohne GUI testbar |
-| `bindstore.py` · `deck_paths.py` | Bindings/Settings/Tickets · State-Ordner, atomares JSON |
+| `slot_state.py` | Slot-Zustände lesen |
+| `binding.py` | Bindings, Settings, Tickets, Reihenfolge |
+| `config.py` | Vorgaben und Schalter |
 
 </details>
 
 <details>
-<summary><b>Nebenaufgaben</b></summary>
+<summary><b>deck/platform</b> · <b>deck/render</b> — Win32 und Zeichnerei</summary>
 
 | Datei | Aufgabe |
 |---|---|
-| `chat_summary.py` | Kurzzusammenfassung, Ticket-/PR-Erkennung |
-| `claude_usage.py` | Usage-Abruf — Token aus CLI oder Claude Desktop (AES-GCM über Windows CNG, dependency-frei) |
-| `claude_settings.py` | `~/.claude/settings.json` lesen |
-| `worktree_cleanup.py` | verwaiste `git worktree`s abräumen |
-| `single_instance.py` · `watchdog.py` | Zweitstart-Guard · Neustart-Wächter |
-| `deck_log.py` | Logging (`pythonw` hat kein stderr) |
-| `i18n.py` | Deutsch/Englisch |
-| `reenable_glow.py` | Custom-CSS nach einem VS-Code-Update neu injizieren |
+| `platform/focus.py` | Fokus, Layered Windows, Fenster-Identität |
+| `platform/dpi.py` · `platform/monitor.py` | DPI-Skalierung · Fenster im Monitor halten |
+| `render/kit.py` | Palette, Zeichen-Primitive, pure Farb-/Text-Helfer |
+| `render/card.py` | Kachelfläche und Halo (Pillow, Masken-Cache) |
+| `render/capsule.py` | Griff als freistehende Neon-Kapsel (Per-Pixel-Alpha) |
+| `render/fluid.py` | Schwappen im Kern der Kapsel |
+| `render/glow.py` | Puls, Crossfade, Bloom, Press-Pop |
+
+</details>
+
+<details>
+<summary><b>deck/claude</b> · <b>deck/net</b> — Claude-Code-Spezifisches und die Brücke</summary>
+
+| Datei | Aufgabe |
+|---|---|
+| `claude/hooks/report.py` · `statusline.py` | die Hooks (schreiben den Slot-Status) |
+| `claude/hooks/resolve.py` | Slot-Auflösung über die Prozesskette |
+| `claude/usage.py` | Usage-Abruf — Token aus CLI oder Claude Desktop (AES-GCM über Windows CNG, dependency-frei) |
+| `claude/summarize.py` | Kurzzusammenfassung, Ticket-/PR-Erkennung |
+| `claude/settings.py` | `~/.claude/settings.json` lesen |
+| `net/broker.py` · `net/commands.py` | TCP-Server · Fassade über die Wire-Dicts |
+| `extension/` | VS-Code-Extension (reines JS, kein Build) |
+
+</details>
+
+<details>
+<summary><b>deck/dock</b> — Andocken, Griff, Animation</summary>
+
+| Datei | Aufgabe |
+|---|---|
+| `controller.py` | Zustand und öffentliche API des Randdocks |
+| `metrics.py` | Maße, Farben, Takte + Umrechnungen |
+| `animation.py` | Slide und Landung — **hier liegen die drei Sicherungen** |
+| `handle.py` | Griff-Fenster: Zonen, Hover, Ziehen, zeichnen |
+| `wave.py` | Schwappen und Atmen des Neons |
+| `poll.py` · `reveal.py` · `frameless.py` · `clipping.py` · `geometry.py` | Zeiger-Poll · Auf-/Zuklappen · rahmenlos · Kanten-Clip · Rechnerei |
+
+</details>
+
+<details>
+<summary><b>deck/ui</b> · <b>deck/ops</b> — Panel und Betrieb</summary>
+
+| Datei | Aufgabe |
+|---|---|
+| `ui/panel.py` | Fenster, Layout, Hauptschleife |
+| `ui/theme.py` | Farben, Timings, Anzeigetexte |
+| `ui/tiles.py` · `ui/reorder.py` | Kacheln zeichnen · per Ziehen umsortieren |
+| `ui/refresh.py` | Poll-Takt, Bindungen pflegen |
+| `ui/hover.py` · `ui/connect.py` · `ui/actions.py` | Tooltip · Fenster binden · Klick-Wirkungen |
+| `ui/ticket.py` · `ui/settings_dialog.py` | Ticket → worktree · Einstellungen |
+| `ui/bottombar.py` | Dauer-UI: Usage links, Einstellungen rechts |
+| `ui/uithread.py` | Rückweg vom Daemon-Thread auf den Tk-Thread |
+| `ops/log.py` | Logging (`pythonw` hat kein stderr) |
+| `ops/instance.py` · `ops/watchdog.py` | Zweitstart-Guard · Neustart-Wächter |
+| `ops/worktree.py` | verwaiste `git worktree`s abräumen |
+| `ops/vscode_glow.py` | Custom-CSS nach einem VS-Code-Update neu injizieren |
+| `deck/i18n.py` | Deutsch/Englisch (Querschnitt, liegt auf der Paketwurzel) |
 
 </details>
 
@@ -235,14 +276,20 @@ Die anzeigefreie Logik ist unit-getestet — Statusmodell, Ticket-/PR-Erkennung,
 Farb- und Text-Helfer, Worktree-Parsing, Usage-Auswertung, Watchdog-Urteile:
 
 ```powershell
-python tests/run.py                   # alle 144 Tests, kein pytest nötig
+python tests/run.py                   # alle 148 Tests, kein pytest nötig
 python tests/test_dock_animation.py   # eine Datei allein läuft auch
 python -m pytest tests/               # geht ebenfalls
 ```
 
-Stand: **144/144** in 20 Dateien, die `deck/` spiegeln. Läuft in der
+Stand: **148/148** in 21 Dateien, die `deck/` spiegeln. Läuft in der
 [CI](.github/workflows/ci.yml) bei jedem Push, dort zusammen mit einer Syntaxprüfung
 aller Module (`python -m compileall`).
+
+Vier davon prüfen nicht Verhalten, sondern die **Architektur**
+([`test_architecture.py`](tests/test_architecture.py)): dass kein Import nach oben
+zeigt, dass `domain/` ohne `tkinter`/`PIL`/`ctypes` bleibt und dass die Hooks nicht die
+Anzeige nachziehen — sie starten bei jedem Tool-Aufruf neu. Eine Schichttabelle in der
+Doku veraltet still; dieser Test wird rot und nennt Datei und Zeile.
 
 ## Bekannte Grenzen
 

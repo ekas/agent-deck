@@ -286,7 +286,7 @@ class AgentDeck(
         # unteren Rand sichtbar. Die Leiste ist selbst defensiv gebaut: ein fehlendes/
         # kaputtes Usage-Modul oder ein nicht laufendes Claude Desktop laesst nur die
         # linke Nutzungsanzeige weg -> das Deck startet trotzdem, das Zahnrad bleibt da.
-        from deck.render.bottombar import BottomBar
+        from deck.ui.bottombar import BottomBar
         self.bottombar = BottomBar(
             self.root, self.root,
             on_settings=self._open_settings,
