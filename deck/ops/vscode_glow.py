@@ -43,7 +43,7 @@ END = "<!-- !! VSCODE-CUSTOM-CSS-END !! -->"
 
 
 # ── VS-Code-Installationen / workbench.html finden ──────────────────────────
-def vscode_bases():
+def vscode_bases() -> list[str]:
     bases = []
     # 1) expliziter Override fuer beliebige Install-Orte
     override = os.environ.get("AGENT_DECK_VSCODE_DIR")
@@ -75,7 +75,7 @@ def vscode_bases():
     return out
 
 
-def find_workbench_files():
+def find_workbench_files() -> list[str]:
     names = ("workbench.html", "workbench.esm.html", "workbench-dev.html")
     subdirs = ("electron-browser", "electron-sandbox")  # neu / alt
     found = []
@@ -95,7 +95,7 @@ def find_workbench_files():
 
 
 # ── Imports aus settings.json lesen ─────────────────────────────────────────
-def fileurl_to_path(u):
+def fileurl_to_path(u: str) -> str:
     if u.startswith("file:"):
         p = unquote(urlparse(u).path)
         if re.match(r"^/[A-Za-z]:", p):  # Windows: /C:/... -> C:/...
@@ -104,7 +104,7 @@ def fileurl_to_path(u):
     return u
 
 
-def read_imports():
+def read_imports() -> list[str]:
     appdata = os.environ.get("APPDATA")
     candidates = []
     if appdata:
@@ -122,7 +122,7 @@ def read_imports():
     return DEFAULT_IMPORTS
 
 
-def _extract_imports(raw):
+def _extract_imports(raw: str) -> list[str] | None:
     # Gezielt das imports-Array greifen und die Strings rausziehen. Bewusst KEIN
     # generisches JSONC-Parsing: "//" in file:///-URLs wuerde ein naiver
     # Kommentar-Stripper zerstoeren. file-URLs enthalten keine " -> [^"] reicht.
@@ -133,7 +133,7 @@ def _extract_imports(raw):
 
 
 # ── Patchen (identisch zur Extension) ───────────────────────────────────────
-def clear_existing(html):
+def clear_existing(html: str) -> str:
     html = re.sub(START + r".*?" + END + r"\n*", "", html, flags=re.S)
     html = re.sub(r"<!-- !! VSCODE-CUSTOM-CSS-SESSION-ID [\w-]+ !! -->\n*", "", html)
     html = re.sub(
@@ -143,7 +143,7 @@ def clear_existing(html):
     return html
 
 
-def build_inject(imports):
+def build_inject(imports: list[str]) -> str:
     parts = []
     for p in imports:
         try:
@@ -164,7 +164,7 @@ def build_inject(imports):
     return "".join(parts)
 
 
-def _sweep_backups(d, keep=None):
+def _sweep_backups(d: str, keep: str | None = None) -> None:
     for it in os.listdir(d):
         if it.endswith(".bak-custom-css") and it != keep:
             try:
@@ -173,7 +173,7 @@ def _sweep_backups(d, keep=None):
                 pass
 
 
-def patch(wb, imports):
+def patch(wb: str, imports: list[str]) -> bool:
     with open(wb, encoding="utf-8") as f:
         html = f.read()
     html = clear_existing(html)
@@ -222,7 +222,7 @@ def patch(wb, imports):
     return True
 
 
-def unpatch(wb):
+def unpatch(wb: str) -> bool:
     with open(wb, encoding="utf-8") as f:
         html = f.read()
     m = re.search(r"VSCODE-CUSTOM-CSS-SESSION-ID ([0-9a-fA-F-]+)", html)
@@ -246,7 +246,7 @@ def unpatch(wb):
 
 
 # ── Programmatische API fuers Deck (kein print / kein sys.exit) ─────────────
-def status():
+def status() -> tuple[int, int]:
     """(installed, n_workbench): ist der Glow-Patch aktuell in mindestens einer
     workbench.html vorhanden, und wie viele workbench-Dateien gibt es ueberhaupt?
     n_workbench == 0 -> keine VS-Code-Installation gefunden."""
@@ -263,7 +263,7 @@ def status():
     return installed, len(wbs)
 
 
-def set_glow(enabled):
+def set_glow(enabled: bool) -> tuple[int, int, str | None]:
     """Glow in ALLEN gefundenen workbench.html an- (enabled=True) bzw. abschalten,
     idempotent. Rueckgabe (ok, total, error): ok = Anzahl erfolgreich gepatchter/
     entfernter Dateien, total = gefundene workbench-Dateien, error = None oder eine
@@ -273,8 +273,9 @@ def set_glow(enabled):
     if not wbs:
         return 0, 0, i18n.L("Keine VS-Code-Installation gefunden.",
                             "No VS Code installation found.")
-    imports = read_imports() if enabled else None
-    ok, err = 0, None
+    imports = read_imports() if enabled else []
+    ok = 0
+    err: str | None = None
     for wb in wbs:
         try:
             done = patch(wb, imports) if enabled else unpatch(wb)
@@ -288,7 +289,7 @@ def set_glow(enabled):
     return ok, len(wbs), err
 
 
-def main():
+def main() -> None:
     off = "--off" in sys.argv
     wbs = find_workbench_files()
     if not wbs:

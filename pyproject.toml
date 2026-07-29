@@ -104,7 +104,7 @@ no_implicit_optional = true
 # Fertig annotierte Pakete werden hier scharf gestellt: eine neue Funktion ohne
 # Signatur macht mypy rot. Die Liste wächst, während die Annotationen wandern -
 # so bleibt der Fortschritt geprüft statt behauptet.
-module = ["deck.domain.*", "deck.net.*", "deck.platform.*"]
+module = ["deck.domain.*", "deck.net.*", "deck.platform.*", "deck.ops.*"]
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]

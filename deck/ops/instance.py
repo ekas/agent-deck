@@ -64,7 +64,7 @@ _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 _STILL_ACTIVE = 259
 
 
-def _pid_alive(pid):
+def _pid_alive(pid: int) -> bool:
     """True, wenn ein Prozess mit dieser PID laeuft. Best effort ueber OpenProcess;
     ein bereits beendeter (aber noch nicht abgeraeumter) Prozess meldet einen
     Exit-Code != STILL_ACTIVE und gilt als tot."""
@@ -82,7 +82,7 @@ def _pid_alive(pid):
         _kernel32.CloseHandle(h)
 
 
-def _read_lock_pid():
+def _read_lock_pid() -> int:
     """PID aus der Lock-Datei (0, wenn keine/kaputt)."""
     try:
         with open(LOCK_PATH, encoding="utf-8") as f:
@@ -91,7 +91,7 @@ def _read_lock_pid():
         return 0
 
 
-def _write_lock():
+def _write_lock() -> None:
     """Eigene PID atomar ins Lock schreiben (Zielordner bei Bedarf anlegen)."""
     try:
         os.makedirs(os.path.dirname(LOCK_PATH), exist_ok=True)
@@ -103,7 +103,7 @@ def _write_lock():
         pass   # Lock ist best effort -> ein Schreibfehler darf den Start nicht kippen
 
 
-def beat():
+def beat() -> None:
     """Lebenszeichen setzen – das Panel ruft das aus seiner Poll-Schleife
     (gedrosselt auf BEAT_EVERY_S). Best effort, ein Schreibfehler darf nichts kippen."""
     try:
@@ -114,7 +114,7 @@ def beat():
         pass
 
 
-def beat_age():
+def beat_age() -> float | None:
     """Alter des letzten Lebenszeichens in Sekunden; None, wenn es keins gibt."""
     try:
         return max(0.0, time.time() - os.path.getmtime(BEAT_PATH))
@@ -122,7 +122,7 @@ def beat_age():
         return None
 
 
-def beat_pid():
+def beat_pid() -> int:
     """PID aus dem Lebenszeichen (0, wenn keine/kaputt)."""
     try:
         with open(BEAT_PATH, encoding="utf-8") as f:
@@ -131,7 +131,7 @@ def beat_pid():
         return 0
 
 
-def beats_for(pid):
+def beats_for(pid: int) -> bool:
     """True, wenn ein FRISCHES Lebenszeichen vorliegt, das zu dieser PID passt.
 
     Ein Lebenszeichen ohne PID-Angabe (0) wird akzeptiert: es kann von einer
@@ -142,7 +142,7 @@ def beats_for(pid):
     return beat_pid() in (0, pid)
 
 
-def request_reveal():
+def request_reveal() -> None:
     """Dem lebenden Panel hinterlassen: »zeig dich«.
 
     Gedacht fuer den zurueckgetretenen Zweitstart. Reiner Datei-Marker (wie die
@@ -157,7 +157,7 @@ def request_reveal():
         pass
 
 
-def clear_reveal_request():
+def clear_reveal_request() -> None:
     """Marker wegraeumen (auch wenn keiner da ist)."""
     try:
         os.remove(REVEAL_PATH)
@@ -165,7 +165,7 @@ def clear_reveal_request():
         pass
 
 
-def take_reveal_request():
+def take_reveal_request() -> bool:
     """True, wenn ein FRISCHER Reveal-Wunsch vorliegt – vom laufenden Panel gepollt.
 
     Der Marker wird in jedem Fall entfernt (auch ein veralteter), der Wunsch gilt
@@ -178,7 +178,7 @@ def take_reveal_request():
     return age <= REVEAL_MAX_AGE_S
 
 
-def acquire_or_focus():
+def acquire_or_focus() -> bool:
     """Entscheidet, ob diese Instanz laufen darf.
 
     Rueckgabe:

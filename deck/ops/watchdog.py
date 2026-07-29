@@ -63,7 +63,7 @@ CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 CREATE_NEW_PROCESS_GROUP = 0x00000200
 
 
-def _exe_name(pid):
+def _exe_name(pid: int) -> str:
     """Dateiname der EXE dieses Prozesses (klein), "" wenn nicht ermittelbar.
     Dient dem Recycling-Schutz: steckt hinter der Lock-PID inzwischen ein
     Fremdprozess, ist das Panel in Wahrheit weg."""
@@ -81,7 +81,7 @@ def _exe_name(pid):
         k32.CloseHandle(h)
 
 
-def panel_state():
+def panel_state() -> tuple[str, int, str]:
     """Wie steht es um das Panel? -> (zustand, pid, hinweis)
 
     zustand ist einer von:
@@ -108,7 +108,7 @@ def panel_state():
     return "haengt", pid, f"Prozess {pid} lebt, Lebenszeichen: {alt}"
 
 
-def last_end():
+def last_end() -> str:
     """Aus panel.log ablesen, wie der LETZTE PANEL-LAUF geendet hat.
 
     Betrachtet strikt den Abschnitt nach der letzten "--- Panel-Start"-Marke;
@@ -145,7 +145,7 @@ def last_end():
             "Aufraeum-Tool, Abmeldung), kein Programmfehler")
 
 
-def start_panel():
+def start_panel() -> bool:
     """Panel abgekoppelt starten. True bei Erfolg."""
     exe = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
     if not os.path.isfile(exe):
@@ -163,7 +163,7 @@ def start_panel():
     return False
 
 
-def _loop_lock():
+def _loop_lock() -> bool:
     """True, wenn dieser Prozess der einzige Dauerwaechter ist (Lock uebernommen).
 
     Gleiche Mechanik wie beim Panel-Lock: eine PID in einer Datei, und ein Eintrag
@@ -185,7 +185,7 @@ def _loop_lock():
     return True
 
 
-def run_loop(every=LOOP_EVERY_S):
+def run_loop(every: float = LOOP_EVERY_S) -> int:
     """Dauerwaechter: im Takt nachsehen und im Notfall starten. Laeuft, bis er
     beendet wird. Jeder Durchgang ist in try/except gekapselt – ein Fehler im
     Waechter darf niemals das Wachen beenden."""
@@ -202,7 +202,7 @@ def run_loop(every=LOOP_EVERY_S):
         time.sleep(every)
 
 
-def once():
+def once() -> int:
     """Ein Durchgang: pruefen und ggf. starten. Rueckgabe wie main()."""
     zustand, _pid, hinweis = panel_state()
     if zustand == "laeuft":
@@ -223,7 +223,7 @@ def once():
     return 0 if ok else 1
 
 
-def main():
+def main() -> int:
     args = sys.argv[1:]
     if "--loop" in args:
         log.install(marks=False)

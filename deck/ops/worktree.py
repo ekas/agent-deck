@@ -30,6 +30,7 @@ import shutil
 import stat
 import subprocess
 import time
+from typing import Any
 
 from deck.domain.paths import STATE_DIR
 
@@ -42,7 +43,7 @@ _RETRY_DELAYS = (1, 2, 4, 8)
 
 
 # ── pure Helfer (unit-getestet) ──────────────────────────────────────────
-def parse_worktrees_porcelain(text):
+def parse_worktrees_porcelain(text: str) -> list[dict[str, str | None]]:
     """`git worktree list --porcelain` -> [{'path': str, 'branch': str|None}, …].
 
     Bloecke sind durch Leerzeilen getrennt; je Block eine 'worktree <pfad>'-Zeile
@@ -64,12 +65,13 @@ def parse_worktrees_porcelain(text):
     return entries
 
 
-def main_path(entries):
+def main_path(entries: list[dict[str, str | None]]) -> str | None:
     """Der Haupt-Checkout ist der erste Eintrag der porcelain-Liste."""
     return entries[0]["path"] if entries else None
 
 
-def path_for_branch(entries, branch):
+def path_for_branch(entries: list[dict[str, str | None]],
+                    branch: str) -> str | None:
     """Pfad des worktree, der auf <branch> ausgecheckt ist (oder None)."""
     if not branch:
         return None
@@ -79,7 +81,7 @@ def path_for_branch(entries, branch):
     return None
 
 
-def wt_dir_for_repo(repo_root):
+def wt_dir_for_repo(repo_root: str) -> str | None:
     """Verzeichnis, in dem die deck-beauftragten worktrees eines Repos liegen. Per
     Konvention (siehe config.TICKET_PROMPT: `<repo-root>/../<repo-name>.wt/<slug>`)
     ist das IMMER der Geschwisterordner mit Repo-Namen + '.wt', also schlicht
@@ -89,7 +91,7 @@ def wt_dir_for_repo(repo_root):
     return os.path.normpath(repo_root) + ".wt"
 
 
-def repo_root_from_wt_dir(wt_dir):
+def repo_root_from_wt_dir(wt_dir: str) -> str | None:
     """Umkehr von wt_dir_for_repo: '<x>.wt' -> '<x>'. None, wenn der Pfad nicht auf
     '.wt' endet (dann ist es kein deck-worktree-Sammelordner). Aus einem worktree-
     Marker gewinnt man so das Repo-Root: repo_root_from_wt_dir(dirname(markerpfad))."""
@@ -100,7 +102,7 @@ def repo_root_from_wt_dir(wt_dir):
 
 
 # ── git / fs (unrein) ────────────────────────────────────────────────────
-def _run_git(args, cwd):
+def _run_git(args: list[str], cwd: str) -> tuple[int, str]:
     """git <args> in cwd; (returncode, stdout+stderr). Nie eine Exception (git fehlt/
     Timeout/kein Repo -> (1, meldung)).
 
@@ -120,20 +122,20 @@ def _run_git(args, cwd):
         return 1, str(e)
 
 
-def _worktrees(cwd):
+def _worktrees(cwd: str) -> list[dict[str, str | None]]:
     """Geparste worktree-Liste des Repos, in dem cwd liegt (leer bei Fehler)."""
     rc, out = _run_git(["worktree", "list", "--porcelain"], cwd=cwd)
     return parse_worktrees_porcelain(out) if rc == 0 else []
 
 
-def worktree_for_branch(repo, branch):
+def worktree_for_branch(repo: str, branch: str) -> str | None:
     """Im Repo unter <repo> den worktree finden, der auf <branch> ausgecheckt ist."""
     if not repo or not branch or not os.path.isdir(repo):
         return None
     return path_for_branch(_worktrees(repo), branch)
 
 
-def is_linked_worktree(path):
+def is_linked_worktree(path: str) -> bool:
     """True NUR fuer einen verlinkten worktree – die zentrale Sicherung dieses Moduls
     (nur so etwas wird je geloescht). NICHT ausreichend ist der blosse Test '.git ist
     eine Datei': ein Submodul (`.git` -> `…/.git/modules/<name>`) und ein Haupt-Checkout
@@ -159,7 +161,7 @@ def is_linked_worktree(path):
     return os.path.basename(os.path.dirname(os.path.normpath(gitdir))) == "worktrees"
 
 
-def list_child_dirs(parent):
+def list_child_dirs(parent: str) -> list[str]:
     """Direkte Unterordner von <parent> als absolute Pfade (leer, wenn <parent> kein
     Verzeichnis ist / nicht lesbar). Gedacht fuers Absuchen eines '<repo>.wt'-Ordners
     nach den darin liegenden worktrees – Dateien/Symlinks werden uebersprungen."""
@@ -170,7 +172,7 @@ def list_child_dirs(parent):
         return []
 
 
-def _force_writable(func, path, _exc):
+def _force_writable(func: Any, path: str, _exc: Any) -> None:
     """rmtree-onerror: Schreibschutz weg (git/objects & Windows) und einmal erneut."""
     try:
         os.chmod(path, stat.S_IWRITE)
@@ -179,7 +181,7 @@ def _force_writable(func, path, _exc):
         pass
 
 
-def remove_worktree(path):
+def remove_worktree(path: str) -> bool:
     """Einen verlinkten git worktree entfernen. Gibt True zurueck, wenn er weg ist
     (oder schon war). Verweigert alles, was kein verlinkter worktree ist.
 
@@ -233,7 +235,7 @@ def remove_worktree(path):
     return False
 
 
-def remove_orphan_dir(path, repo=None):
+def remove_orphan_dir(path: str, repo: str | None = None) -> bool:
     """Einen ABGERAEUMTEN worktree-Rest entfernen: ein Verzeichnis, das git nicht (mehr)
     als worktree fuehrt und KEINE .git-Datei mehr hat. Das entsteht auf Windows, wenn
     `git worktree remove` nur bis zur .git-Datei kam und dann eine gesperrte Datei das
@@ -276,13 +278,13 @@ def remove_orphan_dir(path, repo=None):
     return False
 
 
-def note(msg):
+def note(msg: str) -> None:
     """Oeffentlicher Protokoll-Eintrag fuer Aufrufer (z.B. das Deck, wenn es einen
     worktree bewusst NICHT loescht). Geht in dasselbe Log wie die Loeschungen."""
     _log(msg)
 
 
-def _log(msg):
+def _log(msg: str) -> None:
     """Best-effort-Protokoll nach STATE_DIR/worktree-cleanup.log (die Loeschung laeuft
     unsichtbar im Hintergrund; so ist nachvollziehbar, was passiert ist). Rotiert
     grob bei ~200 KB. Darf nie stoeren."""

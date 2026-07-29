@@ -29,6 +29,7 @@ import sys
 import threading
 import time
 import traceback
+from typing import Any
 
 from deck.domain import paths as dp
 
@@ -44,11 +45,11 @@ _fh = None
 _installed = False
 
 
-def _stamp():
+def _stamp() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _rotate():
+def _rotate() -> None:
     """Beim Start einmal rotieren, wenn das Log zu gross geworden ist."""
     try:
         if os.path.getsize(LOG_PATH) < MAX_BYTES:
@@ -61,7 +62,7 @@ def _rotate():
         pass
 
 
-def install(marks=True):
+def install(marks: bool = True) -> None:
     """Diagnose einschalten. Idempotent; Fehler werden geschluckt.
 
     Bewusst SEHR früh aufrufen (vor dem Tk-Aufbau), damit auch ein Fehlstart im
@@ -110,11 +111,11 @@ def install(marks=True):
     except Exception:
         pass
 
-    def _hook(exc_type, exc, tb):
+    def _hook(exc_type: Any, exc: Any, tb: Any) -> None:
         note("UNBEHANDELTE EXCEPTION (Main-Thread):")
         _write("".join(traceback.format_exception(exc_type, exc, tb)))
 
-    def _thread_hook(args):
+    def _thread_hook(args: Any) -> None:
         note(f"UNBEHANDELTE EXCEPTION im Thread '{getattr(args.thread, 'name', '?')}':")
         _write("".join(traceback.format_exception(
             args.exc_type, args.exc_value, args.exc_traceback)))
@@ -133,7 +134,7 @@ def install(marks=True):
             pass
 
 
-def _write(text):
+def _write(text: str) -> None:
     if _fh is None:
         return
     try:
@@ -142,12 +143,12 @@ def _write(text):
         pass
 
 
-def note(msg):
+def note(msg: str) -> None:
     """Eine Zeile ins Log (mit Zeitstempel). Immer erlaubt, auch ohne install()."""
     _write(f"[{_stamp()}] {msg}")
 
 
-def exc(where):
+def exc(where: str) -> None:
     """Den gerade behandelten Fehler protokollieren – fuer except-Zweige, die
     absichtlich weiterlaufen (das Deck soll an einer Kleinigkeit nicht sterben,
     die Ursache aber auch nicht verschweigen)."""
@@ -155,16 +156,18 @@ def exc(where):
     _write(traceback.format_exc())
 
 
-def hook_tk(root):
+def hook_tk(root: Any) -> None:
     """Tk-Callback-Fehler ins Log holen.
 
     Tkinter faengt Fehler in Callbacks (Timer, Klicks, Bindings) selbst ab und
     schreibt sie nach stderr – unter pythonw also ins Leere. Das Panel lief nach
     so einem Fehler scheinbar normal weiter, ein Timer war aber tot. Ab jetzt
     steht jeder dieser Fehler im Log."""
+    def _tk_error(t: Any, v: Any, tb: Any) -> None:
+        note("Fehler in Tk-Callback:")
+        _write("".join(traceback.format_exception(t, v, tb)))
+
     try:
-        root.report_callback_exception = lambda t, v, tb: (
-            note("Fehler in Tk-Callback:"),
-            _write("".join(traceback.format_exception(t, v, tb))))
+        root.report_callback_exception = _tk_error
     except Exception:
         pass
