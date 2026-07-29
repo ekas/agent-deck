@@ -24,6 +24,9 @@ from deck.ops import worktree as wtc
 from deck.claude import summarize as cs
 from deck.claude import settings as cset
 from deck.dock import controller as ed
+from deck.dock import metrics as dockm
+from deck.dock import wave as dockwave
+import tkinter as tk
 from deck.render import capsule as hrender
 from deck.render import fluid as hwave
 from deck.platform import monitor as sf
@@ -87,26 +90,26 @@ def test_escalated():
 def test_neon_color_and_tint():
     """Neon-Griff (edge_dock): Farbrechnung der Röhren-Schichten, ohne Fenster."""
     AMBER = "#ffc48a"
-    core_fade, halo_fade = ed.NEON_LAYERS[-1][1], ed.NEON_LAYERS[0][1]
+    core_fade, halo_fade = dockm.NEON_LAYERS[-1][1], dockm.NEON_LAYERS[0][1]
     assert core_fade == 0.0 and halo_fade > 0.5      # Kern kraeftig, aussen blass
     # Volle Leuchtkraft: Kern = Statusfarbe Richtung Weiss, ohne Beimischung von HANDLE_BG.
-    assert ed.neon_color(AMBER, core_fade, 1.0) == ck.mix(AMBER, "#ffffff",
-                                                          ed.NEON_CORE_WHITE)
+    assert dockm.neon_color(AMBER, core_fade, 1.0) == ck.mix(AMBER, "#ffffff",
+                                                          dockm.NEON_CORE_WHITE)
     # Aufblitzen (eff > 1) klemmt auf dieselbe Vollfarbe (kein Ueberlauf).
-    assert ed.neon_color(AMBER, core_fade, 1.6) == ed.neon_color(AMBER, core_fade, 1.0)
+    assert dockm.neon_color(AMBER, core_fade, 1.6) == dockm.neon_color(AMBER, core_fade, 1.0)
     # Halo ist immer blasser als der Kern, aber nie ganz HANDLE_BG bei Vollausschlag.
-    halo = ed.neon_color(AMBER, halo_fade, 1.0)
-    assert halo != ed.HANDLE_BG and halo != AMBER
+    halo = dockm.neon_color(AMBER, halo_fade, 1.0)
+    assert halo != dockm.HANDLE_BG and halo != AMBER
     # Dunkel (eff = 0) -> Schicht verschwindet in der Griff-Grundfarbe.
-    assert ed.neon_color(AMBER, halo_fade, 0.0) == ed.HANDLE_BG
+    assert dockm.neon_color(AMBER, halo_fade, 0.0) == dockm.HANDLE_BG
     # Unter dem Zeiger ist der Kern heller (mehr Weissanteil), aber dieselbe Familie.
-    assert ed.neon_color(AMBER, core_fade, 1.0, hot=True) != ed.neon_color(
+    assert dockm.neon_color(AMBER, core_fade, 1.0, hot=True) != dockm.neon_color(
         AMBER, core_fade, 1.0)
-    assert ed.NEON_HOT_WHITE > ed.NEON_CORE_WHITE
+    assert dockm.NEON_HOT_WHITE > dockm.NEON_CORE_WHITE
     # Grundflaeche: getaucht, aber deutlich dunkler als die Statusfarbe selbst.
-    assert ed.neon_tint(AMBER, 0.0) == ed.HANDLE_BG
-    assert ed.neon_tint(AMBER, 1.0) == ck.mix(ed.HANDLE_BG, AMBER, ed.NEON_TINT)
-    assert ed.neon_tint(AMBER, 2.0) == ed.neon_tint(AMBER, 1.0)   # geklemmt
+    assert dockm.neon_tint(AMBER, 0.0) == dockm.HANDLE_BG
+    assert dockm.neon_tint(AMBER, 1.0) == ck.mix(dockm.HANDLE_BG, AMBER, dockm.NEON_TINT)
+    assert dockm.neon_tint(AMBER, 2.0) == dockm.neon_tint(AMBER, 1.0)   # geklemmt
 
 
 def test_resolve_effort():
@@ -1304,7 +1307,7 @@ def test_dock_slide_endpoints():
     der Griff sass), v=1 -> auf dem Ziel, das EDGE_GAP vom Rand weg liegt. Beides
     exakt, sonst springt es. Die Ziele sind die, die _expanded_rect liefert –
     inklusive der EDGE_GAP-Einrueckung, sonst faende der Startstreifen den Rand nicht."""
-    t, g = ed.handle_thick(), ed.EDGE_GAP
+    t, g = dockm.handle_thick(), dockm.EDGE_GAP
     d = _dock("left", (g, 100, 300, 200))
     assert d._slide_geom(0.0) == (t - 300, 100, 300, 200)
     assert d._slide_geom(1.0) == (g, 100, 300, 200)
@@ -1323,14 +1326,14 @@ def test_dock_clip_covers_everything_beyond_the_edge():
     SetWindowRgn samt Neuzeichnen), und zwar nach OBEN: hoechstens knapp eine Stufe
     zu viel, nie eine zu wenig. Kante ist der Bildschirmrand (0), nicht das um
     EDGE_GAP eingerueckte Ziel."""
-    for edge, target, axis in (("left", (ed.EDGE_GAP, 100, 300, 200), 0),
-                               ("top", (100, ed.EDGE_GAP, 300, 200), 1)):
+    for edge, target, axis in (("left", (dockm.EDGE_GAP, 100, 300, 200), 0),
+                               ("top", (100, dockm.EDGE_GAP, 300, 200), 1)):
         d = _dock(edge, target)
         d._clip_on = True
         for i in range(41):
             v = i / 40.0
             beyond = max(0, -d._slide_geom(v)[axis])     # was links/oberhalb von 0 liegt
-            assert beyond <= d._clip_for(v) < beyond + ed.CLIP_QUANT, (edge, v)
+            assert beyond <= d._clip_for(v) < beyond + dockm.CLIP_QUANT, (edge, v)
         assert d._clip_for(1.0) == 0                     # aufgeklappt -> Region weg
         d._clip_on = False                               # kein Nachbar-Monitor
         assert all(d._clip_for(i / 10.0) == 0 for i in range(11))
@@ -1370,7 +1373,7 @@ def test_dock_expanded_rect_keeps_border_visible_on_all_four_sides():
     Bildschirmrand fiel deshalb genau die Kante an der Dockseite optisch aus. Also
     haelt _expanded_rect an JEDER Kante mindestens EDGE_GAP Abstand: an der Dockkante
     exakt, quer dazu auch dann, wenn das Deck fast so hoch/breit wie der Schirm ist."""
-    g, sw, sh = ed.EDGE_GAP, 1920, 1080
+    g, sw, sh = dockm.EDGE_GAP, 1920, 1080
     for edge, win in (("left", (300, 200)), ("right", (300, 200)), ("top", (300, 200)),
                       ("left", (300, sh - 2 * g)),      # so hoch wie eben erlaubt
                       ("top", (sw - 2 * g, 200))):
@@ -1422,7 +1425,7 @@ def test_dock_spring_never_overshoots():
     """Kritische Daempfung = kein Ueberschwingen. Ein Randpanel, das ueber sein Ziel
     hinausschiesst, wirkt wackelig – Overshoot gehoert zu Bewegungen, die der Nutzer
     mit Schwung angestossen hat, nicht zu einem Hover-Panel."""
-    for response in (ed.COLLAPSE_RESPONSE_MS, ed.REVEAL_RESPONSE_MS):
+    for response in (dockm.COLLAPSE_RESPONSE_MS, dockm.REVEAL_RESPONSE_MS):
         track = _spring_track(response)
         assert max(track) <= 1.0 + 1e-12, response
         assert all(b >= a - 1e-12 for a, b in zip(track, track[1:]))   # nie zurueck
@@ -1434,7 +1437,7 @@ def test_dock_spring_is_front_loaded_but_starts_from_rest():
     dort exakt bei 50 %), aber der erste Frame legt nur wenig zurueck. Genau daran
     war hier schon einmal ein cubic-ease-out gescheitert: sein Vollgas-Start ruckte
     sichtbar. Die Feder startet aus dem Stand."""
-    track = _spring_track(ed.REVEAL_RESPONSE_MS)
+    track = _spring_track(dockm.REVEAL_RESPONSE_MS)
     ende = next(i for i, x in enumerate(track) if x > 0.99)
     assert track[ende // 2] > 0.75                     # front-loaded
     assert track[0] < 0.05                             # kein Sprung im ersten Frame
@@ -1450,10 +1453,10 @@ def test_dock_spring_is_not_slower_than_the_curve_it_replaced():
         p = max(0.0, min(1.0, p))
         return p * p * (3.0 - 2.0 * p)
 
-    feder = _spring_track(ed.REVEAL_RESPONSE_MS)
+    feder = _spring_track(dockm.REVEAL_RESPONSE_MS)
     assert feder[11] >= smoothstep(120 / 170.0) - 0.02      # 12 Frames = 120 ms
     assert feder[7] > smoothstep(80 / 170.0) + 0.20         # nach 80 ms klar voraus
-    assert ed.COLLAPSE_RESPONSE_MS < ed.REVEAL_RESPONSE_MS  # Wegräumen zügiger
+    assert dockm.COLLAPSE_RESPONSE_MS < dockm.REVEAL_RESPONSE_MS  # Wegräumen zügiger
 
 
 def test_dock_spring_reversal_is_velocity_continuous():
@@ -1461,8 +1464,8 @@ def test_dock_spring_reversal_is_velocity_continuous():
     weiter. Das Deck bremst also aus voller Fahrt ab, statt seine Kurve rueckwaerts
     abzuspulen: die Bewegung kehrt weich um und braucht dafuer nur so lange, wie der
     Restweg hergibt."""
-    omega_auf = 2.0 * math.pi / (ed.REVEAL_RESPONSE_MS / 1000.0)
-    omega_zu = 2.0 * math.pi / (ed.COLLAPSE_RESPONSE_MS / 1000.0)
+    omega_auf = 2.0 * math.pi / (dockm.REVEAL_RESPONSE_MS / 1000.0)
+    omega_zu = 2.0 * math.pi / (dockm.COLLAPSE_RESPONSE_MS / 1000.0)
     d, v = -1.0, 0.0
     for _ in range(8):                                  # 80 ms aufklappen
         d, v = ed.EdgeDock._spring_at(d, v, omega_auf, 0.010)
@@ -1535,7 +1538,7 @@ def test_dock_hold_expires_with_full_delay():
     d.root.allowed = True
     d._poll_once()
     assert d._collapsed == [] and d._outside_since == 1000
-    d._now_ms = lambda: 1000 + ed.COLLAPSE_DELAY_MS
+    d._now_ms = lambda: 1000 + dockm.COLLAPSE_DELAY_MS
     d._poll_once()
     assert len(d._collapsed) == 1
 
@@ -1569,7 +1572,7 @@ def _dock_anim(edge="left"):
 
         def geometry(self, spec):
             if self.fail:
-                raise ed.tk.TclError("Fenster gerade weg")
+                raise tk.TclError("Fenster gerade weg")
             self.geoms.append(spec)
 
         def after(self, ms, fn):
@@ -1775,7 +1778,7 @@ def _dock_hover(pointer, along=300, shown=True, lock=0, now=1000.0):
     d._now_ms = lambda: now
     d._anchor = (0, along)
     d._last_size = (300, 200)
-    d._handle_drawn = (ed.handle_thick(), 0)
+    d._handle_drawn = (dockm.handle_thick(), 0)
     d.revealed = []
     d.reveal = lambda: d.revealed.append(True)
     return d
@@ -1810,7 +1813,7 @@ def test_dock_grip_zone_is_the_invisible_pad_on_every_edge():
     Kapsel (Hover klappt auf), dahinter Polster (Greifen). Bei „rechts" liegt die
     Dockkante am ANDEREN Ende, dort muss gespiegelt gerechnet werden – sonst laege die
     Greif-Zone auf dem Leuchten und das Aufklappen im Unsichtbaren."""
-    thick, ext = ed.handle_thick(), ed.capsule_extent()
+    thick, ext = dockm.handle_thick(), dockm.capsule_extent()
     assert 0 < ext < thick                    # es gibt ueberhaupt ein Polster
 
     class _Ev:
@@ -2095,16 +2098,16 @@ def test_handle_breathing_is_a_ramp_not_a_staircase():
     d = object.__new__(ed.EdgeDock)
     d._glow_int, d._glow_pulse, d._bloom = 1.0, True, 0.0
     keys = []
-    for i in range(ed.NEON_PULSE_TICKS):
+    for i in range(dockm.NEON_PULSE_TICKS):
         d._pulse_i = i
         keys.append(round(hrender._qe(d._eff_intensity()), 6))
-    assert len(set(keys)) >= ed.NEON_PULSE_TICKS * 0.3, len(set(keys))
+    assert len(set(keys)) >= dockm.NEON_PULSE_TICKS * 0.3, len(set(keys))
     laengste, lauf = 1, 1
     for a, b in zip(keys, keys[1:]):
         lauf = lauf + 1 if a == b else 1
         laengste = max(laengste, lauf)
-    assert laengste * ed.NEON_MS <= 200, laengste * ed.NEON_MS
-    assert 2100 <= ed.NEON_MS * ed.NEON_PULSE_TICKS <= 2500
+    assert laengste * dockm.NEON_MS <= 200, laengste * dockm.NEON_MS
+    assert 2100 <= dockm.NEON_MS * dockm.NEON_PULSE_TICKS <= 2500
 
 
 def test_dock_frame_tick_is_one_frame_per_screen_refresh():
@@ -2119,20 +2122,20 @@ def test_dock_frame_tick_is_one_frame_per_screen_refresh():
 
     Die Rate selbst kommt vom Rechner, auf dem der Test läuft – geprüft wird darum die
     Rechnung darum herum, nicht ein fester Wert."""
-    ed._tick_ms = None                       # Messung erzwingen (Wert wird gemerkt)
-    tick = ed.frame_tick_ms()
-    assert ed.ANIM_TICK_MIN_MS <= tick <= ed.ANIM_TICK_MAX_MS, tick
-    if ed.ANIM_TICK_MIN_MS < tick < ed.ANIM_TICK_MAX_MS:      # nicht an die Grenze geklemmt
+    dockm._tick_ms = None                       # Messung erzwingen (Wert wird gemerkt)
+    tick = dockm.frame_tick_ms()
+    assert dockm.ANIM_TICK_MIN_MS <= tick <= dockm.ANIM_TICK_MAX_MS, tick
+    if dockm.ANIM_TICK_MIN_MS < tick < dockm.ANIM_TICK_MAX_MS:      # nicht an die Grenze geklemmt
         assert tick == int(1000.0 / float(wf.refresh_hz())), tick
-    assert ed.frame_tick_ms() == tick        # gemerkt, kein Win32-Aufruf je Frame
+    assert dockm.frame_tick_ms() == tick        # gemerkt, kein Win32-Aufruf je Frame
     # Eine unbrauchbar gemeldete Rate darf nie einen Takt von 0 ergeben (Timer-Sturm).
-    ed._tick_ms = None
+    dockm._tick_ms = None
     real, wf.refresh_hz = wf.refresh_hz, lambda *a, **k: 0
     try:
-        assert ed.frame_tick_ms() == ed.ANIM_TICK_FALLBACK_MS
+        assert dockm.frame_tick_ms() == dockm.ANIM_TICK_FALLBACK_MS
     finally:
         wf.refresh_hz = real
-        ed._tick_ms = None
+        dockm._tick_ms = None
 
 
 def test_handle_cache_reuse_and_clear():
@@ -2167,7 +2170,7 @@ def test_wave_is_only_a_deviation_from_the_selected_design():
     """Ein Profil aus Nullen muss Pixel fuer Pixel dasselbe Bild ergeben wie GAR KEIN
     Profil. Das ist die Zusage, auf der der ganze Umbau steht: das Schwappen ist eine
     Auslenkung aus dem ausgewaehlten Entwurf, kein neuer Entwurf. Wer es abschaltet
-    (edge_dock.WAVE_ON), bekommt exakt den alten Griff zurueck – und niemand muss die
+    (wave.WAVE_ON), bekommt exakt den alten Griff zurueck – und niemand muss die
     Kapselform, den Bloom oder die Glaskante nachmessen."""
     if not hrender.AVAILABLE:
         return
@@ -2322,12 +2325,12 @@ def test_wave_profile_is_off_without_alpha_or_in_rest():
     assert d._wave_profile(4) is None, "zu kurz fuer ein Profil"
     d._wave_t0 = d._now_ms() - (hwave.PERIOD - 0.05) * 1000.0
     assert d._wave_profile(HR_LEN) is None, "Ruhephase -> gecachtes Ruhebild"
-    real, ed.WAVE_ON = ed.WAVE_ON, False
+    real, dockwave.WAVE_ON = dockwave.WAVE_ON, False
     try:
         d._wave_t0 = d._now_ms() - WAVE_PEAK * 1000.0
         assert d._wave_profile(HR_LEN) is None, "abgeschaltet"
     finally:
-        ed.WAVE_ON = real
+        dockwave.WAVE_ON = real
 
 
 def test_wave_kick_and_timer_and_sliding():
@@ -2412,11 +2415,11 @@ def test_handle_window_is_thicker_than_the_capsule():
     Slide-Startstreifen) rechnet deshalb mit der FENSTERdicke, nicht mit der Kapsel –
     und zwar unabhängig davon, ob Pillow da ist: die Zieh-Zone darf nicht an einer
     Bibliothek hängen."""
-    assert ed.handle_thick() == ed.HANDLE_THICK + ed.HANDLE_PAD
-    assert ed.HANDLE_PAD > 0
+    assert dockm.handle_thick() == dockm.HANDLE_THICK + dockm.HANDLE_PAD
+    assert dockm.HANDLE_PAD > 0
     # Die Grenze muss INNERHALB des Fensters liegen, sonst gäbe es keine der beiden
     # Zonen: 0 -> alles Polster (nie aufklappen), ganze Dicke -> alles Kapsel (nie greifen).
-    assert 0 < ed.capsule_extent() < ed.handle_thick()
+    assert 0 < dockm.capsule_extent() < dockm.handle_thick()
 
 
 # ── watchdog: die Beurteilung des letzten Panel-Laufs. Daran haengt die einzige
