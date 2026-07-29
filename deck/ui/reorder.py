@@ -6,27 +6,50 @@ Reihenfolge deck-eigen und liegt in slot_order.json.
 import tkinter as tk
 
 
-class ReorderMixin:
-    """Wird in AgentDeck eingemischt (siehe panel.py)."""
+class TileDrag:
+    """Das Umsortieren als eigenes Objekt, KEIN Mixin.
+
+    Es hat echten eigenen Zustand - den laufenden Drag (_tile_drag) - und war damit der
+    beste Kandidat nach den beiden ersten: gemessen brauchte es vom Panel fünf Werte und
+    vier Rückrufe, alles andere gehört ihm selbst.
+
+    Nach außen bleibt AgentDeck._dragging() als schmale Fassade stehen. Vier Stellen
+    fragen danach, ob gerade gezogen wird - darunter das Dock über app._dragging(), das
+    seinen Zeiger-Poll währenddessen zurückhält. Diese Frage soll nicht wissen müssen,
+    WO der Drag-Zustand liegt.
+    """
+
+    def __init__(self, root, canvas, tiles, order, store, *,
+                 focus, repaint, ordered_slots, hide_tip):
+        self.root = root                    # Tk-Root (für die Animations-Timer)
+        self.deck = canvas                  # der Deck-Canvas, auf dem gezogen wird
+        self.tiles = tiles                  # geteiltes Kachel-Dict (nie ersetzen)
+        self.order = order                  # {win: [slot, …]} - die deck-eigene Reihenfolge
+        self.store = store                  # BindStore, persistiert die Reihenfolge
+        self.focus_slot = focus             # Press ohne Bewegung = Klick -> fokussieren
+        self._paint_once = repaint          # nach dem Ablegen neu zeichnen
+        self._ordered_slots = ordered_slots # aktuelle Reihenfolge eines Fensters
+        self._hide_prompt_tip = hide_tip    # Tooltip weg, sobald es wirklich zieht
+        self._tile_drag = None              # laufender Drag (None = keiner)
 
     # VS Code gibt die visuelle Terminal-/Pane-Reihenfolge NICHT preis (kein Positions-/
     # Gruppen-API), also kann das Deck sie nicht spiegeln. Stattdessen ist das Deck die
     # Quelle der Wahrheit: die Kacheln lassen sich per Drag&Drop tauschen, die anderen
     # ruecken dabei zusammen und machen Platz (klassische Sortier-Animation). Die neue
     # Reihenfolge landet in self.order (persistiert via BindStore) und ueberlebt Neustarts.
-    def _dragging(self):
+    def dragging(self):
         """True, sobald ein Kachel-Drag wirklich zieht (Bewegung ueber der Schwelle).
         Ein blosser Press ohne Bewegung zaehlt NICHT -> ein normaler Klick bleibt moeglich."""
         return bool(self._tile_drag and self._tile_drag.get("moved"))
 
-    def _tile_press(self, slot, ev):
+    def press(self, slot, ev):
         """Maustaste auf einer Kachel gedrueckt: nur den Drag-Kandidaten merken (noch
         kein Drag). Bewegt sich der Zeiger nicht ueber die Schwelle, wertet _tile_release
         es als Klick -> focus_slot (Verhalten wie zuvor)."""
         self._tile_drag = {"slot": slot, "win": slot[0],
                            "sx": ev.x, "sy": ev.y, "moved": False}
 
-    def _tile_motion(self, ev):
+    def motion(self, ev):
         d = self._tile_drag
         if not d:
             return
@@ -129,7 +152,7 @@ class ReorderMixin:
             pass
         d["job"] = self.root.after(16, self._drag_anim)
 
-    def _tile_release(self, ev):
+    def release(self, ev):
         """Loslassen: war es ein Klick (keine Bewegung), fokussieren; war es ein Drag, die
         neue Reihenfolge festschreiben, speichern und die Reihe sauber einrasten (auch bei
         No-Op zurueck an den Start -> Kachel schnappt in ihr Raster)."""

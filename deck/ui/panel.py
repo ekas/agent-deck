@@ -49,7 +49,7 @@ from deck.ui.connect import ConnectMixin
 from deck.ui.hover import HoverMixin
 from deck.ui.layout import LayoutMixin
 from deck.ui.refresh import RefreshMixin
-from deck.ui.reorder import ReorderMixin
+from deck.ui.reorder import TileDrag
 from deck.ui.settings_dialog import SettingsDialog
 from deck.ui.ticket import TicketMixin
 from deck.ui.tile_draw import TileRenderer
@@ -63,7 +63,7 @@ class AgentDeck(
         # Fenstergroesse und Skalierung
         LayoutMixin,
         # Kacheln: anordnen, zeichnen, umsortieren
-        TilesMixin, ReorderMixin,
+        TilesMixin,
         # Interaktion: Hover-Tooltip, Fenster binden, Klick-Wirkungen
         HoverMixin, ConnectMixin, ActionsMixin,
         # Takt: Slot-Zustände lesen, Fenster/Slots pflegen, Thread-Rückweg
@@ -84,7 +84,6 @@ class AgentDeck(
         self.slot_effort = self.store.effort      # Slot -> gemerktes Effort ("xhigh"/"ultracode")
         self.tickets = self.store.tickets         # Slot -> manuell zugewiesene Ticket-ID
         self.order = self.store.order             # {win: [slot, …]} vom Nutzer gezogene Reihenfolge
-        self._tile_drag = None                    # laufendes Kachel-Drag&Drop (sonst None)
         self._found = {}                          # Slot -> vom Agenten gemeldete ID (state/<slot>.ticket)
         self._worktrees = {}                      # Slot -> gemeldeter worktree-Pfad (state/<slot>.worktree); Ticket-Anzeige haengt daran
         self._wt_gone_since = {}                  # Slot -> ts, seit wann worktree-Marker ohne lebenden Agenten (Orphan-Grace)
@@ -130,14 +129,8 @@ class AgentDeck(
         # Wird beim Neuzeichnen geleert (die Item-IDs sterben mit dem delete('all')).
         self.win_items = {}
         self._hot_win = None     # Repo-Block, der gerade hervorgehoben ist (None = keiner)
-        # Der Kachel-Zeichner bekommt seine sechs Interaktionen hier - damit steht an
-        # EINER Stelle, was ein Klick, ein Rechtsklick und ein Hover auf einer Kachel
-        # auslösen. Als Mixin lag das in tag_bind-Zeilen verstreut.
-        self.tile_renderer = TileRenderer(
-            self.tiles, TilesMixin._SLIM_ADD_W,
-            on_new=self.create_agent, on_close=self.close_agent,
-            on_press=self._tile_press, on_menu=self._card_menu,
-            on_enter=self._hover_enter, on_leave=self._hover_leave)
+        # TileDrag und TileRenderer entstehen NICHT hier, sondern in _build() beim
+        # Canvas - siehe dort. Beide hängen an ihm, und der existiert noch nicht.
         self.prompt_tip = ck.Tooltip(self.root)  # Hover-Kachel -> KI-Chat-Zusammenfassung
         # Hover-Zustand fuer den Tooltip (Shared-Tag-sicher, siehe _hover_enter):
         self._hover_slot = None   # Kachel, ueber der der Zeiger gerade ist (None = keine)
@@ -290,12 +283,28 @@ class AgentDeck(
                               height=dpi.px(44))
         # Configure = Fenster/Canvas neu vermessen -> Deck passend skalieren.
         self.deck.bind("<Configure>", self._on_deck_configure)
+
+        # Die zwei Kachel-Objekte gehören an DIESEN Canvas und entstehen darum hier, nicht
+        # im __init__: TileDrag braucht ihn, und der Zeichner braucht TileDrag.press als
+        # Rückruf. Als Mixins stellte sich die Frage nie - jetzt steht die Reihenfolge
+        # sichtbar da, statt in der Method Resolution Order zu verschwinden.
+        self.drag = TileDrag(
+            self.root, self.deck, self.tiles, self.order, self.store,
+            focus=self.focus_slot, repaint=self._paint_once,
+            ordered_slots=self._ordered_slots, hide_tip=self._hide_prompt_tip)
+        # Sechs Interaktionen hat eine Kachel - hier stehen sie an einer Stelle, statt in
+        # tag_bind-Zeilen mitten im Zeichencode.
+        self.tile_renderer = TileRenderer(
+            self.tiles, TilesMixin._SLIM_ADD_W,
+            on_new=self.create_agent, on_close=self.close_agent,
+            on_press=self.drag.press, on_menu=self._card_menu,
+            on_enter=self._hover_enter, on_leave=self._hover_leave)
         # Kachel-Drag&Drop: Motion/Release EINMAL fest am Canvas (nicht je Kachel neu),
         # damit kein Handler-Stapel entsteht und die Events auch kommen, wenn der Zeiger
-        # die gezogene Kachel kurz verlaesst. Beide sind untaetig, solange _tile_drag None
+        # die gezogene Kachel kurz verlaesst. Beide sind untaetig, solange TileDrag keinen
         # ist. Der Press liegt als tag_bind auf jeder Kachel (siehe _draw_tile).
-        self.deck.bind("<B1-Motion>", self._tile_motion)
-        self.deck.bind("<ButtonRelease-1>", self._tile_release)
+        self.deck.bind("<B1-Motion>", self.drag.motion)
+        self.deck.bind("<ButtonRelease-1>", self.drag.release)
 
         # Untere Leiste: EIN durchgehender Streifen ueber die volle Breite (kein
         # freistehendes Chip-Paar mehr). Links die Claude-Nutzung (Session-Auslastung,
@@ -320,6 +329,13 @@ class AgentDeck(
         self._apply_slim_layout()
 
     # ── Panel neu starten ───────────────────────────────
+    def _dragging(self):
+        """Zieht der Nutzer gerade eine Kachel? Schmale Fassade auf TileDrag.
+
+        Vier Stellen fragen das - Hover, Layout, der Poll-Takt und das Dock über
+        app._dragging(). Keine davon soll wissen müssen, wo der Drag-Zustand liegt."""
+        return self.drag.dragging()
+
     def _open_settings(self):
         """Den Einstellungs-Dialog aufmachen.
 

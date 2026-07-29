@@ -12,6 +12,7 @@ import inspect
 
 import helpers  # noqa: F401 - setzt sys.path und die Deck-Sprache
 
+from deck.ui.reorder import TileDrag
 from deck.ui.settings_dialog import SettingsDialog
 from deck.ui.tile_draw import TileRenderer
 
@@ -103,3 +104,29 @@ def test_kein_mixin_mehr_fuers_zeichnen():
     from deck.ui.panel import AgentDeck
     namen = [b.__name__ for b in AgentDeck.__bases__]
     assert not any("TileDraw" in n for n in namen), namen
+
+
+def test_tile_drag_haelt_seinen_zustand_selbst():
+    """TileDrag ist der erste herausgelöste Teil mit ECHTEM eigenem Zustand.
+
+    Der laufende Drag lag vorher als self._tile_drag im Panel - unter 50 anderen
+    Attributen, und jede der elf Mixins hätte ihn anfassen können. Jetzt gehört er dem
+    Objekt, das ihn führt.
+    """
+    d = TileDrag(None, None, {}, {}, None, focus=lambda s: None,
+                 repaint=lambda: None, ordered_slots=lambda w: [], hide_tip=lambda: None)
+    assert d.dragging() is False            # ohne Press wird nicht gezogen
+    d.press("A1", type("E", (), {"x": 5, "y": 5})())
+    assert d.dragging() is False            # Press allein ist noch KEIN Drag ...
+    d._tile_drag["moved"] = True
+    assert d.dragging() is True             # ... erst Bewegung über der Schwelle
+
+
+def test_kein_drag_zustand_mehr_im_panel():
+    """Das Panel darf den Drag nicht mehr doppelt halten - sonst gäbe es zwei Wahrheiten
+    und die Frage, welche gilt."""
+    import inspect
+
+    from deck.ui import panel
+    quelle = inspect.getsource(panel.AgentDeck.__init__)
+    assert "self._tile_drag" not in quelle, "Drag-Zustand liegt wieder im Panel"

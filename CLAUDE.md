@@ -173,8 +173,20 @@ nicht selbst setzt? Gemessen wird das mit demselben AST-Durchlauf wie in
 
 | fremde Attribute | Form | warum |
 |---|---|---|
-| 0–6 | **eigenes Objekt** mit Konstruktor-Abhängigkeiten | die Liste ist lesbar und das Teil einzeln baubar (`SettingsDialog`: 4 Werte + 3 Rückrufe, `TileRenderer`: 2 + 6) |
+| 0–6 | **eigenes Objekt** mit Konstruktor-Abhängigkeiten | die Liste ist lesbar und das Teil einzeln baubar. Herausgelöst: `SettingsDialog` (4 Werte + 3 Rückrufe), `TileRenderer` (2 + 6), `TileDrag` (5 + 4) |
 | ab ~10 | **Mixin** | `tiles` (20), `actions` (12), `refresh` (11) *orchestrieren* den Panel-Zustand — das ist ihre Aufgabe, nicht ein Mangel. In Objekte gepresst ergäben sie 20 Konstruktor-Argumente und gewönnen nichts |
+
+Die Zahl entscheidet auch gegen einen Umbau. `layout` sah nach der ersten Messung mit 6
+fremden Attributen wie ein Kandidat aus; genau nachgezählt braucht es **11**
+Konstruktor-Argumente (6 Werte, 5 Rückrufe) — und alle fünf Rückrufe dirigieren das
+Neuzeichnen (`_render_agents`, `_render_agents_slim`, `_update_tiles`, `_layout_sig`,
+`_dragging`). Es hat also keine abgrenzbare Verantwortung, sondern koordiniert die
+anderen. Deshalb bleibt es ein Mixin.
+
+Wo ein Kollaborateur von außen befragt wird, bleibt eine **schmale Fassade** auf
+`AgentDeck` stehen: `_dragging()` ruft `self.drag.dragging()`. Vier Stellen fragen danach
+— darunter das Dock über `app._dragging()` —, und keine soll wissen müssen, wo der
+Zustand liegt.
 
 Wer ein Mixin herauslöst, prüft danach dreierlei: dass die Signatur die Abhängigkeiten
 **nennt**, dass sich das Teil **mit Attrappen** bauen lässt (ohne Tk, Broker, BindStore),
