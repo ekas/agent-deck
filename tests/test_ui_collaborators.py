@@ -13,6 +13,7 @@ import inspect
 import helpers  # noqa: F401 - setzt sys.path und die Deck-Sprache
 
 from deck.ui.settings_dialog import SettingsDialog
+from deck.ui.tile_draw import TileRenderer
 
 
 def test_settings_dialog_nennt_seine_abhaengigkeiten_im_konstruktor():
@@ -66,3 +67,39 @@ def test_kein_mixin_mehr_fuer_den_dialog():
     assert not any("Settings" in n for n in namen), namen
     # Der Einstieg bleibt aber erhalten - die Bottom-Bar hängt ihren ⚙-Knopf daran.
     assert callable(AgentDeck._open_settings)
+
+
+def test_tile_renderer_macht_die_sechs_interaktionen_sichtbar():
+    """Eine Kachel reagiert auf sechs Dinge. Vorher stand das nur in tag_bind-Zeilen
+    mitten im Zeichencode; jetzt in der Signatur.
+
+    Der Test hält die ZAHL fest, nicht die Namen der Handler: kommt eine siebte
+    Interaktion dazu, ist das eine Entscheidung, die man hier bestätigen muss.
+    """
+    sig = inspect.signature(TileRenderer.__init__)
+    kwonly = [p for p, v in sig.parameters.items()
+              if v.kind is inspect.Parameter.KEYWORD_ONLY]
+    assert kwonly == ["on_new", "on_close", "on_press",
+                      "on_menu", "on_enter", "on_leave"], kwonly
+
+
+def test_tile_renderer_teilt_das_kachel_dict_statt_es_zu_ersetzen():
+    """Der Renderer füllt DASSELBE Dict, das Panel und GlowAnimator lesen.
+
+    Das ist die Zusage, an der die Animation hängt: würde hier ein neues Dict entstehen,
+    zeigte der GlowAnimator auf ein totes und alle Kacheln blieben stumm grau. Darum wird
+    im Panel tiles.clear() gerufen und nie neu zugewiesen.
+    """
+    geteilt = {}
+    r = TileRenderer(geteilt, 34, on_new=lambda w: None, on_close=lambda s: None,
+                     on_press=lambda s, e: None, on_menu=lambda s, e: None,
+                     on_enter=lambda s: None, on_leave=lambda: None)
+    assert r.tiles is geteilt
+    geteilt["A1"] = {"rect": 1}
+    assert r.tiles["A1"] == {"rect": 1}      # dieselbe Referenz, nicht eine Kopie
+
+
+def test_kein_mixin_mehr_fuers_zeichnen():
+    from deck.ui.panel import AgentDeck
+    namen = [b.__name__ for b in AgentDeck.__bases__]
+    assert not any("TileDraw" in n for n in namen), namen

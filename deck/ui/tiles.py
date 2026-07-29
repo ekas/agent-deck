@@ -162,11 +162,12 @@ class TilesMixin:
             if connected:
                 x = X0
                 for slot in self._ordered_slots(w):
-                    self._draw_tile(c, slot, x, y, W, H, R, scale=s, step=W + GAP)
+                    self.tile_renderer.draw_tile(c, slot, x, y, W, H, R,
+                                                 scale=s, step=W + GAP)
                     x += W + GAP
                 # Geister-＋ am Reihenende: einziger Startweg im Slim-Modus (bewusst
                 # klein/blass statt volle ＋-Kachel wie im Vollmodus).
-                self._draw_slim_add(c, w, x, y, H, s)
+                self.tile_renderer.draw_add(c, w, x, y, H, s)
                 y += H + RING
             else:
                 c.create_text(X0, y, anchor="nw",

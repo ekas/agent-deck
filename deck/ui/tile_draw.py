@@ -17,10 +17,31 @@ from deck.render.kit import hex_to_rgb as _hex_to_rgb
 from deck.ui.theme import LOST_GLOW
 
 
-class TileDrawMixin:
-    """Wird in AgentDeck eingemischt (siehe panel.py)."""
+class TileRenderer:
+    """Zeichnet Kacheln - als eigenes Objekt, KEIN Mixin.
 
-    def _draw_slim_add(self, c, win, x, y, H, s):
+    Gemessen brauchte dieses Modul vom Panel genau zwei Dinge (das Kachel-Dict und die
+    Breite der Geister-Kachel) und sechs Rückrufe. Die sechs sind kein Ballast, sondern
+    die Aussage: SO VIELE Interaktionen hat eine Kachel. Als Mixin stand das nirgends;
+    man musste die tag_bind-Zeilen im Rumpf suchen, um es zu wissen.
+
+    `tiles` ist DASSELBE Dict wie im Panel und wird hier in place gefüllt. Das Panel ruft
+    beim Neuzeichnen tiles.clear() statt es zu ersetzen - sonst zeigte diese Referenz
+    (und die des GlowAnimators) auf ein totes Dict.
+    """
+
+    def __init__(self, tiles, add_width, *, on_new, on_close,
+                 on_press, on_menu, on_enter, on_leave):
+        self.tiles = tiles              # geteiltes Kachel-Dict (nie ersetzen, nur clear)
+        self._SLIM_ADD_W = add_width    # Breite der Geister-＋ am Reihenende
+        self.create_agent = on_new      # Klick auf ＋  -> neues Claude-Terminal
+        self.close_agent = on_close     # Klick auf ✕  -> Agent schließen
+        self._tile_press = on_press     # Linksklick    -> fokussieren / Drag beginnen
+        self._card_menu = on_menu       # Rechtsklick   -> Modell/Ticket/Effort/Modus
+        self._hover_enter = on_enter    # Zeiger drauf  -> Gruppe hervorheben, Tooltip
+        self._hover_leave = on_leave    # Zeiger weg    -> beides zurücknehmen
+
+    def draw_add(self, c, win, x, y, H, s):
         """Slim-Weg zum Starten eines Agenten (Mockup-Option #2 »Geister-＋ am Reihenende«):
         ein blasses, schmales ＋ hinter der letzten Kachel der Reihe – KEINE volle ＋-Kachel
         wie im Vollmodus, damit der ruhige Slim-Look bleibt. Die gefuellte (BG = im Ruhe-
@@ -55,7 +76,7 @@ class TileDrawMixin:
                    (c.itemconfig(p, fill=INK_3), c.itemconfig(b, outline=""),
                     c.configure(cursor="")))
 
-    def _draw_tile(self, c, slot, x, y, W, H, R, scale=1.0, step=None):
+    def draw_tile(self, c, slot, x, y, W, H, R, scale=1.0, step=None):
         # Frostpane-Karte: dunkle Graphitfläche, heller Text, ruhiger Status-GLOW
         # (weicher Halo ringsum). BEWUSST WEGGELASSEN (nach Vorgabe): der Leucht-
         # Streifen an der linken Kante und der Status-Punkt in der Ecke – den Status

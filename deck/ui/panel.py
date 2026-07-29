@@ -52,7 +52,7 @@ from deck.ui.refresh import RefreshMixin
 from deck.ui.reorder import ReorderMixin
 from deck.ui.settings_dialog import SettingsDialog
 from deck.ui.ticket import TicketMixin
-from deck.ui.tile_draw import TileDrawMixin
+from deck.ui.tile_draw import TileRenderer
 from deck.ui.tiles import TilesMixin
 from deck.ui.uithread import UiThreadMixin
 from deck.ui.windows import WindowSyncMixin
@@ -63,7 +63,7 @@ class AgentDeck(
         # Fenstergroesse und Skalierung
         LayoutMixin,
         # Kacheln: anordnen, zeichnen, umsortieren
-        TilesMixin, TileDrawMixin, ReorderMixin,
+        TilesMixin, ReorderMixin,
         # Interaktion: Hover-Tooltip, Fenster binden, Klick-Wirkungen
         HoverMixin, ConnectMixin, ActionsMixin,
         # Takt: Slot-Zustände lesen, Fenster/Slots pflegen, Thread-Rückweg
@@ -130,6 +130,14 @@ class AgentDeck(
         # Wird beim Neuzeichnen geleert (die Item-IDs sterben mit dem delete('all')).
         self.win_items = {}
         self._hot_win = None     # Repo-Block, der gerade hervorgehoben ist (None = keiner)
+        # Der Kachel-Zeichner bekommt seine sechs Interaktionen hier - damit steht an
+        # EINER Stelle, was ein Klick, ein Rechtsklick und ein Hover auf einer Kachel
+        # auslösen. Als Mixin lag das in tag_bind-Zeilen verstreut.
+        self.tile_renderer = TileRenderer(
+            self.tiles, TilesMixin._SLIM_ADD_W,
+            on_new=self.create_agent, on_close=self.close_agent,
+            on_press=self._tile_press, on_menu=self._card_menu,
+            on_enter=self._hover_enter, on_leave=self._hover_leave)
         self.prompt_tip = ck.Tooltip(self.root)  # Hover-Kachel -> KI-Chat-Zusammenfassung
         # Hover-Zustand fuer den Tooltip (Shared-Tag-sicher, siehe _hover_enter):
         self._hover_slot = None   # Kachel, ueber der der Zeiger gerade ist (None = keine)

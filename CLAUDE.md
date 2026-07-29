@@ -161,9 +161,25 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
   wachsen lässt, hat meist zwei Konzepte darin; der Ausweg ist ein neues Modul, nicht
   eine Ausnahme.
 - **Die zwei großen Klassen sind Mixin-Kompositionen.** `AgentDeck` (103 Methoden) setzt
-  sich aus 13 Mixins in `deck/ui/` zusammen, `EdgeDock` (97) aus 8 in `deck/dock/`. Eine
+  sich aus 11 Mixins in `deck/ui/` zusammen, `EdgeDock` (97) aus 8 in `deck/dock/`. Eine
   neue Methode gehört in das Mixin ihres Themas — und wenn es keines gibt, in ein neues.
   Der Klassenkopf in `panel.py` bzw. `controller.py` ist die Übersicht.
+
+### Mixin oder eigenes Objekt?
+
+Die Frage entscheidet **eine Zahl**: wie viele `self`-Attribute liest ein Modul, die es
+nicht selbst setzt? Gemessen wird das mit demselben AST-Durchlauf wie in
+`tests/test_ui_collaborators.py`.
+
+| fremde Attribute | Form | warum |
+|---|---|---|
+| 0–6 | **eigenes Objekt** mit Konstruktor-Abhängigkeiten | die Liste ist lesbar und das Teil einzeln baubar (`SettingsDialog`: 4 Werte + 3 Rückrufe, `TileRenderer`: 2 + 6) |
+| ab ~10 | **Mixin** | `tiles` (20), `actions` (12), `refresh` (11) *orchestrieren* den Panel-Zustand — das ist ihre Aufgabe, nicht ein Mangel. In Objekte gepresst ergäben sie 20 Konstruktor-Argumente und gewönnen nichts |
+
+Wer ein Mixin herauslöst, prüft danach dreierlei: dass die Signatur die Abhängigkeiten
+**nennt**, dass sich das Teil **mit Attrappen** bauen lässt (ohne Tk, Broker, BindStore),
+und dass `AgentDeck` es nicht mehr einmischt — ein zusätzliches Mixin in einer Liste von
+elf sieht sonst niemand.
 - **Kommentare auf Deutsch**, wie der Rest des Repos. Sie erklären das *Warum* — das
   *Was* steht im Code.
 - **Tests spiegeln `deck/`** — eine Datei je Modulbereich, benannt nach ihm
