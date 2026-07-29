@@ -1,0 +1,18 @@
+# Standard: Zeilenenden im Repo normalisiert (LF), im Arbeitsverzeichnis nativ.
+* text=auto
+
+# Windows-Skripte MÜSSEN CRLF behalten - cmd.exe stolpert sonst über
+# Fortsetzungen, und PowerShell-Signaturen brechen.
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# Quelltext explizit als Text (verhindert Fehlerkennung bei Umlauten)
+*.py   text
+*.js   text
+*.json text
+*.md   text
+*.css  text
+
+# Binär - nie anfassen, nie diffen
+*.ico  binary
+*.png  binary

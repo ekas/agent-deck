@@ -1,0 +1,196 @@
+# Agent Deck – Einrichtung
+
+Dashboard für Claude-Agents in VS-Code-Fenstern. Startet **ohne** Agent-Kacheln;
+pro verbundenem Fenster erscheint **eine Kachel je offenem Claude-Terminal** plus
+eine **„＋"-Kachel**, die einen weiteren Claude-Chat öffnet. Wächst/schrumpft
+automatisch mit den tatsächlich offenen Chats.
+
+**Architektur (recherchiert & verifiziert):**
+- **STATUS** = Claude-Code-Hooks → `state/<slot>.json`, vom Panel gelesen.
+- **ACTIONS + Pane-Fokus** = kleine **VS-Code-Extension** (`Terminal.sendText` / `terminal.show`) — trifft exakt den richtigen Split-Pane **ohne Fokus-Klau**. (Win32/SendInput *kann* einen einzelnen Pane prinzipiell nicht treffen.)
+- **Fenster verbinden** = per Klick im Panel; das richtige Fenster wird per Win32 `SetForegroundWindow` nach vorn geholt.
+- **Broker** = schlanker TCP-Server im Panel, über den Panel ↔ Extensions reden.
+
+Panel + Broker: reine Python-Stdlib. Extension: reines JS (kein Build).
+
+---
+
+## Schritt 1 – Extension installieren (pro Rechner einmal)
+
+```powershell
+$src = "$PWD\extension"   # im Repo-Wurzelverzeichnis ausführen
+$dst = "$env:USERPROFILE\.vscode\extensions\agent-deck-bridge"
+New-Item -ItemType Directory -Force -Path $dst | Out-Null
+Copy-Item "$src\*" $dst -Recurse -Force   # nur Inhalt -> idempotent
+```
+
+Dann in **beiden** VS-Code-Fenstern: Command Palette → **„Developer: Reload Window"**.
+
+> Kein `agentDeck.window`-Setting und kein Ordnername in `config.py` von Hand nötig —
+> welches Fenster A bzw. B ist, legst du **im Panel per Klick** fest (Schritt 5).
+> Deine erkannten Ordner (`my-frontend`, `my-backend`) sind
+> in [`config.py`](config.py) als **Auto-Default** hinterlegt, damit es meist sofort passt.
+
+## Schritt 2 – Hooks (Status), gehärtet
+
+In `~/.claude/settings.json` (global, weil beide Fenster verschiedene Ordner haben). `PFAD` = echter Pfad zu `report.py`.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" idle" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking" }] }],
+    "PreToolUse":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" running" }] }],
+    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking" }] }],
+    "Notification": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" waiting" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" done" }] }]
+  }
+}
+```
+
+Härtungs-Hinweise aus der Recherche:
+- **npm-`claude` (`claude.cmd`)** benutzen, nicht eine native `claude.exe` auf dem PATH ([#25577](https://github.com/anthropics/claude-code/issues/25577)).
+- Hook direkt über **`python`** (nicht `bash`) → umgeht die Git-Bash-Fallen unter Windows.
+- **Kein `idle_prompt`** verwenden. „wartet" = `Notification`, „fertig" = `Stop`.
+- **`SessionStart`** meldet einen frisch geöffneten Agenten sofort (Kachel wird gleich „idle" statt grau/leer). Nötig für den automatischen Start-Modus neuer Agenten (`config.NEW_AGENT_MODE`, siehe unten) – ohne ihn schaltet der Modus erst beim ersten Prompt. Für Nicht-Deck-Sessions (ohne `AGENT_SLOT`) tut der Hook nichts.
+- Nach dem Setup **einmal prüfen**, dass Hooks feuern (Kachel muss beim Tippen reagieren).
+
+`AGENT_SLOT` musst du **nicht** setzen — die Extension setzt es beim Anlegen der Terminals (Schritt 6).
+
+---
+
+## Schritt 3 – Panel starten
+
+`start_debug.bat` (erster Start, mit Konsole) oder `start.bat` (leise). Der Broker startet mit.
+
+## Schritt 4 – Warten bis Extensions verbinden
+
+Sobald beide Fenster neu geladen sind, sollten im Panel die Punkte **`Extension A:● B:●`** angehen (Auto-Default greift dank der hinterlegten Ordnernamen).
+
+## Schritt 5 – Fenster verbinden / umbinden (per Klick)
+
+Falls ein Punkt grau bleibt oder du ein anderes Fenster zuordnen willst:
+1. Im Panel oben auf **„Fenster A"** (bzw. „Fenster B") klicken → es steht „… VS Code klicken".
+2. Das gewünschte **VS-Code-Fenster anklicken**.
+3. Der Repo-Name erscheint auf dem Button — verbunden. (Nochmal klicken = neu verbinden.)
+
+Die Zuordnung wird in `bindings.json` gemerkt und beim nächsten Start automatisch wiederhergestellt.
+
+## Schritt 6 – Chats anlegen & erkennen
+
+Sobald ein Fenster verbunden ist, erscheint dort eine **„＋"-Kachel**. Ein Klick
+darauf öffnet **ein** neues Claude-Terminal (`A1`, dann `A2`, … – der Index wächst
+automatisch), setzt `AGENT_SLOT` und startet `claude`. Für jeden weiteren Chat
+nochmal „＋" klicken.
+
+**Automatische Erkennung schon offener Sessions:** Die Extension findet Claude-
+Terminals jetzt daran, **was darin läuft**, nicht nur am Namen. Ein Terminal wird
+als Claude-Chat erkannt, wenn
+1. darin per Shell-Integration `claude` gestartet wurde, **oder**
+2. unter seinem Shell-Prozess ein `claude`-Prozess läuft (Prozess-Scan, Windows), **oder**
+3. sein Name danach aussieht (`A1`, `A2`, … oder enthält „claude").
+
+So tauchen auch Chats auf, die ein **anderer Chat** oder du **von Hand** gestartet
+hast – ohne dass sie über das Deck angelegt wurden.
+
+> **Wichtig zum Status:** Kacheln von Chats, die das Deck **selbst** per „＋"
+> angelegt hat, färben sich live (sie haben `AGENT_SLOT`). Von außen gestartete,
+> nur erkannte Sessions sind **anklickbar/steuerbar** (fokussieren, Approve/Reject,
+> Slash-Kommandos), bleiben aber **grau**, weil die Hooks ohne `AGENT_SLOT` keinen
+> Status melden können. Wer auch dort Farbe will, startet den Chat über „＋".
+
+> Die alte Sammel-Aktion „4 Splits auf einmal" gibt es weiter als VS-Code-Befehl
+> „Agent Deck: Agent-Terminals anlegen (4 Splits)", ist aber nicht mehr im Panel.
+
+---
+
+## Schritt 7 – Nutzungsanzeige (läuft von allein)
+
+Unten links zeigt das Deck die Auslastung deines Kontos als Ampel-Badge (Session,
+Hover → Woche und Modell-Limits, Klick → `claude.ai/settings/usage`). Dafür ist
+**nichts einzurichten**: das OAuth-Token holt sich das Deck aus der Claude-Code-CLI
+(`~/.claude/.credentials.json`) oder, falls vorhanden, aus Claude Desktop. Eine der
+beiden Quellen genügt, und die CLI hat jeder, der das Deck benutzt.
+
+Wenn dort dauerhaft „—" steht, sagt der Hover-Tooltip warum:
+
+| Tooltip | Bedeutung |
+|---|---|
+| `Nicht angemeldet – 'claude auth login'` | Keine Quelle hat ein Token hergegeben. Einmal `claude auth login` ausführen. |
+| `Token ungueltig – 'claude auth login'` | Beide Tokens wurden mit 401/403 abgewiesen (abgelaufen oder Konto gewechselt). |
+| `Rate-Limit – kurz warten` | Zu viele Abrufe. Der letzte gültige Wert bleibt stehen; der Takt fällt automatisch zurück. |
+
+> Der Endpunkt (`api.anthropic.com/api/oauth/usage`) ist **nicht dokumentiert** und
+> gehört Anthropic. Ändert er sich, zeigt das Badge „—" und sonst passiert nichts —
+> die Datenschicht ist durchgehend defensiv. Abschalten mit `SHOW_USAGE = False` in
+> `config.py`; dann wird auch keine der Token-Dateien angefasst.
+
+---
+
+## Optional – Visuelle Indikation (Glow um den fokussierten Chat)
+
+Beim Fokussieren eines Chats läuft ein Lichtpunkt zweimal am Terminal-Rand entlang
+und lässt einen leuchtenden Rahmen zurück (`agent-deck-glow.css`, „Border-Beam").
+
+**Einmalige Einrichtung:**
+1. Extension **„Custom CSS and JS Loader"** (`be5invis.vscode-custom-css`) installieren.
+2. In `settings.json` (global) auf die CSS zeigen:
+   ```json
+   "vscode_custom_css.imports": [
+     "file:///C:/Pfad/zu/agent-deck/agent-deck-glow.css"
+   ]
+   ```
+3. Command Palette → **„Enable Custom CSS and JS"** → **Reload Window**.
+
+**Nach JEDEM VS-Code-Update ist der Glow weg** – das Update ersetzt VS Codes
+`workbench.html` (liegt unter Windows inzwischen in einem versionierten Hash-Ordner,
+`…\Microsoft VS Code\<hash>\resources\app\out\vs\code\electron-browser\workbench\`)
+und wirft damit den injizierten `<style>`-Block raus. Die `settings.json` bleibt
+korrekt – es fehlt nur die Injektion. Zwei Wege, ihn zurückzuholen:
+
+- **Extension:** Command Palette → „Enable Custom CSS and JS" → Reload Window.
+- **Skript (schneller, scriptbar):**
+  ```powershell
+  python reenable_glow.py        # patcht die aktuelle workbench.html neu
+  python reenable_glow.py --off  # Patch wieder entfernen (Backup zurück)
+  ```
+  Danach Command Palette → **„Developer: Reload Window"**. Das Skript findet die
+  aktuelle `workbench.html` selbst (auch im Hash-Ordner), liest `vscode_custom_css.imports`
+  aus der `settings.json` und injiziert byte-gleich wie die Extension (inkl. Backup).
+
+> Reload startet die Terminals **dieses** Fensters neu (inkl. laufender Claude-Session)
+> → ggf. das andere Fenster zuerst neu laden.
+> VS Code zeigt danach evtl. „Your Code installation appears to be corrupt" – das ist
+> bei Custom-CSS **normal** (geänderte `workbench.html`); mit „Don't Show Again" wegklicken.
+
+---
+
+## Bedienung
+
+- **„Fenster A/B" klicken** → dann VS-Code-Fenster anklicken = verbinden/umbinden.
+- **„＋"-Kachel klicken** → die Extension öffnet ein weiteres Claude-Terminal in dem Fenster.
+- **Kachel klicken** → Fenster nach vorn + Pane fokussiert → tippen oder diktieren.
+- **Über eine Kachel fahren (Hover)** → ein Tooltip zeigt **worauf sich der Chat bezieht**
+  (`Ticket: PROJ-2691 · PR #62`) und darunter eine **KI-Kurzzusammenfassung** („worum es
+  geht", ein Satz, aus dem Transcript per `claude --safe-mode haiku`, gecacht). Ticket und
+  PR liest das Deck selbst aus dem Gespräch (Regex, kein Modell/keine Kosten):
+  - **Ticket:** Keys der Form `ABC-123`, das Projekt aus `JIRA_PROJECT_KEY` auch klein
+    geschrieben (z. B. in `ticket/proj-2691`), Nennungen wie „Ticket 2701".
+  - **PR:** „PR #62", „pull request 62", „merge request 62", PR-URLs (GitHub `…/pull/62`,
+    GitLab `…/-/merge_requests/62`) und ein bloßes „#62", wenn es mehrfach fällt.
+
+  Beides steht zusätzlich **gedimmt auf der Karte** (`PROJ-2691 #62`), solange dort kein
+  per Rechtsklick zugewiesenes Ticket (mit worktree) steht; passt es nicht in die schmale
+  Zeile, gewinnt das Ticket. Abschaltbar über `TICKET_AUTODETECT` /
+  `TICKET_AUTODETECT_ON_CARD` (und `HOVER_SUMMARY = False` → Tooltip zeigt wieder nur die
+  zuletzt gestellte Frage) in `config.py`. Grau erkannte Sessions ohne Hook-Meldung zeigen
+  nichts.
+- **🔔 Nächster** → springt zum Agent mit Status „wartet".
+- **✅ Approve / ❌ Reject** → Enter / Esc an den zuletzt gewählten Agent (ohne Fokus-Klau).
+- **🧹 /clear · 🧠 /model opus[1m] (neuestes Opus, 1M-Kontext) · 📖 /model fable** → Slash-Kommando an den aktiven Agent. Die Werte sind bewusst Aliasse ohne Versionsnummer — Claude Code nimmt damit immer das jeweils neueste Modell.
+- **📢 Alle** → Text an alle Agenten broadcasten.
+
+### Bekannte Rest-Risiken (ehrlich)
+- Fenster-nach-vorn (`SetForegroundWindow`) ist „best effort" — Windows blinkt evtl. nur den Taskbar-Button.
+- `Notification`=„wartet" ist zuverlässig, aber leicht verzögert (interne Debounce), nicht instant.
+- **Lücke:** `AskUserQuestion` / Plan-Mode-„proceed?" melden keinen sauberen Hook → Kachel zeigt dann nicht „wartet". Fix (Transcript-Tail) ist der nächste Ausbauschritt.

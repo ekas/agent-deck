@@ -1,0 +1,35 @@
+{
+  "name": "agent-deck-bridge",
+  "displayName": "Agent Deck Bridge",
+  "description": "Bruecke zwischen dem Agent-Deck-Panel und den Claude-Code-Terminals in diesem VS-Code-Fenster.",
+  "version": "0.1.1",
+  "publisher": "local",
+  "engines": { "vscode": "^1.85.0" },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "agentDeck.createAgent", "title": "Agent Deck: Neues Claude-Terminal anlegen" },
+      { "command": "agentDeck.createAgents", "title": "Agent Deck: Agent-Terminals anlegen (4 Splits)" }
+    ],
+    "configuration": {
+      "title": "Agent Deck",
+      "properties": {
+        "agentDeck.window": {
+          "type": "string", "default": "",
+          "description": "Optionaler Fenster-Buchstabe (A, B, C, …). Normalerweise LEER lassen – das Panel weist den Buchstaben beim Verbinden (Klick auf 'Fenster X') automatisch zu. Nur setzen, wenn du die Zuordnung fest verdrahten willst."
+        },
+        "agentDeck.host": { "type": "string", "default": "127.0.0.1", "description": "Host des Agent-Deck-Brokers." },
+        "agentDeck.port": { "type": "number", "default": 8765, "description": "Port des Agent-Deck-Brokers." },
+        "agentDeck.autostartCommand": {
+          "type": "string", "default": "claude",
+          "description": "Befehl, der in jedem neu angelegten Agent-Terminal gestartet wird (leer lassen = nichts starten)."
+        },
+        "agentDeck.slotEnvCommand": {
+          "type": "string", "default": "",
+          "description": "Shell-Zeile, die in gesplitteten Terminals AGENT_SLOT setzt ({slot} = Slot-Name). Leer = automatisch: PowerShell auf Windows ($env:AGENT_SLOT='{slot}'), sonst POSIX (export AGENT_SLOT='{slot}'). Für cmd.exe z.B.: set AGENT_SLOT={slot}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3113 @@
+[
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 0,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 0,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 100,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 100,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 1000,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 1000,
+  "stale": 900,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 1001,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 0
+  },
+  "now": 1001,
+  "stale": 900,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 0,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 0,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 100,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 100,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 1000,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 1000,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 1001,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 100
+  },
+  "now": 1001,
+  "stale": 900,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 0,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 0,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 100,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 100,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 1000,
+  "stale": 0,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 1000,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 1001,
+  "stale": 0,
+  "out": false
+ },
+ {
+  "fn": "is_fresh",
+  "st": {
+   "ts": 1000
+  },
+  "now": 1001,
+  "stale": 900,
+  "out": true
+ },
+ {
+  "fn": "is_fresh",
+  "st": null,
+  "now": 0,
+  "stale": 900,
+  "out": false
+ },
+ {
+  "fn": "normalize_status",
+  "status": "idle",
+  "fresh": true,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "idle",
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "done",
+  "fresh": true,
+  "out": "done"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "done",
+  "fresh": false,
+  "out": "done"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "thinking",
+  "fresh": true,
+  "out": "thinking"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "thinking",
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "running",
+  "fresh": true,
+  "out": "running"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "running",
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "waiting",
+  "fresh": true,
+  "out": "waiting"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "waiting",
+  "fresh": false,
+  "out": "waiting"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "none",
+  "fresh": true,
+  "out": "none"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "none",
+  "fresh": false,
+  "out": "none"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "lost",
+  "fresh": true,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "lost",
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "bogus",
+  "fresh": true,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": "bogus",
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": null,
+  "fresh": true,
+  "out": "idle"
+ },
+ {
+  "fn": "normalize_status",
+  "status": null,
+  "fresh": false,
+  "out": "idle"
+ },
+ {
+  "fn": "is_lost",
+  "status": "idle",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "idle",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "idle",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "idle",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "done",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "done",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "done",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "done",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "thinking",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "thinking",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "thinking",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "thinking",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "running",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "running",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "running",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "running",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "waiting",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "waiting",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "waiting",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "waiting",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "none",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "none",
+  "fresh": true,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "none",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "none",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "lost",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "lost",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "lost",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "lost",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "bogus",
+  "fresh": true,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "bogus",
+  "fresh": true,
+  "connected": false,
+  "out": true
+ },
+ {
+  "fn": "is_lost",
+  "status": "bogus",
+  "fresh": false,
+  "connected": true,
+  "out": false
+ },
+ {
+  "fn": "is_lost",
+  "status": "bogus",
+  "fresh": false,
+  "connected": false,
+  "out": false
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [],
+  "out": "none"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle"
+  ],
+  "out": "idle"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "none"
+  ],
+  "out": "none"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "bogus"
+  ],
+  "out": "none"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "running"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "none"
+  ],
+  "out": "idle"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "bogus"
+  ],
+  "out": "idle"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "running"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "none"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "lost"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "running"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "none"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "none"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "none"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "none",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "none",
+   "bogus"
+  ],
+  "out": "none"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "lost",
+   "bogus"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "thinking"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "running"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "none"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "lost"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "done",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking",
+   "running"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking",
+   "none"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "thinking",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "running",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "running",
+   "none"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "running",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "running",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "waiting",
+   "none"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "waiting",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "waiting",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "none",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "none",
+   "bogus"
+  ],
+  "out": "idle"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "idle",
+   "lost",
+   "bogus"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking",
+   "running"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking",
+   "none"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking",
+   "lost"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "thinking",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "running",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "running",
+   "none"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "running",
+   "lost"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "running",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "waiting",
+   "none"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "waiting",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "waiting",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "none",
+   "lost"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "none",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "done",
+   "lost",
+   "bogus"
+  ],
+  "out": "done"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "running",
+   "waiting"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "running",
+   "none"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "running",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "running",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "waiting",
+   "none"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "waiting",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "waiting",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "none",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "none",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "thinking",
+   "lost",
+   "bogus"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "waiting",
+   "none"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "waiting",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "waiting",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "none",
+   "lost"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "none",
+   "bogus"
+  ],
+  "out": "thinking"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "running",
+   "lost",
+   "bogus"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "none",
+   "lost"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "none",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "waiting",
+   "lost",
+   "bogus"
+  ],
+  "out": "waiting"
+ },
+ {
+  "fn": "dominant_status",
+  "keys": [
+   "none",
+   "lost",
+   "bogus"
+  ],
+  "out": "lost"
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "thinking",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "running",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "lost",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "idle",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "done",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "thinking",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "running",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "lost",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "done",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "thinking",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "running",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "lost",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "thinking",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "thinking",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "running",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "lost",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "running",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "done",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "thinking",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "running",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "waiting",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "lost",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "waiting",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "idle",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "thinking",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "running",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "lost",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "none",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "idle",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "thinking",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "running",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "none",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "lost",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "lost",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "idle",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "done",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "thinking",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "running",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "waiting",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "none",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "lost",
+  "out": true
+ },
+ {
+  "fn": "escalated",
+  "prev": "bogus",
+  "key": "bogus",
+  "out": false
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "",
+  "out": ""
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "xhigh",
+  "out": "xhigh"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "high",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "medium",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "low",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": "ultracode",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "",
+  "remembered": null,
+  "out": ""
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "",
+  "out": "xhigh"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "xhigh",
+  "out": "xhigh"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "high",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "medium",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "low",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": "ultracode",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "xhigh",
+  "remembered": null,
+  "out": "xhigh"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "xhigh",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "high",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "medium",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "low",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": "ultracode",
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "high",
+  "remembered": null,
+  "out": "high"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "xhigh",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "high",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "medium",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "low",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": "ultracode",
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "medium",
+  "remembered": null,
+  "out": "medium"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "xhigh",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "high",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "medium",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "low",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": "ultracode",
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "low",
+  "remembered": null,
+  "out": "low"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "xhigh",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "high",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "medium",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "low",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": "ultracode",
+  "out": "ultracode"
+ },
+ {
+  "fn": "resolve_effort",
+  "live": "ultracode",
+  "remembered": null,
+  "out": "ultracode"
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "manual",
+  "start": "manual",
+  "out": [
+   0,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "manual",
+  "start": "auto",
+  "out": [
+   1,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "manual",
+  "start": "weird",
+  "out": [
+   0,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "accept",
+  "start": "manual",
+  "out": [
+   1,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "accept",
+  "start": "auto",
+  "out": [
+   2,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "accept",
+  "start": "weird",
+  "out": [
+   1,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "plan",
+  "start": "manual",
+  "out": [
+   2,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "plan",
+  "start": "auto",
+  "out": [
+   3,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "plan",
+  "start": "weird",
+  "out": [
+   2,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "auto",
+  "start": "manual",
+  "out": [
+   3,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "auto",
+  "start": "auto",
+  "out": [
+   0,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "auto",
+  "start": "weird",
+  "out": [
+   3,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "bogus",
+  "start": "manual",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "bogus",
+  "start": "auto",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": null,
+  "target": "bogus",
+  "start": "weird",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "manual",
+  "start": "manual",
+  "out": [
+   0,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "manual",
+  "start": "auto",
+  "out": [
+   0,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "manual",
+  "start": "weird",
+  "out": [
+   0,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "accept",
+  "start": "manual",
+  "out": [
+   1,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "accept",
+  "start": "auto",
+  "out": [
+   1,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "accept",
+  "start": "weird",
+  "out": [
+   1,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "plan",
+  "start": "manual",
+  "out": [
+   2,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "plan",
+  "start": "auto",
+  "out": [
+   2,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "plan",
+  "start": "weird",
+  "out": [
+   2,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "auto",
+  "start": "manual",
+  "out": [
+   3,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "auto",
+  "start": "auto",
+  "out": [
+   3,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "auto",
+  "start": "weird",
+  "out": [
+   3,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "bogus",
+  "start": "manual",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "bogus",
+  "start": "auto",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 0,
+  "target": "bogus",
+  "start": "weird",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "manual",
+  "start": "manual",
+  "out": [
+   3,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "manual",
+  "start": "auto",
+  "out": [
+   3,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "manual",
+  "start": "weird",
+  "out": [
+   3,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "accept",
+  "start": "manual",
+  "out": [
+   0,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "accept",
+  "start": "auto",
+  "out": [
+   0,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "accept",
+  "start": "weird",
+  "out": [
+   0,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "plan",
+  "start": "manual",
+  "out": [
+   1,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "plan",
+  "start": "auto",
+  "out": [
+   1,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "plan",
+  "start": "weird",
+  "out": [
+   1,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "auto",
+  "start": "manual",
+  "out": [
+   2,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "auto",
+  "start": "auto",
+  "out": [
+   2,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "auto",
+  "start": "weird",
+  "out": [
+   2,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "bogus",
+  "start": "manual",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "bogus",
+  "start": "auto",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 1,
+  "target": "bogus",
+  "start": "weird",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "manual",
+  "start": "manual",
+  "out": [
+   2,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "manual",
+  "start": "auto",
+  "out": [
+   2,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "manual",
+  "start": "weird",
+  "out": [
+   2,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "accept",
+  "start": "manual",
+  "out": [
+   3,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "accept",
+  "start": "auto",
+  "out": [
+   3,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "accept",
+  "start": "weird",
+  "out": [
+   3,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "plan",
+  "start": "manual",
+  "out": [
+   0,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "plan",
+  "start": "auto",
+  "out": [
+   0,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "plan",
+  "start": "weird",
+  "out": [
+   0,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "auto",
+  "start": "manual",
+  "out": [
+   1,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "auto",
+  "start": "auto",
+  "out": [
+   1,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "auto",
+  "start": "weird",
+  "out": [
+   1,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "bogus",
+  "start": "manual",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "bogus",
+  "start": "auto",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 2,
+  "target": "bogus",
+  "start": "weird",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "manual",
+  "start": "manual",
+  "out": [
+   1,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "manual",
+  "start": "auto",
+  "out": [
+   1,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "manual",
+  "start": "weird",
+  "out": [
+   1,
+   0
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "accept",
+  "start": "manual",
+  "out": [
+   2,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "accept",
+  "start": "auto",
+  "out": [
+   2,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "accept",
+  "start": "weird",
+  "out": [
+   2,
+   1
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "plan",
+  "start": "manual",
+  "out": [
+   3,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "plan",
+  "start": "auto",
+  "out": [
+   3,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "plan",
+  "start": "weird",
+  "out": [
+   3,
+   2
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "auto",
+  "start": "manual",
+  "out": [
+   0,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "auto",
+  "start": "auto",
+  "out": [
+   0,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "auto",
+  "start": "weird",
+  "out": [
+   0,
+   3
+  ]
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "bogus",
+  "start": "manual",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "bogus",
+  "start": "auto",
+  "out": null
+ },
+ {
+  "fn": "mode_steps",
+  "remembered": 3,
+  "target": "bogus",
+  "start": "weird",
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "manual",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "manual",
+  "ts": 5,
+  "out": [
+   0,
+   5
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "manual",
+  "ts": 10,
+  "out": [
+   0,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "accept",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "accept",
+  "ts": 5,
+  "out": [
+   1,
+   5
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "accept",
+  "ts": 10,
+  "out": [
+   1,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "plan",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "plan",
+  "ts": 5,
+  "out": [
+   2,
+   5
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "plan",
+  "ts": 10,
+  "out": [
+   2,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "auto",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "auto",
+  "ts": 5,
+  "out": [
+   3,
+   5
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "auto",
+  "ts": 10,
+  "out": [
+   3,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "bogus",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "bogus",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": "bogus",
+  "ts": 10,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": null,
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": null,
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 0,
+  "mode": null,
+  "ts": 10,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "manual",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "manual",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "manual",
+  "ts": 10,
+  "out": [
+   0,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "accept",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "accept",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "accept",
+  "ts": 10,
+  "out": [
+   1,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "plan",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "plan",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "plan",
+  "ts": 10,
+  "out": [
+   2,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "auto",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "auto",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "auto",
+  "ts": 10,
+  "out": [
+   3,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "bogus",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "bogus",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": "bogus",
+  "ts": 10,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": null,
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": null,
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 5,
+  "mode": null,
+  "ts": 10,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "manual",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "manual",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "manual",
+  "ts": 10,
+  "out": [
+   0,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "accept",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "accept",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "accept",
+  "ts": 10,
+  "out": [
+   1,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "plan",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "plan",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "plan",
+  "ts": 10,
+  "out": [
+   2,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "auto",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "auto",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "auto",
+  "ts": 10,
+  "out": [
+   3,
+   10
+  ]
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "bogus",
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "bogus",
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": "bogus",
+  "ts": 10,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": null,
+  "ts": 0,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": null,
+  "ts": 5,
+  "out": null
+ },
+ {
+  "fn": "adopt_hook_mode",
+  "prev_ts": 9,
+  "mode": null,
+  "ts": 10,
+  "out": null
+ }
+]

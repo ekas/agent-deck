@@ -1,0 +1,9 @@
+# Pflicht: Kachelfläche/Halo (card_render.py) und die Griff-Kapsel
+# (handle_render.py) werden als RGBA-Bilder komponiert.
+Pillow>=10.0
+
+# Optional. claude_usage.py entschlüsselt den Token-Cache primär über Windows CNG
+# (bcrypt.dll) und ist damit abhängigkeitsfrei; schlägt das fehl, dient
+# 'cryptography' als Fallback. Ohne das Paket funktioniert alles außer diesem
+# Sonderfall.
+# cryptography>=42.0

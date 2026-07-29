@@ -1,0 +1,9 @@
+{
+  "slim": true,
+  "glow": true,
+  "jira_prefix": "PROJ",
+  "dock_edge": "left",
+  "dock_along": 269,
+  "model": "opus[1m]",
+  "language": "german"
+}

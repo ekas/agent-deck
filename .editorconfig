@@ -1,0 +1,60 @@
+# Formatregeln für alle drei Sprachen im Repo. Ohne diese Datei formatiert jede
+# IDE anders und Diffs füllen sich mit Whitespace-Rauschen.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+[*.{json,yml,yaml,js,jsonc}]
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.{md,markdown}]
+# Zeilenumbrüche am Zeilenende sind in Markdown bedeutsam
+trim_trailing_whitespace = false
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# ── C# ───────────────────────────────────────────────────────────────────
+[*.cs]
+indent_size = 4
+
+# Namensgebung und Aufbau
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Moderne, knappe Ausdrücke bevorzugen - das hält Dateien kurz und lesbar
+csharp_style_var_for_built_in_types = false:none
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+
+# Sichtbarkeit immer ausschreiben
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+
+# this. ist überflüssig
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+
+# Unbenutzte Dinge sind Fehler, nicht Geschmackssache
+dotnet_diagnostic.IDE0005.severity = warning   # unnötiges using
+dotnet_diagnostic.CS8618.severity = warning    # non-nullable nicht initialisiert
+
+[*.{xaml,csproj,props,targets}]
+indent_size = 2

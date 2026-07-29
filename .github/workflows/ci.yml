@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  python:
+    name: Python-Tests
+    # Muss Windows sein: die Testsuite fasst Win32 an (Arbeitsbereich des Monitors,
+    # Prozesskette) und importiert tkinter.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Abhängigkeiten
+        run: pip install -r requirements.txt
+
+      - name: Kompilieren aller Module (Syntaxprüfung)
+        run: python -m compileall -q .
+
+      - name: Unit-Tests
+        run: python tests/test_pure.py
+
+  dotnet:
+    name: .NET-Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Wiederherstellen
+        run: dotnet restore AgentDeck.sln
+
+      - name: Bauen
+        run: dotnet build AgentDeck.sln --no-restore -warnaserror
+
+      - name: Tests
+        run: dotnet test AgentDeck.sln --no-build --verbosity normal

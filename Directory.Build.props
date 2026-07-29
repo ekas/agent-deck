@@ -1,0 +1,45 @@
+<Project>
+
+  <!--
+    Gemeinsame Einstellungen für ALLE Projekte. Sie stehen hier und nicht in den
+    einzelnen .csproj, damit ein neues Projekt nichts vergessen kann und ein
+    Reviewer die Regeln an einer Stelle sieht.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!--
+      Warnungen sind Fehler - auch lokal, nicht nur in der CI. Eine Warnung, die
+      man im Build übersieht, wird nie behoben; und ein Agent, der nur auf
+      "Build succeeded" schaut, übersieht sie garantiert.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Deutsche Kommentare und Umlaute im Quelltext brauchen eine klare Kodierung. -->
+    <NeutralLanguage>de</NeutralLanguage>
+
+    <!-- Deterministische Builds: gleiche Eingabe -> gleiche Ausgabe. -->
+    <Deterministic>true</Deterministic>
+
+    <!--
+      Nötig, damit IDE0005 (unnötige usings) beim Build überhaupt greift - der
+      Analyzer läuft nur mit erzeugter Doku-Datei (dotnet/roslyn#41640).
+      CS1591 (fehlende Doku) und CS1573 (nicht ALLE Parameter dokumentiert) dazu
+      abschalten: Doku ist für die erklärungsbedürftigen Stellen da, nicht als
+      Pflichtübung. Sonst entstehen Zeilen wie
+      <param name="width">Die Breite.</param> - reines Rauschen, das echte
+      Erklärungen zudeckt.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <!-- Testprojekte brauchen keine XML-Doku-Pflicht. -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
