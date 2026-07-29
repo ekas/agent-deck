@@ -14,14 +14,13 @@ deck_common, kein tkinter): der Hook laeuft in wechselnden Arbeitsverzeichnissen
 und darf NIE mit Fehler enden (sonst blockiert er den Agenten). Die Slot-
 Aufloesung + der State-Ordner wohnen jetzt in hookstate/paths.
 """
+import json
 import os
 import sys
-import json
 import time
 
 from deck.claude.hooks import resolve
 from deck.domain import paths
-
 
 # Claude-Code-permission_mode (aus dem Hook-stdin) -> Namen wie in config.MODE_CYCLE.
 _MODE_MAP = {

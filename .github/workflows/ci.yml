@@ -8,7 +8,7 @@ on:
 
 jobs:
   python:
-    name: Python-Tests
+    name: Prüfen und Testen
     # Muss Windows sein: die Testsuite fasst Win32 an (Arbeitsbereich des Monitors,
     # Prozesskette) und importiert tkinter.
     runs-on: windows-latest
@@ -20,11 +20,24 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - name: Abhängigkeiten
-        run: pip install -r requirements.txt
+      - name: Abhängigkeiten (Laufzeit + Werkzeuge)
+        # -e . macht `deck` importierbar, ohne am sys.path zu schrauben.
+        run: pip install -e ".[dev]"
 
       - name: Kompilieren aller Module (Syntaxprüfung)
         run: python -m compileall -q .
 
+      - name: Linter
+        run: python -m ruff check .
+
+      - name: Typprüfung
+        # Nur die anzeigefreien Schichten - siehe [tool.mypy] in pyproject.toml.
+        run: python -m mypy
+
       - name: Unit-Tests
+        run: python -m pytest tests/ -q
+
+      - name: Testlauf ohne pytest
+        # Der eigene Runner ist der Weg, den das Repo ohne Test-Abhängigkeit anbietet -
+        # er muss darum genauso grün sein wie der pytest-Lauf.
         run: python tests/run.py

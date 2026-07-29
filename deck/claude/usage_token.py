@@ -8,18 +8,18 @@ Fremdpaket. Schlaegt das fehl, dient 'cryptography' als optionaler Rueckfall.
 Gelesen wird defensiv: Claude Desktop haelt seine Dateien offen, ein Lesen mit Sperre
 wuerde die App blockieren.
 """
-from ctypes import wintypes
 import base64
 import ctypes
 import glob
 import json
 import os
 import time
-
+from ctypes import wintypes
 
 # ── Windows-API defensiv laden ───────────────────────────
 # Schlaegt ein Laden fehl (z.B. Nicht-Windows beim Test-Import), bleibt _WINOK
 # False; fetch_usage wirft dann sauber, statt beim Import zu crashen.
+_k32: ctypes.WinDLL | None
 try:
     _k32 = ctypes.WinDLL("kernel32", use_last_error=True)
     _k32.CreateFileW.restype = wintypes.HANDLE
@@ -254,7 +254,9 @@ def _read_tokens_from_cli():
 
 
 # ── Token aus Claude Desktop lesen (mit Cache) ───────────
-_token_cache = []
+# [(token, ablauf_ms)] - eine Liste, damit sie in place ersetzt werden kann,
+# ohne dass Aufrufer eine neue Referenz brauchen.
+_token_cache: list[tuple[str, int | None]] = []
 
 
 def _read_tokens_from_disk():

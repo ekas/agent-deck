@@ -2,8 +2,9 @@
 echte Rueckfrage ist (der Hook feuert fuer acht Faelle, nur drei zaehlen).
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.claude.hooks import report
 
 

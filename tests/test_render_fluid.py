@@ -1,8 +1,10 @@
 """Das Schwappen im Kern der Kapsel (fluid + capsule.WAVE_*).
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
-from helpers import HR_W, HR_TUBE, HR_LEN
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
+from helpers import HR_LEN, HR_TUBE, HR_W
 
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
@@ -10,7 +12,6 @@ from deck.dock import wave as dockwave
 from deck.render import capsule as hrender
 from deck.render import capsule_masks as cmask
 from deck.render import fluid as hwave
-
 
 # Variante 09 der Fluid-Vorlage: das helle Mittelstueck kippt zur einen Seite, zurueck
 # zur anderen, und kommt zur Ruhe. Die Zusage dahinter ist, dass der ausgewaehlte
@@ -167,7 +168,7 @@ def test_wave_is_a_damped_swing_that_returns_to_rest():
     # Zyklisch (auf Rundung, nicht auf das Bit: fmod laesst in der letzten Stelle
     # Rest) – das ist es, was die Bewegung zur reinen Funktion der Zeit macht.
     a, b = hwave.profile(24, 0.7), hwave.profile(24, 0.7 + hwave.PERIOD)
-    assert max(abs(x - y) for x, y in zip(a, b)) < 1e-9
+    assert max(abs(x - y) for x, y in zip(a, b, strict=False)) < 1e-9
     p = hwave.profile(101, WAVE_PEAK)
     assert len(p) == 101 and all(hwave.LO <= v <= hwave.HI for v in p)
     assert abs(p[50]) < 0.35 < abs(p[0]), (p[0], p[50])       # Knoten in der Mitte

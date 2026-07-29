@@ -5,7 +5,9 @@ Entscheidung, ob neu gestartet wird. Dazu die Heartbeat-Pruefung.
 import os
 import time
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+
+                # sys.path und nagelt die Deck-Sprache auf Deutsch.
 
 
 # Frage, die der Waechter falsch machen DARF und nicht falsch machen SOLL: darf er
@@ -14,6 +16,7 @@ import helpers  # setzt sys.path und die Deck-Sprache
 def _befund_fuer(log_text):
     """last_end() gegen ein praepariertes panel.log laufen lassen."""
     import tempfile
+
     from deck.ops import log
     from deck.ops import watchdog as wd
     fd, path = tempfile.mkstemp(prefix="panellog_", suffix=".log")
@@ -91,6 +94,7 @@ def test_heartbeat_frische_und_pid_muessen_passen():
     """beats_for(): nur ein frisches Lebenszeichen DIESER PID gilt. Sonst haelt der
     Guard ein fremdes/altes Signal fuer ein lebendes Panel (oder umgekehrt)."""
     import tempfile
+
     from deck.ops import instance as si
     d = tempfile.mkdtemp(prefix="beat_")
     alt = si.BEAT_PATH

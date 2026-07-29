@@ -6,10 +6,10 @@ Ausgang, die Deadline und der Watchdog gegen den ausgefallenen Frame-Timer.
 
 import tkinter as tk
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.dock import controller as ed
-
 
 # Der eine Zustand, den es nicht geben darf, ist ein halb ausgefahrenes Deck. Die
 # Tests hier stellen genau die Stoerungen nach, die frueher dazu fuehrten: eine
@@ -37,7 +37,7 @@ def _dock_anim(edge="left"):
 
         def after(self, ms, fn):
             self.jobs.append(fn)
-            return "job%d" % len(self.jobs)
+            return f"job{len(self.jobs)}"
 
         def after_cancel(self, job):
             pass
@@ -104,7 +104,7 @@ def test_dock_anim_reaches_target_and_releases():
     _run_frames(d)
     assert d._anim is None and d.expanded is True
     assert d.held[0] == 0
-    x, y, w, h = _ANIM_TARGET
+    x, y, _w, _h = _ANIM_TARGET
     assert d.root.geoms[-1].endswith(f"+{x}+{y}")
 
 

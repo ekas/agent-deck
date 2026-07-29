@@ -7,11 +7,9 @@ rein, Zeile raus.
 Zahlen fuer Menschen brauchen einen festen Punkt als Dezimaltrenner; eine
 locale-abhaengige Formatierung zeigt auf einem deutschen System sonst $0,15 statt $0.15.
 """
-from datetime import datetime
-from datetime import timezone
+from datetime import UTC, datetime
 
 from deck import i18n
-
 
 # Ampelfarben (identisch zur Deck-Palette: done-gruen / waiting-amber / lost-rot),
 # damit das Badge sich nahtlos einfuegt. severity kommt direkt aus der API.
@@ -30,8 +28,8 @@ def fmt_reset(iso, now=None):
     except (ValueError, TypeError):
         return ""
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    now = now or datetime.now(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    now = now or datetime.now(UTC)
     delta = (dt - now).total_seconds()
     if delta <= 0:
         return i18n.L("jetzt", "now")
@@ -78,7 +76,7 @@ def _limit_label(lim):
 
 
 def _pct(v):
-    return int(round(v)) if isinstance(v, (int, float)) else None
+    return round(v) if isinstance(v, (int, float)) else None
 
 
 def parse_usage(data):
@@ -114,7 +112,7 @@ def parse_usage(data):
                            "label": i18n.L("Woche", "Week"),
                            "percent": _pct(seven["utilization"]), "severity": "",
                            "resets_at": seven.get("resets_at"), "active": False})
-    session = next((l for l in limits if l["group"] == "session" or l["kind"] == "session"), None)
+    session = next((lim for lim in limits if lim["group"] == "session" or lim["kind"] == "session"), None)
     return {"session": session, "limits": limits}
 
 
@@ -130,14 +128,14 @@ def _keep_in_tooltip(lim):
 def tooltip_text(snap, now=None):
     """Mehrzeiliger Hover-Text aus einem Poller-Snapshot (siehe UsagePoller)."""
     head = i18n.L("Claude – Nutzung", "Claude – usage")
-    limits = [l for l in (snap.get("limits") or []) if _keep_in_tooltip(l)]
+    limits = [lim for lim in (snap.get("limits") or []) if _keep_in_tooltip(lim)]
     if not limits:
         return f"{head}\n{snap.get('error') or i18n.L('warte auf Daten…', 'waiting for data…')}"
     lines = [head]
-    for l in limits:
-        pct = f"{l['percent']} %" if l["percent"] is not None else "— %"
-        reset = fmt_reset(l["resets_at"], now)
-        line = f"{l['label']}: {pct}"
+    for lim in limits:
+        pct = f"{lim['percent']} %" if lim["percent"] is not None else "— %"
+        reset = fmt_reset(lim["resets_at"], now)
+        line = f"{lim['label']}: {pct}"
         if reset:
             line += i18n.L(f"  ·  Reset in {reset}", f"  ·  resets in {reset}")
         lines.append(line)

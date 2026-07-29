@@ -4,8 +4,9 @@ Ein mehrzeiliger Prompt wird von der Extension als mehrere Eingaben
 abgeschickt - der Agent bekommt dann Bruchstuecke.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.domain import config as cfg
 
 

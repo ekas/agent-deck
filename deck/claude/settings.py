@@ -12,8 +12,8 @@ permissions.allow etc. bleiben unangetastet) und schreiben atomar + eingerueckt
 (die Datei wird auch von Hand editiert). Reine Stdlib, kein Deck-Import -> von
 ueberall gefahrlos nutzbar (auch aus den Tests).
 """
-import os
 import json
+import os
 
 # %USERPROFILE%\.claude\settings.json — dieselbe globale Datei, in der die
 # report.py-Hooks und die statusLine stehen (global, weil die VS-Code-Fenster

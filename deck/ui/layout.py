@@ -100,8 +100,8 @@ class LayoutMixin:
             return
         self._slim_relayout = True
         try:
-            self.deck.configure(width=int(round(nat_w * scale)) + 2,
-                                height=int(round(nat_h * scale)) + 2)
+            self.deck.configure(width=round(nat_w * scale) + 2,
+                                height=round(nat_h * scale) + 2)
             self.root.update_idletasks()      # requested size neu berechnen (inkl. Padding)
             self.root.geometry(
                 f"{self.root.winfo_reqwidth()}x{self.root.winfo_reqheight()}")

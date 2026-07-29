@@ -13,9 +13,11 @@ import math
 import time
 import tkinter as tk
 
-from deck.render import card as cr
 from deck.domain import config as cfg
-from deck.render.kit import BG, CARD_FILL, INK_3, hex_to_rgb as _hex_to_rgb, mix as _mix
+from deck.render import card as cr
+from deck.render.kit import BG, CARD_FILL, INK_3
+from deck.render.kit import hex_to_rgb as _hex_to_rgb
+from deck.render.kit import mix as _mix
 
 # Timing kommt zentral aus der config (Fallback = bisherige Werte).
 ANIM_MS = getattr(cfg, "ANIM_MS", 55)
@@ -110,7 +112,7 @@ class GlowAnimator:
         if ids.get("rect"):
             try:
                 self.canvas.itemconfig(ids["rect"], outline=color,
-                                       width=max(1, int(round(width))))
+                                       width=max(1, round(width)))
             except tk.TclError:
                 return False
         return True
@@ -144,7 +146,7 @@ class GlowAnimator:
         if "rings" not in ids:
             return
         try:
-            for ring, ringbase in zip(ids["rings"], GLOW_RINGS):
+            for ring, ringbase in zip(ids["rings"], GLOW_RINGS, strict=False):
                 toward_bg = 1 - (1 - ringbase) * eff   # eff>1 -> _mix klemmt auf Vollfarbe
                 self.canvas.itemconfig(ring, outline=_mix(color, BG, toward_bg))
         except tk.TclError:
@@ -164,7 +166,7 @@ class GlowAnimator:
         ps = ids.get("press_scale", 1.0)
         ps = round(ps * 40) / 40 if abs(ps - 1.0) > 0.005 else 1.0
         if ps != 1.0:
-            w, h, r, pad = (max(1, int(round(v * ps))) for v in (w, h, r, pad))
+            w, h, r, pad = (max(1, round(v * ps)) for v in (w, h, r, pad))
         key = (w, h, r, pad, ids.get("fill_hex"), color, round(eff, 2),
                ids.get("border"), ids.get("border_w", 1))
         if key == ids.get("img_key"):
@@ -212,7 +214,7 @@ class GlowAnimator:
                     cur[2] += db * FILL_EASE
                 else:
                     cur[0], cur[1], cur[2] = float(tgt[0]), float(tgt[1]), float(tgt[2])
-                hexf = "#%02x%02x%02x" % (round(cur[0]), round(cur[1]), round(cur[2]))
+                hexf = f"#{round(cur[0]):02x}{round(cur[1]):02x}{round(cur[2]):02x}"
                 if hexf != ids.get("fill_hex"):
                     ids["fill_hex"] = hexf
                     if ids.get("rect"):          # Polygon-Fallback: Fläche direkt
@@ -261,8 +263,12 @@ class GlowAnimator:
         ids["press_cx"], ids["press_cy"] = cx, cy
 
         def s_of(p):
-            eo = lambda q: 1 - (1 - q) ** 3            # ease-out
-            eio = lambda q: q * q * (3 - 2 * q)        # smoothstep
+            def eo(q):                                 # ease-out
+                return 1 - (1 - q) ** 3
+
+            def eio(q):                                # smoothstep
+                return q * q * (3 - 2 * q)
+
             if p < _PHASE_IN:                          # 1) eindrücken
                 return 1 - (1 - _PRESS_DIP) * eo(p / _PHASE_IN)
             if p < _PHASE_BACK:                        # 2) zurück & überschwingen

@@ -4,10 +4,10 @@
 
 import os
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.ops import worktree as wtc
-
 
 _WT_PORCELAIN = (
     "worktree C:/repo/my-backend\n"
@@ -50,7 +50,8 @@ def test_wt_main_and_branch_lookup():
 # rmtree, wenn git fehlt). Nur ein VERLINKTER worktree (.git -> …/worktrees/<name>)
 # darf True sein – Submodul (…/modules/…), separate-git-dir und Haupt-Checkout NICHT.
 def test_is_linked_worktree_guard():
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="wtguard_")
     try:
         def mk(name, gitfile_content=None, gitdir=False):
@@ -97,7 +98,8 @@ def test_wt_dir_for_repo_roundtrip():
 
 
 def test_list_child_dirs():
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="wtdisk_")
     try:
         wt = os.path.join(base, "repo.wt")
@@ -117,7 +119,8 @@ def test_remove_orphan_dir_guard_and_removal():
     verweigert), verweigert aber JEDES Verzeichnis, das noch ein .git enthaelt – egal ob
     .git-VERZEICHNIS (echter Checkout) oder .git-DATEI (Submodul/separate-git-dir/worktree).
     Ohne repo laeuft kein git -> reiner rmtree, in den Tests unkritisch."""
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="wtorphan_")
     try:
         # (1) Rest ohne .git -> wird entfernt.

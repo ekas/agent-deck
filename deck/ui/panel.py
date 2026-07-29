@@ -25,7 +25,6 @@ import queue
 import subprocess
 import sys
 import threading
-import time
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -34,7 +33,6 @@ from deck.claude import summarize as cs
 from deck.dock.controller import EdgeDock
 from deck.domain import config as cfg
 from deck.domain import paths as dp
-from deck.domain import slot_state as dc
 from deck.domain.binding import BindStore
 from deck.net.broker import Broker
 from deck.net.commands import BrokerCommands
@@ -46,21 +44,20 @@ from deck.platform import focus as wf
 from deck.render import kit as ck
 from deck.render.glow import GlowAnimator
 from deck.render.kit import BG
-
-from deck.ui.theme import SUMMARY_ON, TICKET_AUTO
-from deck.ui.layout import LayoutMixin
-from deck.ui.tiles import TilesMixin
-from deck.ui.tile_draw import TileDrawMixin
-from deck.ui.reorder import ReorderMixin
-from deck.ui.hover import HoverMixin
-from deck.ui.uithread import UiThreadMixin
-from deck.ui.connect import ConnectMixin
-from deck.ui.refresh import RefreshMixin
-from deck.ui.windows import WindowSyncMixin
 from deck.ui.actions import ActionsMixin
-from deck.ui.ticket import TicketMixin
-from deck.ui.worktree_sweep import WorktreeSweepMixin
+from deck.ui.connect import ConnectMixin
+from deck.ui.hover import HoverMixin
+from deck.ui.layout import LayoutMixin
+from deck.ui.refresh import RefreshMixin
+from deck.ui.reorder import ReorderMixin
 from deck.ui.settings_dialog import SettingsMixin
+from deck.ui.theme import SUMMARY_ON, TICKET_AUTO
+from deck.ui.ticket import TicketMixin
+from deck.ui.tile_draw import TileDrawMixin
+from deck.ui.tiles import TilesMixin
+from deck.ui.uithread import UiThreadMixin
+from deck.ui.windows import WindowSyncMixin
+from deck.ui.worktree_sweep import WorktreeSweepMixin
 
 
 class AgentDeck(
@@ -329,7 +326,7 @@ class AgentDeck(
         env = dict(os.environ)
         env[si.RESTART_ENV] = "1"
         try:
-            subprocess.Popen([sys.executable, script] + sys.argv[1:],
+            subprocess.Popen([sys.executable, script, *sys.argv[1:]],
                              cwd=os.path.dirname(script), env=env)
         except Exception:
             return          # Fehlstart -> laufende Instanz heil lassen (Port bleibt belegt)

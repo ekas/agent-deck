@@ -17,13 +17,13 @@ Defensiv gebaut wie zuvor das Badge: ein fehlendes/kaputtes Usage-Modul oder ein
 nicht laufendes Claude Desktop darf das Deck NIE am Start hindern -> dann bleibt
 self.poller None, die Leiste samt Zahnrad bleibt aber bestehen.
 """
-import webbrowser
 import tkinter as tk
 import tkinter.font as tkfont
+import webbrowser
 
-from deck.render.kit import BG, INK, INK_2, INK_3, round_rect, Tooltip
-from deck.platform import dpi
 from deck import i18n
+from deck.platform import dpi
+from deck.render.kit import INK_2, INK_3, Tooltip, round_rect
 
 # ── Leisten-Palette (Frost, aber flach statt Pille) ──────────────────────
 # Alle Masse hier sind DESIGN-Einheiten (Mass bei 100 %); gezeichnet wird mit
@@ -149,7 +149,6 @@ class BottomBar:
         c.create_line(0, 0, w, 0, fill=_BORDER)
 
         cy = H / 2
-        hl = _HOVER if self._hovering else None  # (Neuzeichnen behaelt den Hover-Zustand)
 
         # ── links: Claude-Nutzung (nur wenn ein Poller laeuft) ──
         if self.poller is not None:

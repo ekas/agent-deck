@@ -7,3 +7,7 @@ Pillow>=10.0
 # 'cryptography' als Fallback. Ohne das Paket funktioniert alles außer diesem
 # Sonderfall.
 # cryptography>=42.0
+
+# Werkzeuge stehen NICHT hier, sondern in pyproject.toml unter [dev]:
+#   pip install -e ".[dev]"      -> ruff, mypy, pytest
+# Diese Datei bleibt die Laufzeit-Liste; zur Laufzeit kommt nichts außer Pillow dazu.

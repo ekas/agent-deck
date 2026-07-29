@@ -15,11 +15,22 @@ Bildperiode des Monitors (frame_tick_ms), nicht an einem festen Intervall.
 import math
 import tkinter as tk
 
-from deck.platform import focus as wf
+from deck.dock.metrics import (
+    ANIM_DEADLINE_MS,
+    BORDER_COLOR,
+    BORDER_LAND_FRAMES,
+    BORDER_LAND_MS,
+    BORDER_LAND_WHITE,
+    COLLAPSE_RESPONSE_MS,
+    EDGE_GAP,
+    POLL_MS,
+    REVEAL_RESPONSE_MS,
+    SPRING_SETTLE_PX,
+    frame_tick_ms,
+    handle_thick,
+)
 from deck.platform import timing as wtime
 from deck.render.kit import mix as _mix
-
-from deck.dock.metrics import ANIM_DEADLINE_MS, BORDER_COLOR, BORDER_LAND_FRAMES, BORDER_LAND_MS, BORDER_LAND_WHITE, COLLAPSE_RESPONSE_MS, EDGE_GAP, POLL_MS, REVEAL_RESPONSE_MS, SPRING_SETTLE_PX, frame_tick_ms, handle_thick
 
 
 class AnimationMixin:
@@ -161,7 +172,7 @@ class AnimationMixin:
         # (16 ms Warten + 9 ms Arbeit = 25 ms Abstand) und die Bewegung wird
         # ungleichmäßig, sobald die Frames unterschiedlich teuer sind – und beim
         # Aufklappen sind sie genau das (siehe ANIM_TICK_FALLBACK_MS).
-        delay = int(round(a["tick"] - (self._now_ms() - t0)))
+        delay = round(a["tick"] - (self._now_ms() - t0))
         try:
             a["job"] = self.root.after(max(1, delay), self._anim_step)
         except tk.TclError:
@@ -311,7 +322,7 @@ class AnimationMixin:
 
         Das + EDGE_GAP im span ist genau diese Einrückung des Ziels: ohne es käme der
         Startstreifen um EDGE_GAP breiter heraus als der Griff, den er ersetzt."""
-        return int(round(self._slide_span() * (1.0 - self._clamp(v, 0.0, 1.0))))
+        return round(self._slide_span() * (1.0 - self._clamp(v, 0.0, 1.0)))
 
     def _slide_span(self):
         """Weglänge des Slides in px – vom Griffstreifen bis aufs Ziel. Auch die

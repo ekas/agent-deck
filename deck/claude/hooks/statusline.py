@@ -13,9 +13,9 @@ pidmap ueber die Prozesskette), genau wie der report-Hook. Gibt IMMER eine Zeile
 aus (auch ohne Slot), damit die Statuszeile im Terminal nicht leer ist. Darf nie
 mit Fehler enden.
 """
+import json
 import os
 import sys
-import json
 import time
 
 from deck.claude.hooks import resolve  # Slot-Aufloesung + State-Ordner (gemeinsamer Hook-Leaf)

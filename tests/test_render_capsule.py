@@ -1,16 +1,18 @@
 """capsule: die Neonroehre mit Alphakanal - reine Bildrechnung, kein Tk.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
-from helpers import HR_W, HR_TUBE, HR_LEN
+import itertools
+
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
+from helpers import HR_LEN, HR_TUBE, HR_W
 
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
-from deck.platform import focus as wf
 from deck.platform import timing as wtime
 from deck.render import capsule as hrender
 from deck.render import capsule_masks as cmask
-
 
 # Getestet wird handle_rgba/handle_bits – beides braucht kein Fenster. Was NICHT
 # hierher kann, ist das Schieben ins Fenster selbst (win_focus.layered_push, reines
@@ -203,7 +205,7 @@ def test_handle_breathing_is_a_ramp_not_a_staircase():
         keys.append(round(hrender._qe(d._eff_intensity()), 6))
     assert len(set(keys)) >= dockm.NEON_PULSE_TICKS * 0.3, len(set(keys))
     laengste, lauf = 1, 1
-    for a, b in zip(keys, keys[1:]):
+    for a, b in itertools.pairwise(keys):
         lauf = lauf + 1 if a == b else 1
         laengste = max(laengste, lauf)
     assert laengste * dockm.NEON_MS <= 200, laengste * dockm.NEON_MS

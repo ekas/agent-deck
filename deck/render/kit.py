@@ -10,8 +10,7 @@ import math
 import tkinter as tk
 import tkinter.font as tkfont
 
-from deck.platform import dpi
-from deck.platform import monitor
+from deck.platform import dpi, monitor
 
 # ── FROSTPANE-Palette: dunkles OS-Glas, heller Text ──────────────────────
 BG          = "#121218"   # Panel-/Fensterkoerper (dunkel getoent)
@@ -33,7 +32,7 @@ def mix(c1, c2, t):
     Glow-Halo (Statusfarbe -> BG) und leicht getoente Kartenkanten."""
     t = 0.0 if t < 0 else 1.0 if t > 1 else t
     a, b = hex_to_rgb(c1), hex_to_rgb(c2)
-    return "#%02x%02x%02x" % tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
+    return "#{:02x}{:02x}{:02x}".format(*tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3)))
 
 
 def short_model(s):
@@ -51,7 +50,8 @@ def fit_label(font, text, maxw, max_lines=2):
     text = " ".join(str(text).split())          # Whitespace/Zeilenumbrueche glaetten
     if not text or font.measure(text) <= maxw:
         return text
-    fits = lambda s: font.measure(s) <= maxw
+    def fits(s):
+        return font.measure(s) <= maxw
     # In Stuecke zerlegen, die je fuer sich auf eine Zeile passen (lange Woerter hart trennen).
     pieces = []
     for w in text.split(" "):
@@ -227,7 +227,7 @@ def pill_bar(parent, items, side="left"):
                   height=H + 6, width=max(total + 2, 1))
     c.pack(side="right", anchor="e") if side == "right" else c.pack(anchor="w")
     x = 1
-    for i, ((lbl, cb), w) in enumerate(zip(items, widths)):
+    for i, ((lbl, cb), w) in enumerate(zip(items, widths, strict=False)):
         rect = round_rect(c, x, 3, x + w, 3 + H, R,
                           fill=base, outline=base_bd, width=1)
         txt = c.create_text(x + w / 2, 3 + H / 2, text=lbl, fill=base_fg, font=font)

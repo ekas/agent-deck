@@ -11,11 +11,22 @@ laeuft ueber handle_thick(), nie ueber die Fensterbreite.
 import math
 import tkinter as tk
 
+from deck.dock.metrics import (
+    DRAG_THRESH,
+    HANDLE_BG,
+    HANDLE_MAX_LEN,
+    HANDLE_MIN_LEN,
+    HANDLE_THICK,
+    HOVER_REVEAL_MS,
+    NEON_FLOOR,
+    NEON_LAYERS,
+    NEON_PULSE_TICKS,
+    capsule_extent,
+    handle_thick,
+)
 from deck.platform import focus as wf
 from deck.platform import layered as wlayer
 from deck.render import capsule as hrender
-
-from deck.dock.metrics import DRAG_THRESH, HANDLE_BG, HANDLE_MAX_LEN, HANDLE_MIN_LEN, HANDLE_THICK, HOVER_REVEAL_MS, NEON_FLOOR, NEON_LAYERS, NEON_PULSE_TICKS, capsule_extent, handle_thick
 
 
 class HandleMixin:

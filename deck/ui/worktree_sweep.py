@@ -14,10 +14,12 @@ from deck.domain import slot_state as dc
 from deck.domain.binding import ticket_branch as _ticket_branch
 from deck.domain.binding import ticket_slug as _ticket_slug
 from deck.ops import worktree as wtc
-from deck.ui.theme import WINDOWS
-from deck.ui.theme import WT_DISK_ORPHAN_GRACE_S
-from deck.ui.theme import WT_DISK_SWEEP_INTERVAL_S
-from deck.ui.theme import WT_ORPHAN_GRACE_S
+from deck.ui.theme import (
+    WINDOWS,
+    WT_DISK_ORPHAN_GRACE_S,
+    WT_DISK_SWEEP_INTERVAL_S,
+    WT_ORPHAN_GRACE_S,
+)
 
 
 class WorktreeSweepMixin:

@@ -1,13 +1,13 @@
 """status_model: Statusinterpretation ohne Anzeige.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+from helpers import _CYCLE, _GLOW
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.dock import metrics as dockm
 from deck.domain import status_model as sm
 from deck.render import kit as ck
-
-from helpers import _CYCLE, _GLOW
 
 
 def test_is_fresh():

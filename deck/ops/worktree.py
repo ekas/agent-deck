@@ -26,10 +26,10 @@ Reine stdlib. Der eigentliche Lauf (subprocess/rmtree/sleep) gehoert NICHT auf d
 Tk-Thread; agent_deck ruft remove_worktree() aus einem Daemon-Thread.
 """
 import os
-import time
-import stat
 import shutil
+import stat
 import subprocess
+import time
 
 from deck.domain.paths import STATE_DIR
 
@@ -112,7 +112,7 @@ def _run_git(args, cwd):
     solche Zeichen. Darum hart UTF-8. `core.quotepath=false` haelt Nicht-ASCII zudem
     unescaped. (Gleiche Lektion wie beim Hook-stdin, report.py.)"""
     try:
-        p = subprocess.run(["git", "-c", "core.quotepath=false"] + list(args), cwd=cwd,
+        p = subprocess.run(["git", "-c", "core.quotepath=false", *list(args)], cwd=cwd,
                            capture_output=True, text=True, encoding="utf-8",
                            errors="replace", timeout=30, creationflags=_NO_WINDOW)
         return p.returncode, (p.stdout or "") + (p.stderr or "")

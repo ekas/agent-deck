@@ -5,8 +5,9 @@ Hooks und statusLine muessen die Runde ueberleben.
 import json
 import os
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.claude import settings as cset
 
 
@@ -14,7 +15,8 @@ def test_claude_settings_write_merges_and_preserves():
     """write_values darf NUR die vier Keys anfassen – Hooks, statusLine und vor allem
     permissions.allow muessen unangetastet bleiben (sonst zerschiesst das Deck die
     handgepflegte settings.json)."""
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="csettings_")
     p = os.path.join(base, "settings.json")
     try:
@@ -40,7 +42,8 @@ def test_claude_settings_write_merges_and_preserves():
 def test_claude_settings_write_creates_file_and_is_partial():
     """Fehlende Datei/Ordner wird angelegt; None-Argumente lassen ihren Key weg
     (kein leeres permissions:{} wenn mode=None)."""
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="csettings2_")
     p = os.path.join(base, "nested", "settings.json")
     try:
@@ -106,7 +109,8 @@ def test_claude_settings_effort_and_ultracode():
 
 
 def test_claude_settings_effort_ultracode_roundtrip():
-    import tempfile, shutil
+    import shutil
+    import tempfile
     base = tempfile.mkdtemp(prefix="csettings3_")
     p = os.path.join(base, "settings.json")
     try:

@@ -26,17 +26,17 @@ Reine stdlib. Der Aufruf blockiert (subprocess) und gehoert NICHT auf den Tk-Thr
 agent_deck ruft `generate()` aus einem Daemon-Thread. `extract_turns`/`build_digest`/
 `clean_summary`/`find_ticket`/`find_pr` sind pur und unit-getestet (tests/test_claude_summarize.py).
 """
-import os
-import re
 import glob
 import json
-import time
+import os
+import re
 import shutil
-import threading
 import subprocess
+import threading
+import time
 
-from deck.domain import paths
 from deck.claude.refs import find_refs
+from deck.domain import paths
 
 # Auf Windows (pythonw) kein kurz aufblitzendes Konsolenfenster fuer claude.
 _NO_WINDOW = 0x08000000 if os.name == "nt" else 0
@@ -140,7 +140,7 @@ def build_digest(turns, max_chars=3500, per_turn=600):
         text = " ".join(text.split())
         if len(text) > per_turn:
             text = text[:per_turn].rstrip() + "…"
-        return "%s: %s" % (_ROLE.get(role, role), text)
+        return f"{_ROLE.get(role, role)}: {text}"
 
     first = fmt(*turns[0])
     picked, total = [], len(first)

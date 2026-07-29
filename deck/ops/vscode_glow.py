@@ -22,13 +22,13 @@ HINWEIS: Reload startet die Terminals dieses Fensters neu (inkl. laufender
 Claude-Session). Ggf. das ANDERE Fenster zuerst neu laden.
 """
 
+import glob
 import os
 import re
-import sys
-import glob
-import uuid
 import shutil
-from urllib.parse import urlparse, unquote
+import sys
+import uuid
+from urllib.parse import unquote, urlparse
 
 from deck import i18n
 from deck.domain import paths
@@ -112,7 +112,7 @@ def read_imports():
         candidates.append(os.path.join(appdata, "Code - Insiders", "User", "settings.json"))
     for sp in candidates:
         try:
-            with open(sp, "r", encoding="utf-8") as f:
+            with open(sp, encoding="utf-8") as f:
                 raw = f.read()
         except OSError:
             continue
@@ -147,20 +147,20 @@ def build_inject(imports):
     parts = []
     for p in imports:
         try:
-            with open(p, "r", encoding="utf-8") as f:
+            with open(p, encoding="utf-8") as f:
                 content = f.read()
         except (OSError, UnicodeDecodeError) as e:
             # UnicodeDecodeError ist KEIN OSError -> hier explizit mitfangen,
             # sonst bricht ein Nicht-UTF-8-Import den ganzen Patch ab.
-            print("  ! Import nicht lesbar / kein UTF-8, uebersprungen: %s (%s)" % (p, e))
+            print(f"  ! Import nicht lesbar / kein UTF-8, uebersprungen: {p} ({e})")
             continue
         ext = os.path.splitext(p)[1].lower()
         if ext == ".css":
-            parts.append("<style>%s</style>" % content)
+            parts.append(f"<style>{content}</style>")
         elif ext == ".js":
-            parts.append("<script>%s</script>" % content)
+            parts.append(f"<script>{content}</script>")
         else:
-            print("  ! Unbekannter Typ, uebersprungen: %s" % p)
+            print(f"  ! Unbekannter Typ, uebersprungen: {p}")
     return "".join(parts)
 
 
@@ -174,13 +174,13 @@ def _sweep_backups(d, keep=None):
 
 
 def patch(wb, imports):
-    with open(wb, "r", encoding="utf-8") as f:
+    with open(wb, encoding="utf-8") as f:
         html = f.read()
     html = clear_existing(html)
 
     d = os.path.dirname(wb)
     session = str(uuid.uuid4())
-    backup = os.path.join(d, "workbench.%s.bak-custom-css" % session)
+    backup = os.path.join(d, f"workbench.{session}.bak-custom-css")
     # Backup = das BEREINIGTE html (vor CSP-Entfernung), wie die Extension.
     with open(backup, "w", encoding="utf-8") as f:
         f.write(html)
@@ -192,8 +192,7 @@ def patch(wb, imports):
 
     inject = build_inject(imports)
     block = (
-        "<!-- !! VSCODE-CUSTOM-CSS-SESSION-ID %s !! -->\n%s\n%s%s\n</head>"
-        % (session, START, inject, END)
+        f"<!-- !! VSCODE-CUSTOM-CSS-SESSION-ID {session} !! -->\n{START}\n{inject}{END}\n</head>"
     )
     new_html, n = re.subn(r"</head>", lambda _m: block, html, count=1)
     if n == 0:
@@ -224,16 +223,16 @@ def patch(wb, imports):
 
 
 def unpatch(wb):
-    with open(wb, "r", encoding="utf-8") as f:
+    with open(wb, encoding="utf-8") as f:
         html = f.read()
     m = re.search(r"VSCODE-CUSTOM-CSS-SESSION-ID ([0-9a-fA-F-]+)", html)
     if not m:
         print("  (kein Patch vorhanden)")
         return False
     d = os.path.dirname(wb)
-    bak = os.path.join(d, "workbench.%s.bak-custom-css" % m.group(1))
+    bak = os.path.join(d, f"workbench.{m.group(1)}.bak-custom-css")
     if os.path.isfile(bak):
-        with open(bak, "r", encoding="utf-8") as f:
+        with open(bak, encoding="utf-8") as f:
             restored = f.read()
     else:
         restored = clear_existing(html)  # kein Backup mehr -> wenigstens Patch raus
@@ -255,7 +254,7 @@ def status():
     installed = False
     for wb in wbs:
         try:
-            with open(wb, "r", encoding="utf-8") as f:
+            with open(wb, encoding="utf-8") as f:
                 if "VSCODE-CUSTOM-CSS-SESSION-ID" in f.read():
                     installed = True
                     break
@@ -284,7 +283,7 @@ def set_glow(enabled):
         except PermissionError:
             err = i18n.L("Keine Schreibrechte – VS Code schließen und erneut versuchen.",
                          "No write permission – close VS Code and try again.")
-        except Exception as e:  # noqa: BLE001 - dem Aufrufer melden, nie crashen
+        except Exception as e:
             err = str(e)
     return ok, len(wbs), err
 
@@ -301,8 +300,8 @@ def main():
     if not off:
         print("Imports:")
         for p in imports:
-            print("  - %s%s" % (p, "   (FEHLT!)" if not os.path.isfile(p) else ""))
-    print("%d workbench-Datei(en) gefunden:" % len(wbs))
+            print("  - {}{}".format(p, "   (FEHLT!)" if not os.path.isfile(p) else ""))
+    print(f"{len(wbs)} workbench-Datei(en) gefunden:")
 
     ok = 0
     for wb in wbs:
@@ -314,10 +313,10 @@ def main():
                 print("  -> ok")
         except PermissionError:
             print("  ! Keine Schreibrechte. VS Code schliessen bzw. Terminal als Admin.")
-        except Exception as e:  # noqa: BLE001 - Diagnose ausgeben, nie hart crashen
-            print("  ! Fehler: %s" % e)
+        except Exception as e:
+            print(f"  ! Fehler: {e}")
 
-    print("\nFertig (%d/%d)." % (ok, len(wbs)))
+    print(f"\nFertig ({ok}/{len(wbs)}).")
     if not off and ok:
         print("Jetzt in VS Code: Command Palette -> 'Developer: Reload Window'.")
         print("(Reload startet die Terminals dieses Fensters neu.)")

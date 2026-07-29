@@ -2,8 +2,9 @@
 fragt der Poll zusaetzlich nach.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
 
@@ -45,7 +46,7 @@ def test_dock_poll_reveals_without_mouse_event():
     withdraw/deiconify geht. Taucht er unter einem STEHENDEN Zeiger auf, schickt
     Windows kein Mausereignis – Tk feuert weder <Enter> noch <Motion>, und frueher
     tat sich dann gar nichts ('klappt nicht auf'). Der Poll muss das auffangen."""
-    hx, hy, hw, hh = _dock_hover((0, 0))._handle_geom()
+    hx, hy, hw, _hh = _dock_hover((0, 0))._handle_geom()
     d = _dock_hover((hx + hw // 2, hy + 4))      # oberes Ende, ausserhalb der Zieh-Zone
     d._poll_reveal()
     assert d.revealed == [True]
@@ -97,7 +98,7 @@ def test_dock_poll_reveal_off_handle_and_locked():
     """Neben dem Griff passiert nichts – und direkt nach dem Einklappen sperrt die
     Anti-Flatter-Frist den Poll-Weg, damit ein zufaellig dort liegender Zeiger das
     Deck nicht im selben Atemzug wieder aufreisst."""
-    hx, hy, hw, hh = _dock_hover((0, 0))._handle_geom()
+    hx, hy, hw, _hh = _dock_hover((0, 0))._handle_geom()
     off = _dock_hover((hx + hw + 50, hy + 4))
     off._poll_reveal()
     assert off.revealed == []

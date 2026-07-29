@@ -29,8 +29,8 @@ try:
     import ctypes
     from ctypes import wintypes
 
-    _user32 = ctypes.WinDLL("user32", use_last_error=True)
-except Exception:      # noqa: BLE001 – jeder Fehlgrund endet gleich: kein Win32
+    _user32: ctypes.WinDLL | None = ctypes.WinDLL("user32", use_last_error=True)
+except Exception:
     _user32 = None
 
 _MONITOR_DEFAULTTONEAREST = 2      # Punkt außerhalb aller Monitore -> nächstgelegener
@@ -74,7 +74,7 @@ def work_area(x, y):
         if r.right <= r.left or r.bottom <= r.top:
             return None
         return (int(r.left), int(r.top), int(r.right), int(r.bottom))
-    except Exception:      # noqa: BLE001 – Platzierung darf nie die Anzeige stoppen
+    except Exception:
         return None
 
 
@@ -109,7 +109,7 @@ def _frame_pad(win):
         if pad != (0, 0):
             _pad_seen = pad
         return pad
-    except Exception:      # noqa: BLE001 – ohne Messwert lieber ungepolstert platzieren
+    except Exception:
         return (0, 0)
 
 
@@ -131,8 +131,8 @@ def fit(ax, ay, w, h, area, *, dx=0, dy=0):
     und in <area> = (l, t, r, b) gehalten. area=None -> Anker + Versatz, ungeklemmt."""
     if not area:
         return int(ax + dx), int(ay + dy)
-    l, t, r, b = area
-    return (int(_axis(ax, w, dx, l, r)), int(_axis(ay, h, dy, t, b)))
+    left, top, right, bottom = area
+    return (int(_axis(ax, w, dx, left, right)), int(_axis(ay, h, dy, top, bottom)))
 
 
 def place(win, ax, ay, *, dx=0, dy=0):

@@ -9,13 +9,20 @@ UpdateLayeredWindow-Aufrufe unten.
 import sys
 import tkinter as tk
 
-from deck.platform import focus as wf
+from deck.dock.metrics import (
+    HANDLE_THICK,
+    LAYER_ERR_PATH,
+    NEON_DECAY,
+    NEON_LAYERS,
+    NEON_MS,
+    WAVE_ON,
+    neon_color,
+    neon_tint,
+)
 from deck.platform import layered as wlayer
 from deck.render import capsule as hrender
 from deck.render import capsule_masks as cmask
 from deck.render import fluid as hwave
-
-from deck.dock.metrics import HANDLE_THICK, LAYER_ERR_PATH, NEON_DECAY, NEON_LAYERS, NEON_MS, WAVE_ON, neon_color, neon_tint
 
 
 class WaveMixin:
@@ -70,7 +77,7 @@ class WaveMixin:
         try:
             self.handle.configure(bg=bg)
             c.configure(bg=bg)
-            for item, (lw, fade) in zip(self._neon, NEON_LAYERS):
+            for item, (lw, fade) in zip(self._neon, NEON_LAYERS, strict=False):
                 c.itemconfig(item, fill=neon_color(col, fade, eff, self._hot),
                              width=(lw + 1 if (self._hot and fade <= 0) else lw))
         except tk.TclError:

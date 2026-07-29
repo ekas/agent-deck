@@ -3,7 +3,9 @@
 
 import os
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+
+                # sys.path und nagelt die Deck-Sprache auf Deutsch.
 
 
 def _tip_deck(cached=None, cached_summary=None, auto=None, bindings=None,

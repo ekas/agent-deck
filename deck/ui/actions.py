@@ -12,7 +12,6 @@ from deck.domain import config as cfg
 from deck.domain import slot_state as dc
 from deck.domain import status_model as sm
 from deck.platform import focus as wf
-
 from deck.ui.theme import SEL_BORDER
 
 

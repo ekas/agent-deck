@@ -9,8 +9,6 @@ aendern sich je Frame, ein Cache dafuer waere reiner Speicherfrass.
 """
 from collections import OrderedDict
 
-from deck.render.kit import mix as _mix
-
 try:                                  # Pillow ist die einzige Nicht-Stdlib-Abhaengigkeit
     from PIL import Image, ImageChops, ImageDraw, ImageFilter
     AVAILABLE = True
@@ -160,7 +158,7 @@ def _gradient(W, H, ends, mid=255):
     vals = []
     for y in range(H):
         t = abs((y + 0.5) / H * 2.0 - 1.0)         # 0 in der Mitte .. 1 am Bildende
-        vals.append(int(round(mid + (ends - mid) * t)))
+        vals.append(round(mid + (ends - mid) * t))
     col = Image.new("L", (1, H))
     col.putdata(vals)
     return col.resize((W, H))
@@ -247,7 +245,7 @@ def capsule_extent(tube):
     Daran haengen die Zonen des Griffs: bis hierher ist Kapsel (Hover -> Deck klappt
     auf), dahinter unsichtbares Polster (Greifen -> verschieben). edge_dock rechnet mit
     genau diesem Wert, damit die Zonengrenze und das Bild nicht auseinanderlaufen."""
-    return int(round(tube * OUT)) + int(tube)
+    return round(tube * OUT) + int(tube)
 
 
 def _masks(W, H, edge, tube, hot):

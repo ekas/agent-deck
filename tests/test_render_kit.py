@@ -1,8 +1,9 @@
 """render/kit: Farb- und Textrechnerei ohne Canvas.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.render import kit as ck
 
 

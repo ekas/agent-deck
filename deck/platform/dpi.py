@@ -120,7 +120,7 @@ def ui():
 def px(v):
     """Design-Einheit (Mass bei 100 %) -> Geraetepixel, ganzzahlig gerundet.
     Fuer feste Masse ausserhalb des Kachel-Renderers (Leistenhoehe, Griffdicke …)."""
-    return int(round(v * _ui))
+    return round(v * _ui)
 
 
 def fpx(v):
@@ -153,5 +153,5 @@ def fontpx(pt, scale=1.0, family="Segoe UI", weight=None):
     Bei 150 % und Zoom 1.0 wird aus 10 pt: 10 * 1.333 * 1.5 = 20 Pixel – also
     dieselbe optische Groesse wie vor der Umstellung, nur echt gezeichnet statt
     hochgerechnet."""
-    size = max(1, int(round(pt * PT_PX * scale)))
+    size = max(1, round(pt * PT_PX * scale))
     return (family, -size, weight) if weight else (family, -size)

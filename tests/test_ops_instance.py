@@ -4,7 +4,9 @@
 import os
 import time
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+
+                # sys.path und nagelt die Deck-Sprache auf Deutsch.
 
 
 def _patch_si(alive, focus_ret, restart_env=False):
@@ -12,6 +14,7 @@ def _patch_si(alive, focus_ret, restart_env=False):
     Verzeichnis legen, _pid_alive/focus_pid faken, RESTART_ENV setzen/loeschen. Gibt
     (si, restore, focus_calls) zurueck; restore() setzt am Ende alles zurueck."""
     import tempfile
+
     from deck.ops import instance as si
     focus_calls = []
     saved = {"LOCK_PATH": si.LOCK_PATH, "REVEAL_PATH": si.REVEAL_PATH,

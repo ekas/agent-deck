@@ -12,12 +12,7 @@ from deck.platform import dpi
 from deck.render import card as cr
 from deck.render import kit as ck
 from deck.render.glow import GLOW_RINGS
-from deck.render.kit import BG
-from deck.render.kit import CARD_BORDER
-from deck.render.kit import CARD_FILL
-from deck.render.kit import INK
-from deck.render.kit import INK_2
-from deck.render.kit import INK_3
+from deck.render.kit import BG, CARD_BORDER, CARD_FILL, INK, INK_2, INK_3
 from deck.render.kit import hex_to_rgb as _hex_to_rgb
 from deck.ui.theme import LOST_GLOW
 
@@ -37,7 +32,7 @@ class TileDrawMixin:
         bh = min(H, 34 * s)
         by = y + (H - bh) / 2
         box = ck.round_rect(c, x, by, x + bw, by + bh, 11 * s,
-                            fill=BG, outline="", width=max(1, int(round(s))), dash=(3, 3))
+                            fill=BG, outline="", width=max(1, round(s)), dash=(3, 3))
         # Zwei Striche statt des Zeichens "＋": als Text sass das Plus 3,5 px zu tief
         # im Kaestchen (tk zentriert die Zeilenbox, das Glyph sitzt auf der Mathe-
         # Achse – Begruendung in ck.plus). Die Masse sind dem alten Glyph abgemessen,
@@ -75,7 +70,8 @@ class TileDrawMixin:
         # Faktor wie die Koordinaten. Eine Punktangabe wuerde zusaetzlich ueber
         # `tk scaling` mit der Monitor-Skalierung wachsen -> doppelt, und der Text
         # liefe aus der Karte.
-        fs = lambda b, w=None: dpi.fontpx(b, s, weight=w)
+        def fs(b, w=None):
+            return dpi.fontpx(b, s, weight=w)
         # Flaeche + Halo + Kante: EIN gerendertes Bild (weiche Rundung, echter
         # Verlauf) – Tk-Canvas selbst kann kein Antialiasing, seine Rundungen
         # treppen. Ohne Pillow ODER bei durchsichtigem Fenster (dort wuerde der
@@ -85,8 +81,8 @@ class TileDrawMixin:
         geom = None
         if cr.AVAILABLE and not getattr(cfg, "TRANSPARENT_BG", False):
             pad = cr.pad_for(s)
-            geom = (max(1, int(round(W))), max(1, int(round(H))),
-                    max(1, int(round(R))), pad)
+            geom = (max(1, round(W)), max(1, round(H)),
+                    max(1, round(R)), pad)
             img = c.create_image(x - pad, y - pad, anchor="nw")
         else:
             for i in range(len(GLOW_RINGS)):
@@ -155,7 +151,7 @@ class TileDrawMixin:
                    (c.itemconfig(i, fill=INK_3), c.configure(cursor="")))
         # Gruppen-Tag über ALLE Items der Kachel -> als Einheit skalierbar (Press & Pop).
         gtag = "g_" + slot
-        for it in rings + [rect, img, model, effort, ticket, act, mode, cls]:
+        for it in [*rings, rect, img, model, effort, ticket, act, mode, cls]:
             if it is not None:
                 c.addtag_withtag(gtag, it)
         # Anim-/Glow-State: Ziele setzt refresh(), gefadet wird im _anim_tick.

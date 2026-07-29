@@ -7,9 +7,9 @@ keitsarme Leaf (nur stdlib + deck_paths). Er muss – wie die Hooks selbst – i
 sicher in beliebigem Arbeitsverzeichnis sein und darf NIE mit Fehler enden (sonst
 blockiert der Hook den Agenten).
 """
+import json
 import os
 import sys
-import json
 
 from deck.domain.paths import STATE_DIR
 

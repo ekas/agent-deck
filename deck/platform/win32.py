@@ -4,9 +4,8 @@ Alle platform-Module bauen darauf auf. Die Deklarationen stehen bewusst an EINER
 Stelle und nicht verstreut - so ist nachpruefbar, dass keine benutzte Funktion
 untypisiert bleibt.
 """
-from ctypes import wintypes
 import ctypes
-
+from ctypes import wintypes
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -69,6 +68,9 @@ _decl(user32, "GetLayeredWindowAttributes", wintypes.BOOL, _HWND,
       ctypes.POINTER(wintypes.COLORREF), ctypes.POINTER(ctypes.c_ubyte),
       ctypes.POINTER(wintypes.DWORD))
 _decl(kernel32, "GetCurrentThreadId", wintypes.DWORD)
+# Optional: auf sehr altem Windows fehlt dwmapi. Der Typ sagt das jetzt aus,
+# statt dass jeder Aufrufer selbst auf None pruefen muss, ohne es zu wissen.
+dwmapi: ctypes.WinDLL | None
 try:
     dwmapi = ctypes.WinDLL("dwmapi")
     dwmapi.DwmSetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD,

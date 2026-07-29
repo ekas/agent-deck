@@ -6,7 +6,7 @@ grauen Rand ueber die aeusserste Pixelreihe, buendig sitzt also nicht.
 """
 import tkinter as tk
 
-from deck.dock.metrics import EDGES, EDGE_GAP
+from deck.dock.metrics import EDGE_GAP, EDGES
 
 
 class GeometryMixin:

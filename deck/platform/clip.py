@@ -7,12 +7,10 @@ Falle: eine neu gesetzte Region annulliert Tks geometry, wenn kein update_idleta
 dazwischen liegt - darum wird die Region gequantelt und nur bei echter Aenderung neu
 gesetzt.
 """
-from ctypes import wintypes
 import ctypes
+from ctypes import wintypes
 
-from deck.platform.win32 import gdi32
-from deck.platform.win32 import user32
-
+from deck.platform.win32 import gdi32, user32
 
 # ── Fenster an der Andock-Kante beschneiden ─────────────
 # Die Slide-Animation des Edge-Docks schiebt das Fenster ueber den Bildschirmrand
@@ -57,9 +55,9 @@ def screen_beyond(side, pos):
     Nur dann kann ein ueber die Kante hinausgeschobenes Fenster dort sichtbar
     werden. Der Zwischenraum, den unterschiedlich skalierte Monitore im
     Koordinatenraum hinterlassen, zaehlt bewusst nicht – dort rendert nichts."""
-    for l, t, r, _b in monitor_rects():
-        if (side == "left" and l < pos) or (side == "right" and r > pos) \
-                or (side == "top" and t < pos):
+    for left, top, right, _bottom in monitor_rects():
+        if (side == "left" and left < pos) or (side == "right" and right > pos) \
+                or (side == "top" and top < pos):
             return True
     return False
 
@@ -83,7 +81,7 @@ def clip_window(hwnd, side, cut, extent=0):
     span = w if side in ("left", "right") else h
     if extent > 0 and span != extent:      # anderer Pixel-Raum -> anteilig umrechnen
         cut = cut * float(span) / float(extent)
-    cut = int(round(max(0, min(cut, span))))
+    cut = round(max(0, min(cut, span)))
     if cut <= 0:
         user32.SetWindowRgn(hwnd, None, True)     # Region weg = wieder ganzes Fenster
         return

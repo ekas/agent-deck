@@ -156,7 +156,7 @@ class ConnectMixin:
         em = tk.Menu(m, tearoff=0)
         for label in cset.EFFORT_CHOICES:
             em.add_command(label=label,
-                           command=lambda s=slot, l=label: self._set_slot_effort(s, l))
+                           command=lambda s=slot, lb=label: self._set_slot_effort(s, lb))
         m.add_cascade(label="Effort", menu=em)
 
         # ── Mode: gezielt per Shift+Tab in den Ziel-Permission-Mode (siehe _set_slot_mode)

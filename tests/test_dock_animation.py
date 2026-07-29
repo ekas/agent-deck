@@ -4,10 +4,12 @@ Die Feder ist kritisch gedaempft - bei randverankerten Panels darf es KEINEN
 Ueberschwinger geben.
 """
 
+import itertools
 import math
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
 
@@ -110,7 +112,7 @@ def test_dock_slide_monotone_and_fixed_size():
     d = _dock("left", (0, 0, 300, 200))
     rects = [d._slide_geom(i / 40.0) for i in range(41)]
     xs = [r[0] for r in rects]
-    assert all(b >= a for a, b in zip(xs, xs[1:]))
+    assert all(b >= a for a, b in itertools.pairwise(xs))
     assert {r[2:] for r in rects} == {(300, 200)}
 
 
@@ -146,7 +148,7 @@ def test_dock_spring_never_overshoots():
     for response in (dockm.COLLAPSE_RESPONSE_MS, dockm.REVEAL_RESPONSE_MS):
         track = _spring_track(response)
         assert max(track) <= 1.0 + 1e-12, response
-        assert all(b >= a - 1e-12 for a, b in zip(track, track[1:]))   # nie zurueck
+        assert all(b >= a - 1e-12 for a, b in itertools.pairwise(track))   # nie zurueck
 
 
 def test_dock_spring_is_front_loaded_but_starts_from_rest():

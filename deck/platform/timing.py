@@ -7,12 +7,10 @@ jeder Frame-Timer auf dieses Raster und die Bewegung ruckelt sichtbar.
 Und der Zieltakt ist die Bildperiode des MONITORS, nicht ein fester Wert: 100 fps auf
 einem 60-Hz-Schirm sind kein glatteres Bild, sondern verworfene Frames.
 """
-from ctypes import wintypes
 import ctypes
+from ctypes import wintypes
 
-from deck.platform.win32 import gdi32
-from deck.platform.win32 import user32
-
+from deck.platform.win32 import gdi32, user32
 
 # ── Timer-Aufloesung waehrend einer Animation anheben ───
 # Windows tickt seine Timer standardmaessig nur alle 15,625 ms (64 Hz). Ein
@@ -31,6 +29,7 @@ from deck.platform.win32 import user32
 #
 # Quelle der Zahlen: Bruce Dawson, „Windows Timer Resolution: The Great Rule
 # Change" (randomascii) und die timeBeginPeriod-Doku bei Microsoft.
+_winmm: ctypes.WinDLL | None
 try:
     _winmm = ctypes.WinDLL("winmm")
 except OSError:

@@ -22,13 +22,13 @@ umgebogen, dort will man die Fehler ja sehen. Umgelenkt wird nur der pythonw-Fal
 Reine stdlib, importiert nur deck_paths -> von ueberall gefahrlos importierbar.
 Best effort: ein Fehler in der Diagnose darf das Panel NIE mitnehmen.
 """
+import atexit
+import faulthandler
 import os
 import sys
-import time
-import atexit
 import threading
+import time
 import traceback
-import faulthandler
 
 from deck.domain import paths as dp
 
@@ -82,7 +82,11 @@ def install(marks=True):
         _rotate()
         # buffering=1 = zeilengepuffert -> im Log steht immer der aktuelle Stand,
         # auch wenn der Prozess gleich hart stirbt.
-        _fh = open(LOG_PATH, "a", encoding="utf-8", errors="replace", buffering=1)
+        # Bleibt ABSICHTLICH offen, solange das Panel lebt: faulthandler schreibt
+        # seinen Stack im Absturzfall in genau dieses Handle. Ein Context-Manager
+        # waere hier falsch - beim Verlassen des Blocks gaebe es kein Log mehr.
+        _fh = open(LOG_PATH, "a", encoding="utf-8",  # noqa: SIM115
+                   errors="replace", buffering=1)
     except OSError:
         _fh = None
         return

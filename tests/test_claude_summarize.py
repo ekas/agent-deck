@@ -5,11 +5,12 @@ Bei der Erkennung sind Falsch-Positive das Problem, nicht das Finden.
 
 import json
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck import i18n
-from deck.claude import summarize as cs
 from deck.claude import refs
+from deck.claude import summarize as cs
 
 
 def _line(rec):
@@ -53,7 +54,7 @@ def test_build_digest_empty():
 
 
 def test_build_digest_topic_plus_recent():
-    turns = [("user", "T" + "a" * 5)] + [("user", "u%d" % i) for i in range(1, 6)] \
+    turns = [("user", "T" + "a" * 5)] + [("user", f"u{i}") for i in range(1, 6)] \
             + [("assistant", "letzte Antwort")]
     d = cs.build_digest(turns, max_chars=60, per_turn=600)
     lines = d.splitlines()
@@ -166,7 +167,7 @@ def test_find_ticket_needs_more_than_a_side_remark():
     steht sie da."""
     side = [("assistant", "das behebt uebrigens ABC-99")]
     assert refs.find_ticket(side) == ""
-    assert refs.find_ticket(side + [("assistant", "ABC-99 ist damit durch")]) == "ABC-99"
+    assert refs.find_ticket([*side, ("assistant", "ABC-99 ist damit durch")]) == "ABC-99"
     assert refs.find_ticket([("user", "mach ABC-99")]) == "ABC-99"
 
 
@@ -195,7 +196,7 @@ def test_find_pr_bare_hash_needs_two_mentions():
     Nennung glauben wir es; mit 'PR' davor reicht eine."""
     once = [("user", "schau dir #62 an")]
     assert refs.find_pr(once) == ""
-    assert refs.find_pr(once + [("user", "#62 ist noch offen")]) == "62"
+    assert refs.find_pr([*once, ("user", "#62 ist noch offen")]) == "62"
     assert refs.find_pr([("user", "schau dir PR #62 an")]) == "62"
 
 

@@ -7,8 +7,8 @@ eigenen Importe -> von ueberall gefahrlos importierbar, auch aus den Claude-Code
 Hooks in wechselnden Arbeitsverzeichnissen (das Skriptverzeichnis steht immer auf
 sys.path, der Import haengt also nicht am cwd).
 """
-import os
 import json
+import os
 
 # Wurzel des Repos: drei Ebenen ueber dieser Datei (deck/domain/paths.py).
 #

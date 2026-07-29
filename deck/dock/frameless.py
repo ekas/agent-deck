@@ -5,9 +5,8 @@ Deck verlaesst diesen Zustand nur ueber den Weg, der es hineingebracht hat.
 """
 import tkinter as tk
 
-from deck.platform import focus as wf
-
 from deck.dock.metrics import BORDER_COLOR, BORDER_PX
+from deck.platform import focus as wf
 
 
 class FramelessMixin:

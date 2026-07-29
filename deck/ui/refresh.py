@@ -6,22 +6,29 @@ steht weiterhin done, sonst leuchtet eine gelesene Antwort wieder auf.
 import time
 
 from deck import i18n
-from deck.claude import settings as cset
 from deck.domain import config as cfg
-from deck.domain import paths as dp
 from deck.domain import slot_state as dc
 from deck.domain import status_model as sm
-from deck.domain.binding import is_placeholder_ws as _is_placeholder_ws
-from deck.domain.binding import repo_from_title as _repo_from_title
 from deck.ops import instance as si
-from deck.platform import focus as wf
-from deck.render.kit import CARD_BORDER
-from deck.render.kit import CARD_FILL
-from deck.render.kit import INK_3
+from deck.render.kit import CARD_BORDER, CARD_FILL, INK_3
 from deck.render.kit import mix as _mix
 from deck.render.kit import short_model as _short_model
-
-from deck.ui.theme import AUTO_MAX_TRIES, AUTO_READY_GRACE, BLOOM_ON_CHANGE, GLOW_STYLE, LOST_FILL, LOST_GLOW, PENDING_AUTO_TTL, POLL_MS, SEL_BORDER, SLIDE_RETRY_MS, STALE_S, STALE_WINDOW_S, TICKET_AUTO_CARD, TICKET_AUTO_INK, TICKET_INK, TICKET_MAX_CHARS, WAIT_BORDER, WINDOWS, status_label
+from deck.ui.theme import (
+    BLOOM_ON_CHANGE,
+    GLOW_STYLE,
+    LOST_FILL,
+    LOST_GLOW,
+    POLL_MS,
+    SEL_BORDER,
+    SLIDE_RETRY_MS,
+    STALE_S,
+    TICKET_AUTO_CARD,
+    TICKET_AUTO_INK,
+    TICKET_INK,
+    TICKET_MAX_CHARS,
+    WAIT_BORDER,
+    status_label,
+)
 
 
 class RefreshMixin:

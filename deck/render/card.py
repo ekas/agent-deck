@@ -71,7 +71,7 @@ def pad_for(scale):
     """Randstreifen (in Pixeln), den der Halo ausserhalb der Kachel braucht.
     Entspricht der Ausdehnung der frueheren drei Glow-Ringe (3 x 2 px), damit
     das Layout unveraendert bleibt – nur eben weich statt gestuft."""
-    return max(3, int(round(6 * scale)))
+    return max(3, round(6 * scale))
 
 
 def _trim(cache, limit):
@@ -131,7 +131,7 @@ def _qc(color, step=6):
     """Farbe grob rastern – haelt den Bildcache klein, waehrend eine Flaeche in
     ihre Zielfarbe fadet. Der Sprung liegt unter der Wahrnehmungsschwelle."""
     r, g, b = hex_to_rgb(color)
-    return "#%02x%02x%02x" % (r // step * step, g // step * step, b // step * step)
+    return f"#{r // step * step:02x}{g // step * step:02x}{b // step * step:02x}"
 
 
 def _qe(eff, step=0.07):

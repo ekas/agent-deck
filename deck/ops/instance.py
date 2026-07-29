@@ -26,9 +26,9 @@ also genau diesen Griff nach vorn und es sah aus wie »oeffnet sich nicht mehr«
 Windows-only (wie das ganze Deck): ctypes/Win32. Best effort – ein Lock-Fehler
 darf den Start NIE verhindern (lieber ein moegliches Zweit-Panel als gar keins).
 """
+import ctypes
 import os
 import time
-import ctypes
 from ctypes import wintypes
 
 from deck.domain import paths as dp

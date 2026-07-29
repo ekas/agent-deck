@@ -88,7 +88,7 @@ class ReorderMixin:
         step = d["step"] or 1
         cur_left = d["home_x"] + (ev_x - d["begin_x"])
         raw = (cur_left - d["x0"]) / step
-        return max(0, min(len(d["order"]) - 1, int(round(raw))))
+        return max(0, min(len(d["order"]) - 1, round(raw)))
 
     def _reflow_drag(self, d):
         """Ziel-x aller NICHT gezogenen Kacheln fuer die aktuelle Einfuege-Position

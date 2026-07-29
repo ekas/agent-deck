@@ -1,8 +1,9 @@
 """binding: Zuordnung Fenster <-> Repo, Platzhalter-Erkennung, Ticket-Helfer.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.domain import binding
 
 

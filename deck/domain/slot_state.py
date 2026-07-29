@@ -8,7 +8,7 @@ Ordner und das atomare Schreiben kommen aus deck_paths (eine Quelle).
 import os
 import time
 
-from deck.domain.paths import STATE_DIR, state_path, load_json, save_json
+from deck.domain.paths import STATE_DIR, load_json, save_json, state_path
 
 
 def write_state(slot, status):

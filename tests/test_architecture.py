@@ -11,7 +11,9 @@ oben ui, das alles kennen darf.
 import ast
 import os
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers
+
+                # sys.path und nagelt die Deck-Sprache auf Deutsch.
 
 # Was jede Schicht importieren DARF. Die Tabelle ist ABSICHTLICH knapp gehalten: sie
 # listet, was heute wirklich importiert wird, nicht was denkbar waere. Ein neuer Import
@@ -33,6 +35,17 @@ ALLOWED = {
 }
 
 DECK = os.path.join(helpers.ROOT, "deck")
+
+def _src(path):
+    """Quelltext lesen und die Datei WIEDER SCHLIESSEN.
+
+    Ohne Context-Manager bleiben hier je Lauf über hundert Handles offen; pytest meldet
+    das als unraisable ResourceWarning, und im schlimmsten Fall laeuft ein Testlauf gegen
+    das Handle-Limit. Aufgefallen ist es erst, als filterwarnings auf "error" stand.
+    """
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
 
 
 def _layer_of(relpath):
@@ -69,7 +82,7 @@ def _imports():
             path = os.path.join(base, name)
             rel = os.path.relpath(path, DECK).replace("\\", "/")
             src_layer = _layer_of(rel)
-            tree = ast.parse(open(path, encoding="utf-8").read())
+            tree = ast.parse(_src(path))
             for node in ast.walk(tree):
                 for mod in _targets(node):
                     parts = mod.split(".")
@@ -116,7 +129,7 @@ def test_domain_bleibt_ohne_anzeige():
         if not name.endswith(".py"):
             continue
         path = os.path.join(DECK, "domain", name)
-        tree = ast.parse(open(path, encoding="utf-8").read())
+        tree = ast.parse(_src(path))
         for node in ast.walk(tree):
             mods = []
             if isinstance(node, ast.ImportFrom) and node.module:
@@ -152,7 +165,7 @@ def test_jeder_import_findet_seinen_namen():
             mod = "deck." + rel[:-3].replace("/", ".")
             if mod.endswith(".__init__"):
                 mod = mod[:-len(".__init__")]
-            tree = ast.parse(open(path, encoding="utf-8").read())
+            tree = ast.parse(_src(path))
             names = set()
             for node in ast.walk(tree):
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -173,7 +186,7 @@ def test_jeder_import_findet_seinen_namen():
                 continue
             path = os.path.join(base, name)
             rel = os.path.relpath(path, helpers.ROOT).replace("\\", "/")
-            tree = ast.parse(open(path, encoding="utf-8").read())
+            tree = ast.parse(_src(path))
             for node in ast.walk(tree):
                 if not isinstance(node, ast.ImportFrom) or not node.module:
                     continue
@@ -203,7 +216,7 @@ def test_hooks_haengen_nicht_an_der_anzeige():
     for name in sorted(os.listdir(hooks)):
         if not name.endswith(".py"):
             continue
-        tree = ast.parse(open(os.path.join(hooks, name), encoding="utf-8").read())
+        tree = ast.parse(_src(os.path.join(hooks, name)))
         for node in ast.walk(tree):
             mods = []
             if isinstance(node, ast.ImportFrom) and node.module:

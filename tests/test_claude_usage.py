@@ -1,17 +1,15 @@
 """claude_usage: Parser der oauth/usage-Antwort und die Token der Claude-Code-CLI.
 """
 
-from datetime import datetime
-from datetime import timezone
 import os
 import time
+from datetime import UTC, datetime
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
-from deck.claude import usage as cu
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.claude import usage_token as utok
 from deck.claude import usage_view as uview
-
 
 # Ausschnitt einer echten API-Antwort (Session kritisch bei 91 %, Woche 15 %, dazu
 # ein modell-spezifisches Wochenlimit bei 0 %).
@@ -31,7 +29,7 @@ _USAGE_SAMPLE = {
 
 
 def test_usage_fmt_reset():
-    base = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+    base = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
     assert uview.fmt_reset("2026-01-01T12:45:00+00:00", base) == "45 Min."
     assert uview.fmt_reset("2026-01-01T14:00:00+00:00", base) == "2 Std."
     assert uview.fmt_reset("2026-01-01T14:30:00+00:00", base) == "2 Std. 30 Min."
@@ -58,7 +56,7 @@ def test_usage_parse_limits():
     assert p["session"]["percent"] == 91
     assert p["session"]["severity"] == "critical"
     assert p["session"]["group"] == "session"
-    assert [l["label"] for l in p["limits"]] == ["Session", "Woche", "Fable (Woche)"]
+    assert [lim["label"] for lim in p["limits"]] == ["Session", "Woche", "Fable (Woche)"]
 
 
 def test_usage_parse_fallback():
@@ -66,7 +64,7 @@ def test_usage_parse_fallback():
     p = uview.parse_usage({"five_hour": {"utilization": 91.0, "resets_at": "x"},
                         "seven_day": {"utilization": 15.0, "resets_at": "y"}})
     assert p["session"]["percent"] == 91
-    assert [l["label"] for l in p["limits"]] == ["Session", "Woche"]
+    assert [lim["label"] for lim in p["limits"]] == ["Session", "Woche"]
 
 
 def test_usage_parse_empty():
@@ -75,7 +73,7 @@ def test_usage_parse_empty():
 
 
 def test_usage_tooltip_text():
-    base = datetime(2026, 7, 21, 21, 55, tzinfo=timezone.utc)
+    base = datetime(2026, 7, 21, 21, 55, tzinfo=UTC)
     snap = {"state": "ok", "limits": uview.parse_usage(_USAGE_SAMPLE)["limits"], "error": None}
     txt = uview.tooltip_text(snap, base)
     assert "Claude – Nutzung" in txt
@@ -166,7 +164,7 @@ def test_beide_tokenquellen_werden_zusammengelegt():
         utok._read_tokens_from_cli = weg
         try:
             utok.read_oauth_token(force=True)
-            assert False, "ohne jede Quelle muss NoTokenError fliegen"
+            raise AssertionError("ohne jede Quelle muss NoTokenError fliegen")
         except utok.NoTokenError as e:
             assert "CLI" in str(e) and "Desktop" in str(e), str(e)
     finally:

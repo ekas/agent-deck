@@ -8,8 +8,8 @@ Modul.
 """
 import ctypes
 from ctypes import wintypes
-from deck.platform.win32 import dwmapi, gdi32, kernel32, user32
 
+from deck.platform.win32 import dwmapi, kernel32, user32
 
 # ── Fenster anhand des Titels finden ────────────────────
 _EnumProc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -187,7 +187,10 @@ _get_wndproc.restype = ctypes.c_void_p
 # Subclass-Zustand je Fenster festhalten: die WNDPROC-Callbacks (und die alte Proc
 # fuer die Aufrufkette) duerfen NICHT vom GC eingesammelt werden – sonst ruft
 # Windows in freigegebenen Speicher (Absturz).
-_resize_hooks = {}
+# hwnd -> die alte Fensterprozedur (WNDPROC), damit sie beim Abraeumen
+# zurueckgesetzt werden kann. MUSS am Leben bleiben: gibt der GC den
+# Callback frei, stuerzt Windows beim naechsten Fensterereignis ab.
+_resize_hooks: dict[int, object] = {}
 
 
 def restrict_resize_to_corner(hwnd):

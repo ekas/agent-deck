@@ -33,16 +33,16 @@ Tk noch GDI an – genau die Bausteine, an denen das Panel stirbt – und ist da
 deutlich langlebiger als das, was er bewacht. Ein zweiter Loop kann nicht
 entstehen (eigenes Lock, siehe _loop_lock).
 """
+import ctypes
 import os
+import subprocess
 import sys
 import time
-import ctypes
-import subprocess
 from ctypes import wintypes
 
-from deck.ops import log
 from deck.domain import paths
 from deck.ops import instance as si
+from deck.ops import log
 
 HERE = paths.REPO_ROOT
 PANEL = os.path.join(HERE, "agent_deck.py")
@@ -204,7 +204,7 @@ def run_loop(every=LOOP_EVERY_S):
 
 def once():
     """Ein Durchgang: pruefen und ggf. starten. Rueckgabe wie main()."""
-    zustand, pid, hinweis = panel_state()
+    zustand, _pid, hinweis = panel_state()
     if zustand == "laeuft":
         return 0
     if zustand == "haengt":

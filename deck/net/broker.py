@@ -9,15 +9,15 @@ Ablauf:
 - Danach adressiert das Panel per Fenster-Buchstabe:  send_window("A", {...})
 - Extensions melden Terminals via {"type":"terminals","window":"A","slots":[...]}.
 """
+import json
 import socket
 import threading
-import json
 
 from deck.domain import protocol
 
 
 class _Client:
-    __slots__ = ("sock", "workspace", "window", "slots")
+    __slots__ = ("slots", "sock", "window", "workspace")
 
     def __init__(self, sock):
         self.sock = sock

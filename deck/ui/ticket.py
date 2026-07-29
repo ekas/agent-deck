@@ -4,7 +4,6 @@ Der Prompt MUSS einzeilig sein. Beim Schließen des Agenten räumt das Deck
 genau diesen worktree wieder ab - mit Guard gegen fremde Slots.
 """
 import os
-import threading
 import tkinter as tk
 
 from deck import i18n
@@ -14,15 +13,9 @@ from deck.domain import slot_state as dc
 from deck.domain.binding import jira_key as _jira_key
 from deck.domain.binding import ticket_branch as _ticket_branch
 from deck.domain.binding import ticket_slug as _ticket_slug
-from deck.ops import worktree as wtc
-from deck.platform import dpi
-from deck.platform import monitor
+from deck.platform import dpi, monitor
 from deck.render import kit as ck
-from deck.render.kit import BG
-from deck.render.kit import INK
-from deck.render.kit import INK_2
-
-from deck.ui.theme import WINDOWS, WT_DISK_ORPHAN_GRACE_S, WT_DISK_SWEEP_INTERVAL_S, WT_ORPHAN_GRACE_S
+from deck.render.kit import BG, INK, INK_2
 
 
 class TicketMixin:

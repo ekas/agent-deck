@@ -2,10 +2,10 @@
 geklappt um den Anker, nicht geschoben.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.platform import monitor as sf
-
 
 # Arbeitsflaeche wie ein 1920x1080-Schirm mit 40 px Taskleiste unten.
 _AREA = (0, 0, 1920, 1040)
@@ -42,12 +42,12 @@ def test_fit_never_leaves_the_work_area_on_a_grid_of_anchors():
     vollstaendig in der Arbeitsflaeche (solange es hineinpasst) – auch mit negativen
     Koordinaten, wie sie ein Monitor LINKS des Hauptschirms hat."""
     for area in (_AREA, (-1920, 232, -384, 1144)):
-        l, t, r, b = area
-        for ax in range(l, r + 1, 97):
-            for ay in range(t, b + 1, 61):
+        left, top, right, bottom = area
+        for ax in range(left, right + 1, 97):
+            for ay in range(top, bottom + 1, 61):
                 x, y = sf.fit(ax, ay, 320, 140, area, dx=14, dy=18)
-                assert l <= x and x + 320 <= r, (area, ax, ay, x)
-                assert t <= y and y + 140 <= b, (area, ax, ay, y)
+                assert left <= x and x + 320 <= right, (area, ax, ay, x)
+                assert top <= y and y + 140 <= bottom, (area, ax, ay, y)
 
 
 def test_fit_without_a_known_area_stays_unclamped():

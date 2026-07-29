@@ -7,7 +7,6 @@ Mindestschwelle reissen.
 """
 import re
 
-
 # ── Ticketnummer aus dem Chat ziehen (pur, unit-getestet) ────────────────
 # Jira-Key-Form PROJEKT-123. BEWUSST case-sensitiv gross: sonst wuerde jedes
 # "python-3" / "top-10" / "schritt-2" aus dem Fliesstext als Ticket durchgehen. Die
@@ -36,7 +35,7 @@ REV VER V N X Y Z K M PART STEP PHASE TIER TOP LEVEL COVID SARS RC
 # bzw. die einen Key-Treffer in ihrer Naehe glaubwuerdiger machen.
 _CTX_WORDS = ("ticket", "issue", "jira", "bug", "story", "vorgang", "karte")
 _NUM_CTX_RE = re.compile(
-    r"(?:%s)s?\b[\s:#/-]*#?(\d{2,6})(?!\d)" % "|".join(_CTX_WORDS), re.I)
+    r"(?:{})s?\b[\s:#/-]*#?(\d{{2,6}})(?!\d)".format("|".join(_CTX_WORDS)), re.I)
 
 
 def _ctx_bonus(text, pos, span=24):
@@ -85,7 +84,7 @@ def find_ticket(turns, project=None, min_score=2):
     Pur -> unit-getestet; `project` (z.B. "PROJ") kommt vom Aufrufer, damit dieses
     Modul weiter ohne config-Import auskommt."""
     proj = (project or "").strip().upper()
-    proj_re = re.compile(r"(?<![A-Za-z0-9_-])%s-(\d{1,6})(?!\d)" % re.escape(proj),
+    proj_re = re.compile(rf"(?<![A-Za-z0-9_-]){re.escape(proj)}-(\d{{1,6}})(?!\d)",
                          re.I) if proj else None
     hits = {}                                  # "ABC-123" -> [Punkte, letzter Zug-Index]
 
@@ -97,7 +96,7 @@ def find_ticket(turns, project=None, min_score=2):
             rec[0] += weight
             rec[1] = idx
 
-    for role, text, w, idx in _iter_turns(turns):
+    for _role, text, w, idx in _iter_turns(turns):
         for m in _KEY_RE.finditer(text):
             pre, num = m.group(1), m.group(2)
             if pre == proj:
@@ -153,7 +152,7 @@ def find_pr(turns, min_score=3):
             rec[0] += weight
             rec[1] = idx
 
-    for role, text, w, idx in _iter_turns(turns):
+    for _role, text, w, idx in _iter_turns(turns):
         for m in _PR_URL_RE.finditer(text):
             bump(m.group(1), w * 3, idx)
         for m in _PR_CTX_RE.finditer(text):

@@ -7,10 +7,8 @@ geometry, wenn kein update_idletasks dazwischen liegt.
 import math
 import tkinter as tk
 
-from deck.platform import focus as wf
-from deck.platform import clip as wclip
-
 from deck.dock.metrics import CLIP_QUANT, EDGE_GAP
+from deck.platform import clip as wclip
 
 
 class ClippingMixin:

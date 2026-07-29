@@ -2,8 +2,9 @@
 Deck auf und haelt es kurz offen.
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.dock import controller as ed
 from deck.dock import metrics as dockm
 

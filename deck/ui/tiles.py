@@ -7,20 +7,10 @@ beim Auf- und Zuklappen alle Kacheln neu auf.
 import tkinter as tk
 
 from deck import i18n
-from deck.domain import config as cfg
 from deck.platform import dpi
-from deck.render import card as cr
-from deck.render import kit as ck
 from deck.render.glow import GLOW_RINGS
-from deck.render.kit import BG
-from deck.render.kit import CARD_BORDER
-from deck.render.kit import CARD_FILL
-from deck.render.kit import INK
-from deck.render.kit import INK_2
-from deck.render.kit import INK_3
-from deck.render.kit import hex_to_rgb as _hex_to_rgb
-
-from deck.ui.theme import LOST_GLOW, RAIL_IDLE, WINDOWS
+from deck.render.kit import INK, INK_3
+from deck.ui.theme import RAIL_IDLE, WINDOWS
 
 
 class TilesMixin:
@@ -86,7 +76,7 @@ class TilesMixin:
         ACHTUNG: die y-Schritte hier und in _render_agents_slim MUESSEN gleich bleiben –
         laufen sie auseinander, skaliert das Deck gegen eine falsche natuerliche Groesse
         (Inhalt abgeschnitten oder Fenster zu gross)."""
-        W, H, GAP, R, X0 = self._SLIM_W, self._SLIM_H, self._SLIM_GAP, self._SLIM_R, self._SLIM_X0
+        W, H, GAP, _R, X0 = self._SLIM_W, self._SLIM_H, self._SLIM_GAP, self._SLIM_R, self._SLIM_X0
         nf = self._slim_name_font
         nf.configure(size=dpi.fontpx(12)[1])
         RING = len(GLOW_RINGS) * 2

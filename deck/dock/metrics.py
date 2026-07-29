@@ -12,12 +12,9 @@ import os
 from deck.domain import config as cfg
 from deck.domain import paths as dp
 from deck.platform import dpi
-from deck.platform import focus as wf
 from deck.platform import timing as wtime
-from deck.render import capsule as hrender
 from deck.render import capsule_masks as cmask
 from deck.render.kit import mix as _mix
-
 
 # Hierhin schreibt _report_layer_failure, wenn der Bild-Pfad des Griffs aufgibt
 # (neben panel.lock, also im State-Ordner des Decks). Siehe dort, warum es eine

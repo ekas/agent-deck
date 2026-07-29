@@ -33,22 +33,17 @@ den Snapshot legt. Das Deck laeuft ungestoert weiter; das Badge zeigt dann "—"
 Bewusst OHNE tkinter-Import -> die puren Parser (parse_usage / fmt_reset /
 severity_color / tooltip_text) sind headless testbar (tests/test_claude_usage.py).
 """
-import os
-import glob
 import json
-import base64
-import ctypes
+import os
 import random
 import threading
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 
 from deck import i18n
-from ctypes import wintypes
-from datetime import datetime, timezone
-from deck.claude.usage_view import parse_usage
 from deck.claude.usage_token import NoTokenError, read_oauth_token
+from deck.claude.usage_view import parse_usage
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 
@@ -69,6 +64,7 @@ def _shared():
         return _shared_mod
     import importlib
     import sys
+
     from deck.domain import paths
     here = paths.REPO_ROOT
     for p in (os.environ.get("CLAUDE_USAGE_SHARED_DIR"),

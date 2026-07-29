@@ -8,10 +8,7 @@ from deck.claude import settings as cset
 from deck.domain import config as cfg
 from deck.ops import vscode_glow as rg
 from deck.render import kit as ck
-from deck.render.kit import BG
-from deck.render.kit import INK
-from deck.render.kit import INK_2
-from deck.render.kit import INK_3
+from deck.render.kit import BG, INK, INK_2, INK_3
 
 
 class SettingsMixin:
@@ -60,7 +57,7 @@ class SettingsMixin:
         lang_display = [(i18n.L("Deutsch", "German"), "german"),
                         (i18n.L("Englisch", "English"), "english")]
         _lang_v2d = {v: d for d, v in lang_display}
-        _lang_d2v = {d: v for d, v in lang_display}
+        _lang_d2v = dict(lang_display)
         lang_var = tk.StringVar(
             value=_lang_v2d.get(i18n.normalize(cur["language"]), lang_display[0][0]))
 
@@ -79,8 +76,8 @@ class SettingsMixin:
                 pass
             om.grid(row=r, column=1, sticky="w", padx=(0, 16), pady=4)
 
-        _row(2, i18n.L("Modell", "Model"), model_var, [l for l, _ in cset.MODEL_CHOICES])
-        _row(3, i18n.L("Modus", "Mode"), mode_var, [l for l, _ in cset.MODE_CHOICES])
+        _row(2, i18n.L("Modell", "Model"), model_var, [lbl for lbl, _ in cset.MODEL_CHOICES])
+        _row(3, i18n.L("Modus", "Mode"), mode_var, [lbl for lbl, _ in cset.MODE_CHOICES])
         _row(4, "Effort", effort_var, cset.EFFORT_CHOICES)
         _row(5, i18n.L("Sprache", "Language"), lang_var, [d for d, _ in lang_display])
 
@@ -102,7 +99,7 @@ class SettingsMixin:
             self.store.save_settings()
             try:
                 ok, total, err = rg.set_glow(on)
-            except Exception as e:                                   # noqa: BLE001
+            except Exception as e:
                 status.configure(text=i18n.L(f"Ring: Fehler – {e}", f"Ring: error – {e}"),
                                  fg="#ff6b6b")
                 return
@@ -153,8 +150,8 @@ class SettingsMixin:
         # gibt es keine Titelleiste – zum Schliessen der App hier wieder "Aus" waehlen.
         DOCK_CHOICES = [(i18n.L("Aus", "Off"), "off"), (i18n.L("Links", "Left"), "left"),
                         (i18n.L("Rechts", "Right"), "right"), (i18n.L("Oben", "Top"), "top")]
-        _dock_l2v = {l: v for l, v in DOCK_CHOICES}
-        _dock_v2l = {v: l for l, v in DOCK_CHOICES}
+        _dock_l2v = dict(DOCK_CHOICES)
+        _dock_v2l = {v: lbl for lbl, v in DOCK_CHOICES}
         cur_edge = self.dock.current_edge() if self.dock else \
             self.settings.get("dock_edge", "off")
         dock_var = tk.StringVar(value=_dock_v2l.get(cur_edge, DOCK_CHOICES[0][0]))
@@ -183,7 +180,7 @@ class SettingsMixin:
                                   "Dock to edge  (auto-hide to a handle bar)"), bg=BG,
                  fg=INK_2, font=("Segoe UI", 10)).grid(
                      row=8, column=0, sticky="w", padx=(16, 10), pady=4)
-        dock_om = tk.OptionMenu(dlg, dock_var, *[l for l, _ in DOCK_CHOICES],
+        dock_om = tk.OptionMenu(dlg, dock_var, *[lbl for lbl, _ in DOCK_CHOICES],
                                 command=_on_dock)
         dock_om.configure(bg="#23232b", fg=INK, activebackground="#33333d",
                           activeforeground="#ffffff", relief="flat", bd=0,
@@ -222,7 +219,7 @@ class SettingsMixin:
                         "Saved ✓ – applies to newly started agents (UI language: restart "
                         "the panel)."),
                     fg="#6ee7a8")
-            except Exception as e:                                   # noqa: BLE001 (dem Nutzer zeigen)
+            except Exception as e:
                 status.configure(
                     text=i18n.L(f"Fehler beim Speichern: {e}", f"Error while saving: {e}"),
                     fg="#ff6b6b")

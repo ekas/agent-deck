@@ -38,16 +38,32 @@ jeder Atemzug einen neuen Eintrag an.
 Fehlt Pillow, ist AVAILABLE False und edge_dock bleibt beim alten Linien-Pfad – an
 einer fehlenden Bibliothek darf das Deck nicht scheitern.
 """
-from collections import OrderedDict
 
-from deck.render.kit import mix as _mix
 # Masse und Masken liegen in capsule_masks - dieses Modul setzt daraus die Schichten
 # zusammen und faerbt sie ein.
 from deck.render.capsule_masks import (
-    _BITS_MAX, BLOOM_FADE, BLOOM_HOT, BODY_FADE, BODY_WHITE_HOT, FLASH_BLOOM, FLASH_WHITE,
-    GROUND, HIT_ALPHA, SHEEN_HOT, SHEEN_WHITE, WARM_WHITE, WARM_WHITE_HOT,
-    _bits_cache, _canon, _mask_cache, _masks, _mul, _trim, _wave_layers,
+    _BITS_MAX,
+    BLOOM_FADE,
+    BLOOM_HOT,
+    BODY_FADE,
+    BODY_WHITE_HOT,
+    FLASH_BLOOM,
+    FLASH_WHITE,
+    GROUND,
+    HIT_ALPHA,
+    SHEEN_HOT,
+    SHEEN_WHITE,
+    WARM_WHITE,
+    WARM_WHITE_HOT,
+    _bits_cache,
+    _canon,
+    _mask_cache,
+    _masks,
+    _mul,
+    _trim,
+    _wave_layers,
 )
+from deck.render.kit import mix as _mix
 
 try:                                  # Pillow ist die einzige Nicht-Stdlib-Abhaengigkeit
     from PIL import Image, ImageChops, ImageDraw, ImageFilter
@@ -150,7 +166,7 @@ def _qc(color, step=6):
     Statusfarbe fadet. Der Sprung liegt unter der Wahrnehmungsschwelle."""
     c = color.lstrip("#")
     r, g, b = (int(c[i:i + 2], 16) for i in (0, 2, 4))
-    return "#%02x%02x%02x" % (r // step * step, g // step * step, b // step * step)
+    return f"#{r // step * step:02x}{g // step * step:02x}{b // step * step:02x}"
 
 
 def _qe(eff, step=0.015):

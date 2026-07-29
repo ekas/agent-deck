@@ -9,12 +9,8 @@ Die Fallback-Werte in getattr(cfg, ...) greifen nur, wenn ein config-Eintrag feh
 
 from deck import i18n
 from deck.domain import config as cfg
-from deck.render.kit import BG
-from deck.render.kit import CARD_BORDER
-from deck.render.kit import CARD_FILL
-from deck.render.kit import INK_3
+from deck.render.kit import BG, CARD_BORDER, CARD_FILL, INK_3
 from deck.render.kit import mix as _mix
-
 
 # ── FROSTPANE-Palette (BG/CARD_FILL/INK…) lebt jetzt in canvas_kit ───────
 # Aus der schwarzen Kiste wird eine dunkel getönte Scheibe; jede Karte glüht ruhig

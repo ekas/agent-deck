@@ -11,9 +11,7 @@ from deck import i18n
 from deck.claude import summarize as cs
 from deck.ops import log
 from deck.render import kit as ck
-from deck.render.kit import CARD_BORDER
-from deck.render.kit import INK_3
-
+from deck.render.kit import CARD_BORDER, INK_3
 from deck.ui.theme import SUMMARY_MODEL, SUMMARY_ON, TICKET_AUTO, TICKET_PROJECT, UI_PUMP_MS
 
 

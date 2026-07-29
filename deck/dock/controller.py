@@ -87,18 +87,16 @@ Schließen im angedockten Zustand: es gibt keine Titelleiste/kein ✕. Zum Beend
 im ⚙-Dialog „Am Rand andocken" auf „Aus" stellen – dann ist die Titelleiste
 (inkl. Schließen) wieder da.
 """
-from deck.render import capsule as hrender
-
-from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, NEON_BLOOM, scale_metrics
-from deck.dock.frameless import FramelessMixin
-from deck.dock.reveal import RevealMixin
 from deck.dock.animation import AnimationMixin
 from deck.dock.clipping import ClippingMixin
-from deck.dock.poll import PollMixin
+from deck.dock.frameless import FramelessMixin
 from deck.dock.geometry import GeometryMixin
 from deck.dock.handle import HandleMixin
+from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, NEON_BLOOM, scale_metrics
+from deck.dock.poll import PollMixin
+from deck.dock.reveal import RevealMixin
 from deck.dock.wave import WaveMixin
-from deck.platform import timing as wtime
+from deck.render import capsule as hrender
 
 
 class EdgeDock(

@@ -18,11 +18,13 @@ from deck.domain import status_model as sm
 from deck.domain.binding import is_placeholder_ws as _is_placeholder_ws
 from deck.domain.binding import repo_from_title as _repo_from_title
 from deck.platform import focus as wf
-from deck.ui.theme import AUTO_MAX_TRIES
-from deck.ui.theme import AUTO_READY_GRACE
-from deck.ui.theme import PENDING_AUTO_TTL
-from deck.ui.theme import STALE_WINDOW_S
-from deck.ui.theme import WINDOWS
+from deck.ui.theme import (
+    AUTO_MAX_TRIES,
+    AUTO_READY_GRACE,
+    PENDING_AUTO_TTL,
+    STALE_WINDOW_S,
+    WINDOWS,
+)
 
 
 class WindowSyncMixin:

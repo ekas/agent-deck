@@ -10,10 +10,19 @@ import tkinter as tk
 from deck import i18n
 from deck.claude import summarize as cs
 from deck.platform import dpi
-from deck.render.kit import INK
-from deck.render.kit import INK_3
-
-from deck.ui.theme import HOVER_TIP_MS, PREFETCH_EVERY_S, RAIL_DIM, RAIL_HOT, RAIL_IDLE, SUMMARY_ON, SUMMARY_PREFETCH, TICKET_AUTO, TICKET_MAX_CHARS, TIP_LEAVE_MS
+from deck.render.kit import INK, INK_3
+from deck.ui.theme import (
+    HOVER_TIP_MS,
+    PREFETCH_EVERY_S,
+    RAIL_DIM,
+    RAIL_HOT,
+    RAIL_IDLE,
+    SUMMARY_ON,
+    SUMMARY_PREFETCH,
+    TICKET_AUTO,
+    TICKET_MAX_CHARS,
+    TIP_LEAVE_MS,
+)
 
 
 class HoverMixin:

@@ -10,12 +10,10 @@ force). Ein Test ohne verstecktes Fenster beweist hier NICHTS.
 
 Die Bytes muessen vormultipliziertes BGRA sein, die Hoehe negativ (top-down).
 """
-from ctypes import wintypes
 import ctypes
+from ctypes import wintypes
 
-from deck.platform.win32 import gdi32
-from deck.platform.win32 import user32
-
+from deck.platform.win32 import gdi32, user32
 
 # ── Per-Pixel-Alpha (fuer den Griff-Balken) ─────────────
 # Tk kennt nur zwei Arten Transparenz: das GANZE Fenster halbdurchsichtig (-alpha)
@@ -101,7 +99,7 @@ def layer_probe(hwnd):
                 f"layered={bool(ex & _WS_EX_LAYERED)} "
                 f"rect={r.right - r.left}x{r.bottom - r.top} "
                 f"attr_modus={attr}(alpha={alpha.value},flags=0x{flags.value:X})")
-    except Exception as e:                             # noqa: BLE001 (Diagnose)
+    except Exception as e:
         return f"probe fehlgeschlagen: {e}"
 
 
@@ -190,7 +188,7 @@ def layered_push(hwnd, bits, w, h):
             LAST_ERROR = ""      # Erfolg -> alten Grund nicht stehen lassen
             return True
         return _layer_fail("UpdateLayeredWindow")
-    except Exception as e:                             # noqa: BLE001 (Grund festhalten)
+    except Exception as e:
         return _layer_fail(f"Ausnahme {type(e).__name__}: {e}")
     finally:
         # Jede angeforderte GDI-Resource wieder hergeben: das laeuft im Puls-Takt

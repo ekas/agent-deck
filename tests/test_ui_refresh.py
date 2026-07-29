@@ -2,12 +2,12 @@
 gibt (_apply_pending_auto, _set_slot_mode, _update_dock_glow).
 """
 
-import helpers  # setzt sys.path und die Deck-Sprache
+import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+from helpers import _CYCLE
 
+# sys.path und nagelt die Deck-Sprache auf Deutsch.
 from deck.domain import config as cfg
 from deck.ui import theme
-
-from helpers import _CYCLE
 
 
 # Testet die gluecklogik an einem minimalen Fake-Self (ohne tkinter/Broker), indem die
@@ -42,7 +42,6 @@ def _pa(base_ts=0.0, reg_ts=100.0, ready_ts=0.0, sent_ts=0.0, tries=0):
 
 def test_apply_pending_auto():
     assert cfg.NEW_AGENT_MODE == "auto"          # Testdaten gehen von diesem Ziel aus
-    from deck.ui import panel as ad
     GRACE = theme.AUTO_READY_GRACE
 
     # Readiness-Gate: der ERSTE frische Hook armt nur die Uhr, es wird NICHT sofort getippt.
@@ -122,7 +121,7 @@ def _glow_deck():
 
 
 def test_update_dock_glow():
-    f, ad = _glow_deck()
+    f, _ad = _glow_deck()
     # Erster Aufruf: dominanter Status faerbt den Griff, aber KEIN Blitz (kein Vorzustand).
     f._update_dock_glow(["idle", "thinking", "waiting"])
     assert f.dock.calls == [
