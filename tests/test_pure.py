@@ -17,6 +17,7 @@ from deck.domain import status_model as sm
 from deck.domain import binding
 from deck.render import kit as ck
 from deck.claude.hooks import report
+from deck.ui import theme
 from deck.claude import usage as cu
 from deck.domain import config as cfg
 from deck.ops import worktree as wtc
@@ -172,7 +173,7 @@ def _pa(base_ts=0.0, reg_ts=100.0, ready_ts=0.0, sent_ts=0.0, tries=0):
 def test_apply_pending_auto():
     assert cfg.NEW_AGENT_MODE == "auto"          # Testdaten gehen von diesem Ziel aus
     from deck.ui import panel as ad
-    GRACE = ad.AUTO_READY_GRACE
+    GRACE = theme.AUTO_READY_GRACE
 
     # Readiness-Gate: der ERSTE frische Hook armt nur die Uhr, es wird NICHT sofort getippt.
     f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(base_ts=0.0, reg_ts=100.0)}
@@ -199,7 +200,7 @@ def test_apply_pending_auto():
     assert f._pending_auto["A1"]["tries"] == 2 and f._pending_auto["A1"]["sent_ts"] == 110.0
 
     # AUTO_MAX_TRIES erschoepft + immer noch nicht im Ziel -> aufgeben (kein weiteres Senden).
-    f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(ready_ts=101.0, sent_ts=103.0, tries=ad.AUTO_MAX_TRIES)}
+    f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(ready_ts=101.0, sent_ts=103.0, tries=theme.AUTO_MAX_TRIES)}
     f._apply_pending_auto({"A1": {"ts": 105.0, "mode": "plan"}}, 110.0, _CYCLE)
     assert f.cmds.calls == [] and f._pending_auto == {}
 
@@ -222,7 +223,7 @@ def test_apply_pending_auto():
 
     # TTL abgelaufen (relativ zur reg-ts) -> aufgeben, nichts senden.
     f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(reg_ts=100.0)}
-    f._apply_pending_auto({"A1": {"ts": 101.0}}, 100.0 + ad.PENDING_AUTO_TTL + 1, _CYCLE)
+    f._apply_pending_auto({"A1": {"ts": 101.0}}, 100.0 + theme.PENDING_AUTO_TTL + 1, _CYCLE)
     assert f.cmds.calls == [] and f._pending_auto == {}
 
     # Button-Pfad (_set_slot_mode current=None) folgt dem gemerkten slot_mode: plan(2)->auto = 1 Schritt.
@@ -255,34 +256,34 @@ def test_update_dock_glow():
     # Erster Aufruf: dominanter Status faerbt den Griff, aber KEIN Blitz (kein Vorzustand).
     f._update_dock_glow(["idle", "thinking", "waiting"])
     assert f.dock.calls == [
-        (ad.GLOW_STYLE["waiting"][0], ad.GLOW_STYLE["waiting"][1], True, False)]
+        (theme.GLOW_STYLE["waiting"][0], theme.GLOW_STYLE["waiting"][1], True, False)]
     assert f._dock_key == "waiting"
 
     # Ruhiger werdend (Rueckfrage beantwortet -> nur noch ungelesen): kein Blitz.
     f.dock.calls.clear()
     f._update_dock_glow(["idle", "done"])
-    assert f.dock.calls == [(ad.GLOW_STYLE["done"][0], ad.GLOW_STYLE["done"][1], False, False)]
+    assert f.dock.calls == [(theme.GLOW_STYLE["done"][0], theme.GLOW_STYLE["done"][1], False, False)]
 
     # Gelesen -> alle idle: graue Ruhefarbe, kein Blitz.
     f.dock.calls.clear()
     f._update_dock_glow(["idle", "idle"])
-    assert f.dock.calls == [(ad.GLOW_STYLE["idle"][0], ad.GLOW_STYLE["idle"][1], False, False)]
+    assert f.dock.calls == [(theme.GLOW_STYLE["idle"][0], theme.GLOW_STYLE["idle"][1], False, False)]
 
     # Jetzt wird einer fertig -> gruen UND Blitz (dringlicher als idle).
     f.dock.calls.clear()
     f._update_dock_glow(["idle", "done"])
-    assert f.dock.calls == [(ad.GLOW_STYLE["done"][0], ad.GLOW_STYLE["done"][1], False, True)]
+    assert f.dock.calls == [(theme.GLOW_STYLE["done"][0], theme.GLOW_STYLE["done"][1], False, True)]
 
     # Verbindung verloren -> Rot kommt NICHT aus GLOW_STYLE (im Panel berechnet), ruhig.
     # Aus 'ungelesen' heraus ist Rot der ruhigere Rang -> kein Blitz, nur Farbwechsel.
     f.dock.calls.clear()
     f._update_dock_glow(["idle", "lost"])
-    assert f.dock.calls == [(ad.LOST_GLOW, 1.0, False, False)]
+    assert f.dock.calls == [(theme.LOST_GLOW, 1.0, False, False)]
 
     # Keine Kachel -> 'none' (Intensitaet 0; das Dock faellt selbst auf Cyan zurueck).
     f.dock.calls.clear()
     f._update_dock_glow([])
-    assert f.dock.calls == [(ad.GLOW_STYLE["none"][0], 0.0, False, False)]
+    assert f.dock.calls == [(theme.GLOW_STYLE["none"][0], 0.0, False, False)]
 
     # Ohne Dock (schwebendes Fenster) darf nichts passieren.
     f.dock = None
@@ -988,11 +989,16 @@ def test_tip_refs_prefers_memory_over_cache_file():
     try:
         assert f._tip_refs("sess-3")["ticket"] == "NEU-2"  # frisch gescannt > Cache-Datei
         assert f._tip_refs("")["ticket"] == ""
-        prev, ad.TICKET_AUTO = ad.TICKET_AUTO, False
+        # Gepatcht wird in hover, NICHT in panel: _tip_refs lebt im HoverMixin und
+        # liest TICKET_AUTO aus dem Namensraum von deck/ui/hover.py. panel hat eine
+        # eigene Bindung desselben Werts - ein Patch dort bliebe wirkungslos, und der
+        # Test waere still gruen, ohne den Aus-Fall zu pruefen.
+        from deck.ui import hover
+        prev, hover.TICKET_AUTO = hover.TICKET_AUTO, False
         try:
             assert f._tip_refs("sess-3") == {"ticket": "", "pr": ""}   # Erkennung aus
         finally:
-            ad.TICKET_AUTO = prev
+            hover.TICKET_AUTO = prev
     finally:
         ad.cs.cached_refs, ad.cs.cached_summary = orig
 
