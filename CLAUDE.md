@@ -49,16 +49,24 @@ das man auf Papier nachprüfen könnte, gehört sie nach `domain/`.
 
 | Ich will … | … dann hierhin |
 |---|---|
-| Kachel-Aussehen, Farben, Beschriftung | `ui/tiles.py`, Werte in `ui/theme.py` |
+| wie eine Kachel aussieht | `ui/tile_draw.py`, Werte in `ui/theme.py` |
+| wo Kacheln liegen, Reihenfolge | `ui/tiles.py`, Ziehen in `ui/reorder.py` |
 | Statusfarbe oder -text ändern | `ui/theme.py` (`GLOW_STYLE`, `STATUS_LABEL`) |
 | wann ein Status kippt | `domain/status_model.py` |
-| Poll-Verhalten, Bindungen, Auto-Startmodus | `ui/refresh.py` |
-| Tooltip-Inhalt | `ui/hover.py`, Zusammenfassung in `claude/summarize.py` |
-| Ein-/Ausklappen, Griff, Animation | `dock/` — Maße in `dock/metrics.py` |
+| Poll-Takt, Kacheln nachziehen | `ui/refresh.py` |
+| Bindungen, geschlossene Fenster, Auto-Startmodus | `ui/windows.py` |
+| Fenstergröße und Skalierung | `ui/layout.py` |
+| Tooltip-Inhalt | `ui/hover.py`, Text in `claude/summarize.py`, Ticket/PR in `claude/refs.py` |
+| Ein-/Ausklappen, Animation | `dock/animation.py` — **die drei Sicherungen dort lassen** |
+| Griff: Aussehen | `render/capsule.py`, Maße und Masken in `render/capsule_masks.py` |
+| Griff: Verhalten | `dock/handle.py`, Schwappen in `dock/wave.py` |
 | ein neues Kommando an die Extension | `domain/protocol.py` **und** `extension/extension.js` |
 | Hook-Verhalten (was gemeldet wird) | `claude/hooks/report.py` |
-| Usage-Zahlen | `claude/usage.py`, Anzeige in `ui/bottombar.py` |
-| Ticket → worktree | `ui/ticket.py`, Aufräumen in `ops/worktree.py` |
+| Usage: Zahlen holen | `claude/usage.py`, Token in `claude/usage_token.py` |
+| Usage: Anzeige und Ampelfarben | `claude/usage_view.py`, Balken in `ui/bottombar.py` |
+| Ticket zuweisen | `ui/ticket.py` |
+| worktrees abräumen | `ui/worktree_sweep.py`, Git-Teil in `ops/worktree.py` |
+| irgendetwas mit Win32 | `platform/` — neue Funktion? Signatur in `platform/win32.py` typisieren |
 
 ### Die Einsprungpunkte im Wurzelverzeichnis sind Verträge
 
@@ -135,10 +143,14 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
 
 ## Konventionen
 
-- **Eine Datei = ein Konzept, Ziel < 400 Zeilen.** Zwei Altlasten reißen das Ziel noch:
-  `deck/ui/panel.py` (~2.900 Zeilen, eine Klasse mit 103 Methoden) und
-  `deck/dock/controller.py` (~1.900). Beide werden entlang ihrer Abschnittsgrenzen
-  aufgeteilt; neue Konzepte kommen in eigene Module, statt dort anzuwachsen.
+- **Eine Datei = ein Konzept, < 400 Zeilen.** Das gilt inzwischen für **jedes** Modul —
+  die größte Datei ist `ui/panel.py` mit 375 Zeilen. Wer eine Datei über die Grenze
+  wachsen lässt, hat meist zwei Konzepte darin; der Ausweg ist ein neues Modul, nicht
+  eine Ausnahme.
+- **Die zwei großen Klassen sind Mixin-Kompositionen.** `AgentDeck` (103 Methoden) setzt
+  sich aus 13 Mixins in `deck/ui/` zusammen, `EdgeDock` (97) aus 8 in `deck/dock/`. Eine
+  neue Methode gehört in das Mixin ihres Themas — und wenn es keines gibt, in ein neues.
+  Der Klassenkopf in `panel.py` bzw. `controller.py` ist die Übersicht.
 - **Kommentare auf Deutsch**, wie der Rest des Repos. Sie erklären das *Warum* — das
   *Was* steht im Code.
 - **Tests spiegeln `deck/`** — eine Datei je Modulbereich, benannt nach ihm

@@ -181,7 +181,8 @@ Deck läuft ansonsten vollständig.
 Bewusst **flache Module ohne Package**: `restart()` startet sich über `sys.argv[0]`
 neu, ein `python -m`-Layout würde das brechen.
 
-Der Code liegt im Paket `deck/`, geschnitten in Schichten. Abhängigkeiten zeigen **nur
+Der Code liegt im Paket `deck/`, geschnitten in Schichten — 62 Module, keines über 400
+Zeilen. Abhängigkeiten zeigen **nur
 nach unten** — und das ist keine Absichtserklärung, sondern
 [getestet](tests/test_architecture.py): ein Import nach oben macht die Suite rot und
 nennt Datei und Zeile.
@@ -210,11 +211,16 @@ in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
 
 | Datei | Aufgabe |
 |---|---|
-| `platform/focus.py` | Fokus, Layered Windows, Fenster-Identität |
+| `platform/win32.py` | DLL-Handles und **typisierte** ctypes-Signaturen (Grundlage) |
+| `platform/focus.py` | Fenster finden, nach vorn holen, Titelleiste stylen |
+| `platform/layered.py` | Per-Pixel-Alpha — schiebt das Kapselbild ins Fenster |
+| `platform/clip.py` | Fenster an der Bildschirmkante beschneiden |
+| `platform/timing.py` | Timer-Auflösung und Bildwiederholrate |
 | `platform/dpi.py` · `platform/monitor.py` | DPI-Skalierung · Fenster im Monitor halten |
 | `render/kit.py` | Palette, Zeichen-Primitive, pure Farb-/Text-Helfer |
 | `render/card.py` | Kachelfläche und Halo (Pillow, Masken-Cache) |
-| `render/capsule.py` | Griff als freistehende Neon-Kapsel (Per-Pixel-Alpha) |
+| `render/capsule.py` | Griff-Kapsel einfärben und zusammensetzen |
+| `render/capsule_masks.py` | Lage, Maße und Masken der Kapsel |
 | `render/fluid.py` | Schwappen im Kern der Kapsel |
 | `render/glow.py` | Puls, Crossfade, Bloom, Press-Pop |
 
@@ -227,8 +233,11 @@ in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
 |---|---|
 | `claude/hooks/report.py` · `statusline.py` | die Hooks (schreiben den Slot-Status) |
 | `claude/hooks/resolve.py` | Slot-Auflösung über die Prozesskette |
-| `claude/usage.py` | Usage-Abruf — Token aus CLI oder Claude Desktop (AES-GCM über Windows CNG, dependency-frei) |
-| `claude/summarize.py` | Kurzzusammenfassung, Ticket-/PR-Erkennung |
+| `claude/usage.py` | Usage-Abruf und Hintergrund-Poller |
+| `claude/usage_token.py` | Token aus CLI oder Claude Desktop (DPAPI + AES-GCM über Windows CNG, dependency-frei) |
+| `claude/usage_view.py` | Antwort auswerten, Ampelfarben, Tooltip-Text (pur) |
+| `claude/summarize.py` | Kurzzusammenfassung des Chats |
+| `claude/refs.py` | Ticket- und PR-Nummer aus dem Chat (reine Regex) |
 | `claude/settings.py` | `~/.claude/settings.json` lesen |
 | `net/broker.py` · `net/commands.py` | TCP-Server · Fassade über die Wire-Dicts |
 | `extension/` | VS-Code-Extension (reines JS, kein Build) |
@@ -254,12 +263,14 @@ in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
 
 | Datei | Aufgabe |
 |---|---|
-| `ui/panel.py` | Fenster, Layout, Hauptschleife |
+| `ui/panel.py` | Fenster, Aufbau, Hauptschleife (mischt 13 Mixins) |
 | `ui/theme.py` | Farben, Timings, Anzeigetexte |
-| `ui/tiles.py` · `ui/reorder.py` | Kacheln zeichnen · per Ziehen umsortieren |
-| `ui/refresh.py` | Poll-Takt, Bindungen pflegen |
+| `ui/layout.py` | Fenstergröße und Skalierung |
+| `ui/tiles.py` · `ui/tile_draw.py` · `ui/reorder.py` | Kacheln anordnen · eine Kachel zeichnen · umsortieren |
+| `ui/refresh.py` · `ui/windows.py` | Poll-Takt · Bindungen und Fenster-Sync |
 | `ui/hover.py` · `ui/connect.py` · `ui/actions.py` | Tooltip · Fenster binden · Klick-Wirkungen |
-| `ui/ticket.py` · `ui/settings_dialog.py` | Ticket → worktree · Einstellungen |
+| `ui/ticket.py` · `ui/worktree_sweep.py` | Ticket zuweisen · worktrees abräumen |
+| `ui/settings_dialog.py` | Einstellungen |
 | `ui/bottombar.py` | Dauer-UI: Usage links, Einstellungen rechts |
 | `ui/uithread.py` | Rückweg vom Daemon-Thread auf den Tk-Thread |
 | `ops/log.py` | Logging (`pythonw` hat kein stderr) |
