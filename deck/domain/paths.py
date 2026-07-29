@@ -1,4 +1,4 @@
-"""Ein Ort fuer den State-Ordner + atomares JSON-Lesen/Schreiben.
+"""Ein Ort fuer alle Pfade: Repo-Wurzel, State-Ordner, atomares JSON.
 
 Frueher lag die STATE_DIR-Formel doppelt (deck_common.py UND report.py) und das
 atomare .tmp+os.replace-Schreiben gleich drei Mal herum (deck_common, report,
@@ -9,6 +9,16 @@ sys.path, der Import haengt also nicht am cwd).
 """
 import os
 import json
+
+# Wurzel des Repos: drei Ebenen ueber dieser Datei (deck/domain/paths.py).
+#
+# Wer Dateien NEBEN dem Code ablegt oder liest - bindings.json und die uebrigen
+# Laufzeit-JSONs, assets/robot.ico, agent-deck-glow.css, der Panel-Einstieg fuer
+# den Waechter - fragt hier und rechnet NICHT selbst mit __file__. Sonst zeigt
+# jede Modulverschiebung ins Leere, und das faellt nicht auf: die Laufzeitdateien
+# entstehen einfach neu am falschen Ort, waehrend die alten mit allen Fenster-
+# Zuordnungen unsichtbar liegenbleiben.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Slot-Zustaende liegen als kleine JSON-Dateien in diesem Ordner (siehe report.py).
 STATE_DIR = os.path.join(

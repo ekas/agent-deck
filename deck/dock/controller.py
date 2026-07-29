@@ -93,13 +93,13 @@ import sys
 import time
 import tkinter as tk
 
-import config as cfg
-import deck_paths as dp
-import handle_render as hrender
-import handle_wave as hwave
-import hidpi
-import win_focus as wf
-from canvas_kit import mix as _mix
+from deck.domain import config as cfg
+from deck.domain import paths as dp
+from deck.render import capsule as hrender
+from deck.render import fluid as hwave
+from deck.platform import dpi
+from deck.platform import focus as wf
+from deck.render.kit import mix as _mix
 
 # Hierhin schreibt _report_layer_failure, wenn der Bild-Pfad des Griffs aufgibt
 # (neben panel.lock, also im State-Ordner des Decks). Siehe dort, warum es eine
@@ -328,7 +328,7 @@ NEON_DECAY = getattr(cfg, "BLOOM_DECAY", 0.82) ** (NEON_MS / float(getattr(cfg, 
 
 # ── HiDPI ────────────────────────────────────────────────────────────────
 # Alle Pixelmasse oben sind DESIGN-Einheiten (Mass bei 100 %). Seit das Deck
-# DPI-aware zeichnet (hidpi.py), sind Tk-Koordinaten echte Geraetepixel – ein
+# DPI-aware zeichnet (dpi.py), sind Tk-Koordinaten echte Geraetepixel – ein
 # 12-px-Griff waere auf einem 150-%-Schirm nur noch 8 px "gross" und kaum
 # greifbar. Darum werden die Masse hier EINMAL beim Start und danach bei jedem
 # Monitorwechsel umgerechnet.
@@ -349,11 +349,11 @@ def scale_metrics():
     for name in _SCALED_PX:
         if name not in _design:
             _design[name] = g[name]
-        g[name] = max(1, hidpi.px(_design[name]))
+        g[name] = max(1, dpi.px(_design[name]))
     # Die Roehren-Tabelle traegt Linienbreiten in px (der Fade-Anteil bleibt).
     if "NEON_LAYERS" not in _design:
         _design["NEON_LAYERS"] = NEON_LAYERS
-    g["NEON_LAYERS"] = tuple((max(1, hidpi.px(lw)), fade)
+    g["NEON_LAYERS"] = tuple((max(1, dpi.px(lw)), fade)
                              for lw, fade in _design["NEON_LAYERS"])
 
 

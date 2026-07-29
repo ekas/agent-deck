@@ -35,7 +35,7 @@ import shutil
 import threading
 import subprocess
 
-import deck_paths
+from deck.domain import paths
 
 # Auf Windows (pythonw) kein kurz aufblitzendes Konsolenfenster fuer claude.
 _NO_WINDOW = 0x08000000 if os.name == "nt" else 0
@@ -49,7 +49,7 @@ _SEM = threading.BoundedSemaphore(MAX_CONCURRENT)
 # Claude-Code-Transcripts: ~/.claude/projects/<enc-cwd>/<session-id>.jsonl
 PROJECTS_DIR = os.path.join(os.path.expanduser("~"), ".claude", "projects")
 # Cache der erzeugten Zusammenfassungen (je Session eine winzige JSON-Datei).
-SUMMARY_DIR = os.path.join(deck_paths.STATE_DIR, "summaries")
+SUMMARY_DIR = os.path.join(paths.STATE_DIR, "summaries")
 
 # Anweisung an das Modell (je Sprache eine Fassung). Der Digest wird direkt
 # angehaengt. Die verlangte Ausgabesprache folgt der Deck-Sprache (i18n) -> die
@@ -401,7 +401,7 @@ def _cache_path(session_id):
 def read_cache(session_id):
     if not session_id:
         return None
-    return deck_paths.load_json(_cache_path(session_id), None)
+    return paths.load_json(_cache_path(session_id), None)
 
 
 def cached_summary(session_id):
@@ -424,7 +424,7 @@ def _merge_cache(session_id, **fields):
     gehen (und umgekehrt)."""
     data = read_cache(session_id) or {}
     data.update(fields)
-    deck_paths.save_json(_cache_path(session_id), data)
+    paths.save_json(_cache_path(session_id), data)
     return data
 
 

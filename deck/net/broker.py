@@ -13,7 +13,7 @@ import socket
 import threading
 import json
 
-import protocol
+from deck.domain import protocol
 
 
 class _Client:

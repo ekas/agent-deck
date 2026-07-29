@@ -44,7 +44,7 @@ import time
 import urllib.request
 import urllib.error
 
-import i18n
+from deck import i18n
 from ctypes import wintypes
 from datetime import datetime, timezone
 
@@ -72,7 +72,8 @@ def _shared():
         return _shared_mod
     import importlib
     import sys
-    here = os.path.dirname(os.path.abspath(__file__))
+    from deck.domain import paths
+    here = paths.REPO_ROOT
     for p in (os.environ.get("CLAUDE_USAGE_SHARED_DIR"),
               os.path.join(here, "..", "claude-usage-shared")):
         if p and os.path.isfile(os.path.join(p, "usage_poller.py")):

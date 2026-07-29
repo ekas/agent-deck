@@ -7,7 +7,7 @@ kapselt den slot[0]==Fenster-Vertrag und gibt bool zurueck (True = an eine
 verbundene Extension geschickt). Die App-Logik (aktive Kachel, gemerktes Effort,
 Auswahl zuruecksetzen) bleibt bewusst im Panel – hier steckt NUR das Senden.
 """
-import protocol
+from deck.domain import protocol
 
 
 class BrokerCommands:

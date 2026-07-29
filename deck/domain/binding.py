@@ -9,10 +9,12 @@ Beide Dateien werden selbstheilend geladen und atomar (deck_paths) geschrieben.
 import os
 import re
 
-import config as cfg
-from deck_paths import load_json, save_json
+from deck.domain import config as cfg
+from deck.domain.paths import REPO_ROOT, load_json, save_json
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
+# Die Laufzeit-JSONs liegen neben dem Code, also in der Repo-Wurzel -
+# NICHT neben diesem Modul (siehe paths.REPO_ROOT).
+_DIR = REPO_ROOT
 BIND_FILE = os.path.join(_DIR, "bindings.json")
 EFFORT_FILE = os.path.join(_DIR, "slot_effort.json")
 SETTINGS_FILE = os.path.join(_DIR, "deck_settings.json")

@@ -30,7 +30,7 @@ import threading
 import traceback
 import faulthandler
 
-import deck_paths as dp
+from deck.domain import paths as dp
 
 # Neben panel.lock (…/claude-agent-deck/panel.log).
 LOG_PATH = os.path.join(os.path.dirname(dp.STATE_DIR), "panel.log")

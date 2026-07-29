@@ -13,21 +13,21 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import status_model as sm
-import bindstore
-import canvas_kit as ck
-import report
-import claude_usage as cu
-import config as cfg
-import worktree_cleanup as wtc
-import chat_summary as cs
-import claude_settings as cset
-import edge_dock as ed
-import handle_render as hrender
-import handle_wave as hwave
-import screen_fit as sf
-import win_focus as wf     # nur fuer die Bildrate im Takt-Test (edge_dock laedt es ohnehin)
-import i18n
+from deck.domain import status_model as sm
+from deck.domain import binding
+from deck.render import kit as ck
+from deck.claude.hooks import report
+from deck.claude import usage as cu
+from deck.domain import config as cfg
+from deck.ops import worktree as wtc
+from deck.claude import summarize as cs
+from deck.claude import settings as cset
+from deck.dock import controller as ed
+from deck.render import capsule as hrender
+from deck.render import fluid as hwave
+from deck.platform import monitor as sf
+from deck.platform import focus as wf  # nur fuer die Bildrate im Takt-Test (edge_dock laedt es ohnehin)
+from deck import i18n
 
 # Die Usage-/Anzeige-Tests pruefen die deutsche Baseline. Deck-Sprache hier fest auf
 # Deutsch stellen, damit die Tests unabhaengig vom realen ~/.claude/settings.json
@@ -153,7 +153,7 @@ class _FakeCmds:
 
 
 def _fake_deck(ok=True):
-    import agent_deck as ad
+    from deck.ui import panel as ad
     f = type("F", (), {})()
     f._pending_auto = {}
     f.slot_mode = {}
@@ -171,7 +171,7 @@ def _pa(base_ts=0.0, reg_ts=100.0, ready_ts=0.0, sent_ts=0.0, tries=0):
 
 def test_apply_pending_auto():
     assert cfg.NEW_AGENT_MODE == "auto"          # Testdaten gehen von diesem Ziel aus
-    import agent_deck as ad
+    from deck.ui import panel as ad
     GRACE = ad.AUTO_READY_GRACE
 
     # Readiness-Gate: der ERSTE frische Hook armt nur die Uhr, es wird NICHT sofort getippt.
@@ -242,7 +242,7 @@ class _FakeDock:
 
 def _glow_deck():
     """Fake-Self mit der echten (ungebundenen) _update_dock_glow-Methode."""
-    import agent_deck as ad
+    from deck.ui import panel as ad
     f = type("F", (), {})()
     f.dock = _FakeDock()
     f._dock_key = None
@@ -291,42 +291,42 @@ def test_update_dock_glow():
 
 # ── bindstore-Helfer ─────────────────────────────────────
 def test_is_placeholder_ws():
-    assert bindstore.is_placeholder_ws("") is True
-    assert bindstore.is_placeholder_ws(None) is True
-    assert bindstore.is_placeholder_ws("unknown") is True
-    assert bindstore.is_placeholder_ws("  Unknown  ") is True        # getrimmt/case-insensitiv
-    assert bindstore.is_placeholder_ws("myrepo") is False
+    assert binding.is_placeholder_ws("") is True
+    assert binding.is_placeholder_ws(None) is True
+    assert binding.is_placeholder_ws("unknown") is True
+    assert binding.is_placeholder_ws("  Unknown  ") is True        # getrimmt/case-insensitiv
+    assert binding.is_placeholder_ws("myrepo") is False
 
 
 def test_repo_from_title():
-    assert bindstore.repo_from_title("main.py - myrepo - Visual Studio Code") == "myrepo"
-    assert bindstore.repo_from_title("● app.tsx - acme-client - Visual Studio Code") == "acme-client"
-    assert bindstore.repo_from_title("Visual Studio Code") == "Visual Studio Code"  # nur Marker -> kein Ordner davor
+    assert binding.repo_from_title("main.py - myrepo - Visual Studio Code") == "myrepo"
+    assert binding.repo_from_title("● app.tsx - acme-client - Visual Studio Code") == "acme-client"
+    assert binding.repo_from_title("Visual Studio Code") == "Visual Studio Code"  # nur Marker -> kein Ordner davor
 
 
 def test_ticket_slug():
-    assert bindstore.ticket_slug("ABC-123") == "abc-123"
-    assert bindstore.ticket_slug("ABC-123: Login fix") == "abc-123-login-fix"
-    assert bindstore.ticket_slug("  #42  ") == "42"                   # getrimmt, Sonderzeichen -> weg
-    assert bindstore.ticket_slug("a//b__c") == "a-b-c"               # Laeufe zu einem '-'
-    assert bindstore.ticket_slug("") == ""
-    assert bindstore.ticket_slug("---") == ""                        # nur Trenner -> leer
+    assert binding.ticket_slug("ABC-123") == "abc-123"
+    assert binding.ticket_slug("ABC-123: Login fix") == "abc-123-login-fix"
+    assert binding.ticket_slug("  #42  ") == "42"                   # getrimmt, Sonderzeichen -> weg
+    assert binding.ticket_slug("a//b__c") == "a-b-c"               # Laeufe zu einem '-'
+    assert binding.ticket_slug("") == ""
+    assert binding.ticket_slug("---") == ""                        # nur Trenner -> leer
 
 
 def test_ticket_branch():
-    assert bindstore.ticket_branch("ABC-123") == "ticket/abc-123"
-    assert bindstore.ticket_branch("ABC-123", prefix="feat/") == "feat/abc-123"
-    assert bindstore.ticket_branch("") == ""                          # leerer Slug -> kein Branch
-    assert bindstore.ticket_branch("!!!") == ""
+    assert binding.ticket_branch("ABC-123") == "ticket/abc-123"
+    assert binding.ticket_branch("ABC-123", prefix="feat/") == "feat/abc-123"
+    assert binding.ticket_branch("") == ""                          # leerer Slug -> kein Branch
+    assert binding.ticket_branch("!!!") == ""
 
 
 def test_jira_key():
-    assert bindstore.jira_key("2701", project="PROJ") == "PROJ-2701"   # nur Nummer -> Praefix davor
-    assert bindstore.jira_key("  #42 ", project="PROJ") == "PROJ-42"   # getrimmt, '#' weg
-    assert bindstore.jira_key("PROJ-2701", project="PROJ") == "PROJ-2701"  # schon ein Key -> so lassen
-    assert bindstore.jira_key("abc-123", project="PROJ") == "ABC-123"  # Key gewinnt, Projektteil gross
-    assert bindstore.jira_key("2701", project="") == "2701"            # kein Projekt -> Nummer roh
-    assert bindstore.jira_key("", project="PROJ") == ""                # leer -> leer
+    assert binding.jira_key("2701", project="PROJ") == "PROJ-2701"   # nur Nummer -> Praefix davor
+    assert binding.jira_key("  #42 ", project="PROJ") == "PROJ-42"   # getrimmt, '#' weg
+    assert binding.jira_key("PROJ-2701", project="PROJ") == "PROJ-2701"  # schon ein Key -> so lassen
+    assert binding.jira_key("abc-123", project="PROJ") == "ABC-123"  # Key gewinnt, Projektteil gross
+    assert binding.jira_key("2701", project="") == "2701"            # kein Projekt -> Nummer roh
+    assert binding.jira_key("", project="PROJ") == ""                # leer -> leer
 
 
 # ── Ticket-Prompts: EINZEILIG + alle Platzhalter gefuellt (inkl. {wt_marker}) ──
@@ -919,7 +919,7 @@ def _tip_deck(cached=None, cached_summary=None, auto=None, bindings=None,
     """Fake-Self mit den echten (ungebundenen) Tooltip-Methoden; chat_summary wird
     gemockt, damit kein Transcript/Cache auf der Platte noetig ist. bindings/worktrees
     speisen die Herkunftszeile (Repo · Fenster · Slot, siehe _origin_lines)."""
-    import agent_deck as ad
+    from deck.ui import panel as ad
     f = type("F", (), {})()
     f._auto_refs = dict(auto or {})
     f.bindings = dict(bindings or {})
@@ -998,7 +998,7 @@ def test_tip_refs_prefers_memory_over_cache_file():
 
 
 def test_refs_card_label_fits_the_narrow_line():
-    import agent_deck as ad
+    from deck.ui import panel as ad
     L = ad.AgentDeck._refs_card_label
     assert L({"ticket": "PROJ-2691", "pr": "62"}) == "PROJ-2691 #62"   # beides, 13 Z.
     assert L({"ticket": "", "pr": "62"}) == "#62"
@@ -1122,7 +1122,7 @@ def test_claude_settings_effort_ultracode_roundtrip():
 
 
 def test_reenable_glow_pure_helpers():
-    import reenable_glow as rg
+    from deck.ops import vscode_glow as rg
     assert rg.fileurl_to_path("file:///C:/a%20b/x.css") == "C:/a b/x.css"
     assert rg.fileurl_to_path("C:/plain.css") == "C:/plain.css"
     imports = rg._extract_imports(
@@ -1140,7 +1140,7 @@ def _patch_si(alive, focus_ret, restart_env=False):
     Verzeichnis legen, _pid_alive/focus_pid faken, RESTART_ENV setzen/loeschen. Gibt
     (si, restore, focus_calls) zurueck; restore() setzt am Ende alles zurueck."""
     import tempfile
-    import single_instance as si
+    from deck.ops import instance as si
     focus_calls = []
     saved = {"LOCK_PATH": si.LOCK_PATH, "REVEAL_PATH": si.REVEAL_PATH,
              "_pid_alive": si._pid_alive,
@@ -1183,7 +1183,7 @@ def test_si_lock_roundtrip():
 
 def test_si_pid_alive_real():
     """Echter ctypes-Pfad: der eigene Prozess lebt, unsinnige PIDs nicht."""
-    import single_instance as si
+    from deck.ops import instance as si
     assert si._pid_alive(os.getpid()) is True
     assert si._pid_alive(0) is False
     assert si._pid_alive(-1) is False
@@ -2420,18 +2420,18 @@ def test_handle_window_is_thicker_than_the_capsule():
 def _befund_fuer(log_text):
     """last_end() gegen ein praepariertes panel.log laufen lassen."""
     import tempfile
-    import deck_log
-    import watchdog as wd
+    from deck.ops import log
+    from deck.ops import watchdog as wd
     fd, path = tempfile.mkstemp(prefix="panellog_", suffix=".log")
     os.close(fd)
-    alt = deck_log.LOG_PATH
+    alt = log.LOG_PATH
     try:
         with open(path, "w", encoding="utf-8") as f:
             f.write(log_text)
-        deck_log.LOG_PATH = path
+        log.LOG_PATH = path
         return wd.last_end()
     finally:
-        deck_log.LOG_PATH = alt
+        log.LOG_PATH = alt
         try:
             os.remove(path)
         except OSError:
@@ -2441,7 +2441,7 @@ def _befund_fuer(log_text):
 def test_watchdog_sieht_sauberes_ende():
     """Panel hat sich selbst beendet -> der Nutzer hat es geschlossen. Der Waechter
     muss das als CLEAN_END erkennen, sonst kommt das Deck alle drei Minuten zurueck."""
-    import watchdog as wd
+    from deck.ops import watchdog as wd
     befund = _befund_fuer(
         "[..] --- Panel-Start (PID 1, Python 3.14.0) ---\n"
         "[..] mainloop beendet (Fenster zerstoert) -> Panel endet regulaer\n"
@@ -2452,7 +2452,7 @@ def test_watchdog_sieht_sauberes_ende():
 def test_watchdog_sieht_abschuss():
     """Log bricht mitten im Lauf ab: keine Exit-Marke, kein Dump -> von aussen
     abgeschossen. Muss neu gestartet werden (also NICHT als CLEAN_END gelten)."""
-    import watchdog as wd
+    from deck.ops import watchdog as wd
     befund = _befund_fuer(
         "[..] --- Panel-Start (PID 1, Python 3.14.0) ---\n"
         "[..] Fehler in Tk-Callback:\n(harmlos, Panel lief weiter)\n")
@@ -2472,7 +2472,7 @@ def test_watchdog_sieht_harten_absturz():
 def test_watchdog_beurteilt_nur_den_letzten_lauf():
     """Nur der Abschnitt nach der LETZTEN Panel-Start-Marke zaehlt: ein Absturz von
     vorgestern darf den heutigen sauberen Lauf nicht ueberstimmen."""
-    import watchdog as wd
+    from deck.ops import watchdog as wd
     befund = _befund_fuer(
         "[..] --- Panel-Start (PID 1, Python 3.14.0) ---\n"
         "Fatal Python error: Aborted\n"
@@ -2482,10 +2482,10 @@ def test_watchdog_beurteilt_nur_den_letzten_lauf():
 
 
 def test_watchdog_waechter_zeilen_sind_kein_panel_lauf():
-    """Der Waechter selbst schreibt KEINE Start-/Ende-Marken (deck_log.install(marks=False)).
+    """Der Waechter selbst schreibt KEINE Start-/Ende-Marken (log.install(marks=False)).
     Stuenden welche im Log, wuerde er seinen eigenen Lauf beurteilen und jedes
     geschlossene Deck wieder hochholen."""
-    import watchdog as wd
+    from deck.ops import watchdog as wd
     befund = _befund_fuer(
         "[..] --- Panel-Start (PID 1, Python 3.14.0) ---\n"
         "[..] --- Panel-Ende (normaler Exit) ---\n"
@@ -2497,7 +2497,7 @@ def test_heartbeat_frische_und_pid_muessen_passen():
     """beats_for(): nur ein frisches Lebenszeichen DIESER PID gilt. Sonst haelt der
     Guard ein fremdes/altes Signal fuer ein lebendes Panel (oder umgekehrt)."""
     import tempfile
-    import single_instance as si
+    from deck.ops import instance as si
     d = tempfile.mkdtemp(prefix="beat_")
     alt = si.BEAT_PATH
     try:

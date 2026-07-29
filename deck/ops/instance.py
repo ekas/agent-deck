@@ -31,8 +31,8 @@ import time
 import ctypes
 from ctypes import wintypes
 
-import deck_paths as dp
-import win_focus as wf
+from deck.domain import paths as dp
+from deck.platform import focus as wf
 
 # Lock liegt neben dem state/-Ordner (…/claude-agent-deck/panel.lock).
 LOCK_PATH = os.path.join(os.path.dirname(dp.STATE_DIR), "panel.lock")

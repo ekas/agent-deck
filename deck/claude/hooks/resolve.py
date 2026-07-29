@@ -11,7 +11,7 @@ import os
 import sys
 import json
 
-from deck_paths import STATE_DIR
+from deck.domain.paths import STATE_DIR
 
 
 def state_dir():

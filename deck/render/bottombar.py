@@ -21,15 +21,15 @@ import webbrowser
 import tkinter as tk
 import tkinter.font as tkfont
 
-from canvas_kit import BG, INK, INK_2, INK_3, round_rect, Tooltip
-import hidpi
-import i18n
+from deck.render.kit import BG, INK, INK_2, INK_3, round_rect, Tooltip
+from deck.platform import dpi
+from deck import i18n
 
 # ── Leisten-Palette (Frost, aber flach statt Pille) ──────────────────────
 # Alle Masse hier sind DESIGN-Einheiten (Mass bei 100 %); gezeichnet wird mit
-# hidpi.px(), damit die Leiste auf einem 150-%-Schirm in echten Pixeln waechst
+# dpi.px(), damit die Leiste auf einem 150-%-Schirm in echten Pixeln waechst
 # statt hochgerechnet zu werden. Die Schriftgroessen stehen dagegen in PUNKTEN –
-# die skaliert Tk selbst ueber `tk scaling` (siehe hidpi.py).
+# die skaliert Tk selbst ueber `tk scaling` (siehe dpi.py).
 _BAR_BG  = "#181820"   # Leistenflaeche: dezent heller als der Fensterkoerper (BG)
 _BORDER  = "#2c2c36"   # feine Trennlinie oben, setzt die Leiste vom Deck ab
 _HOVER   = "#26262f"   # Hover-Highlight hinter dem gerade angefahrenen Element
@@ -63,7 +63,7 @@ class BottomBar:
         self._alive = True
 
         self.canvas = tk.Canvas(parent, bg=_BAR_BG, highlightthickness=0,
-                                height=hidpi.px(_H), width=hidpi.px(240),
+                                height=dpi.px(_H), width=dpi.px(240),
                                 takefocus=0)
         self.canvas.bind("<Configure>", self._on_configure)
         self.canvas.bind("<Destroy>", lambda e: self._on_destroy())
@@ -83,7 +83,7 @@ class BottomBar:
         self._snap = None
         if show_usage:
             try:
-                from claude_usage import UsagePoller
+                from deck.claude.usage import UsagePoller
                 self.poller = UsagePoller(poll_seconds=poll_seconds)
                 self.poller.start()
             except Exception:
@@ -127,7 +127,7 @@ class BottomBar:
         Hoehe in Geraetepixeln setzen und neu zeichnen. Das Panel ruft das aus
         _sync_ui_scale."""
         try:
-            self.canvas.configure(height=hidpi.px(_H))
+            self.canvas.configure(height=dpi.px(_H))
         except tk.TclError:
             return
         self._draw()
@@ -140,9 +140,9 @@ class BottomBar:
         self._last_w = w
         c.delete("all")
         # Design-Einheiten -> Geraetepixel (einmal je Zeichnen, danach nur noch H, PADX …)
-        H, PADX, GAP = hidpi.px(_H), hidpi.px(_PADX), hidpi.px(_GAP)
-        DOT, HLPADX = hidpi.px(_DOT), hidpi.px(_HLPADX)
-        HLH, HLR = hidpi.px(_HLH), hidpi.px(_HLR)
+        H, PADX, GAP = dpi.px(_H), dpi.px(_PADX), dpi.px(_GAP)
+        DOT, HLPADX = dpi.px(_DOT), dpi.px(_HLPADX)
+        HLH, HLR = dpi.px(_HLH), dpi.px(_HLR)
 
         # Leistenflaeche + feine Trennlinie am oberen Rand.
         c.create_rectangle(0, 0, w, H, fill=_BAR_BG, outline="")
@@ -156,7 +156,7 @@ class BottomBar:
             snap = self._snap
             pct = snap.get("session_percent") if snap else None
             sev = snap.get("session_severity") if snap else ""
-            from claude_usage import severity_color
+            from deck.claude.usage import severity_color
             color = severity_color(sev, pct)
             value = f"{pct} %" if pct is not None else "—"
             wl = self._lbl_font.measure("Claude")
@@ -216,13 +216,13 @@ class BottomBar:
         if not self._tip:
             return
         try:
-            from claude_usage import tooltip_text
+            from deck.claude.usage import tooltip_text
             # Anker = Ecke der Leiste; der Versatz geht als dx/dy mit, damit der Tooltip
             # am unteren Bildschirmrand nach OBEN klappt statt halb hinter der Taskleiste
             # zu verschwinden (screen_fit).
             self._tip.show(self.canvas.winfo_rootx(), self.canvas.winfo_rooty(),
                            tooltip_text(getattr(self, "_snap", {}) or {}),
-                           dx=hidpi.px(_PADX), dy=hidpi.px(_H + 2))
+                           dx=dpi.px(_PADX), dy=dpi.px(_H + 2))
         except tk.TclError:
             pass
         except Exception:

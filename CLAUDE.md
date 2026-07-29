@@ -17,31 +17,42 @@ der Standardbibliothek.
 
 ## Aufbau
 
-Das Deck besteht aus **flachen Modulen** — kein Package, keine `__init__.py`. Die
-Trennlinie verläuft nicht über Ordner, sondern über eine Frage: *braucht das Modul einen
-Bildschirm?*
+Der Code liegt im Paket `deck/`. Abhängigkeiten zeigen **nur nach unten** — wer eine
+Datei anlegt, entscheidet zuerst, in welche Schicht sie gehört:
 
-| Zuständigkeit | Module |
+| Schicht | Enthält | Darf NICHT importieren |
+|---|---|---|
+| `deck/domain/` | Anzeigefreie Domäne: Statusmodell, Pfade, Protokoll, Slot-Zustand, Zuordnung, Konfiguration | alles andere |
+| `deck/platform/` | Win32: Fokus, DPI, Monitor-Arbeitsbereich | `render`, `ui`, `dock`, `claude` |
+| `deck/render/` | Zeichnerei (Pillow/Canvas): Kachel, Kapsel, Welle, Glow, Bottom-Bar | `ui`, `dock`, `claude` |
+| `deck/claude/` | Claude-Code-Spezifisches: Usage, Zusammenfassung, Settings, **Hooks** | `ui`, `dock`, `render` |
+| `deck/net/` | Broker (TCP) und Kommando-Vokabular zur Extension | `ui`, `dock`, `render` |
+| `deck/dock/` | Andocken am Rand, Griff-Fenster, Slide-Animation | `ui` |
+| `deck/ui/` | Panel-Fenster, Kacheln, Interaktion — die oberste Schicht | — |
+| `deck/ops/` | Betrieb: Log, Zweitstart-Guard, Wächter, Worktrees, VS-Code-Patch | `ui`, `dock`, `render` |
+
+**Faustregel:** Rechnen gehört nach `domain/` und wird getestet; Zeichnen gehört nach
+`render/` oder `ui/` und wird angeschaut. Wenn eine Methode in `ui/` etwas ausrechnet,
+das man auf Papier nachprüfen könnte, gehört sie nach `domain/`.
+
+### Die Einsprungpunkte im Wurzelverzeichnis sind Verträge
+
+Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
+`runpy.run_module`-Aufruf. Ihre Namen dürfen sich nicht ändern:
+
+| Datei | Wer nagelt den Namen fest |
 |---|---|
-| Panel-Fenster, Kacheln, Interaktion | `agent_deck.py` |
-| Andocken am Rand, Griff-Kapsel | `edge_dock.py`, `handle_render.py`, `handle_wave.py` |
-| Zeichnen (Pillow/Canvas) | `card_render.py`, `glow_animator.py`, `canvas_kit.py`, `bottom_bar.py` |
-| Brücke zur VS-Code-Extension | `broker.py`, `broker_commands.py`, `protocol.py` |
-| Claude-Code-Hooks | `report.py`, `statusline.py`, `hookstate.py` |
-| Statuslogik, Pfade, Log | `status_model.py`, `deck_common.py`, `deck_paths.py`, `deck_log.py` |
-| Claude-Spezifisches | `claude_usage.py`, `chat_summary.py`, `claude_settings.py` |
-| Windows/Bildschirm | `hidpi.py`, `screen_fit.py`, `win_focus.py` |
-| Zuordnung, Einstellungen, Sprache | `bindstore.py`, `config.py`, `i18n.py` |
-| Betrieb | `single_instance.py`, `watchdog.py`, `worktree_cleanup.py` |
+| `report.py` · `statusline.py` | `~/.claude/settings.json` — **mit absolutem Pfad, auf jedem Rechner** |
+| `agent_deck.py` | `start.bat`, `start_debug.bat`, `deck/ops/watchdog.py` (`PANEL`) |
+| `watchdog.py` | `start_watchdog.bat` und die **Windows-Aufgabenplanung** (`install_watchdog.ps1`) |
+| `reenable_glow.py` | dokumentierter Handaufruf in README und SETUP |
 
-**Faustregel:** Rechnen gehört in ein anzeigefreies Modul und wird getestet; Zeichnen
-gehört ins Canvas und wird angeschaut. Wenn eine Methode in `agent_deck.py` etwas
-ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes Modul —
-`status_model.py` und `canvas_kit.py` sind genau dafür entstanden.
+`run_module` statt eines Funktionsaufrufs, weil in den `__main__`-Blöcken Logik sitzt
+(das Fangnetz der Hooks, die Log-Installation des Panels).
 
 ## Verträge, die man nicht raten kann
 
-1. **Das Wire-Protokoll existiert doppelt** — `protocol.py` und
+1. **Das Wire-Protokoll existiert doppelt** — `deck/domain/protocol.py` und
    `extension/extension.js`. Es gibt bewusst keinen Build-Step, der sie koppelt (reines
    JS/Python, die Extension kann die Python-Datei nicht importieren). Wer einen String
    ändert, ändert **beide**.
@@ -53,26 +64,35 @@ ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes M
 
 3. **Ein Hook darf NIEMALS mit Fehler enden.** Er blockiert sonst den Agenten: bei
    `UserPromptSubmit` und `PreToolUse` liest Claude Code Exit ≠ 0 als Veto gegen Prompt
-   bzw. Tool-Aufruf. Jeder Pfad in `report.py` und `statusline.py` hat ein Fangnetz und
-   Exit-Code 0.
+   bzw. Tool-Aufruf. Jeder Pfad in `deck/claude/hooks/` hat ein Fangnetz und Exit-Code 0.
 
    Das reicht aber nicht: **ein Hook, der nicht startet, kommt an sein Fangnetz nicht
-   heran.** Fehlt `python` auf dem PATH oder wurde die Datei verschoben, urteilt der
-   Prozessstarter. Wer die Hook-Einträge in `~/.claude/settings.json` anfasst, prüft
-   danach, dass eine Kachel beim Tippen wirklich reagiert.
+   heran.** Fehlt die Datei, urteilt der Prozessstarter. Darum steht in `settings.json`
+   zusätzlich `cmd /c … || exit 0` — die äußere Schale, die auch einen fehlenden
+   Einsprungpunkt in Exit 0 verwandelt. Diese Härtung nicht entfernen; sie ist der
+   Unterschied zwischen „Kachel bleibt grau" und „Claude Code lässt sich nicht mehr
+   bedienen". Beim Umbenennen gilt: **erst den neuen Pfad beweisen, dann den alten
+   löschen** — nie umgekehrt.
 
-4. **Hook-stdin roh als UTF-8 dekodieren** (`sys.stdin.buffer`), nie über `sys.stdin`.
+4. **Dateien neben dem Code werden über `paths.REPO_ROOT` gefunden**, nie über
+   `__file__` des eigenen Moduls. Betroffen sind `bindings.json` und die übrigen
+   Laufzeit-JSONs, `assets/robot.ico` und `agent-deck-glow.css`. Rechnet ein Modul selbst
+   mit `__file__`, zeigt jede Verschiebung ins Leere — und das fällt nicht auf: die
+   Laufzeitdateien entstehen einfach neu am falschen Ort, während die alten mit allen
+   Fenster-Zuordnungen unsichtbar liegenbleiben.
+
+5. **Hook-stdin roh als UTF-8 dekodieren** (`sys.stdin.buffer`), nie über `sys.stdin`.
    Sonst kommen Umlaute unter Windows als cp1252-Mojibake an.
 
-5. **Die VS-Code-Extension ist JavaScript** — VS Code lädt nur JS-Extensions. Das ist
+6. **Die VS-Code-Extension ist JavaScript** — VS Code lädt nur JS-Extensions. Das ist
    keine offene Aufgabe.
 
 ## Fallen, die schon einmal wehgetan haben
 
-- **`SO_REUSEADDR` ist in `broker.py` schädlich.** Unter Windows erlaubt die Option zwei
-  Listener auf demselben Port; „Port belegt → still deaktiviert" greift dann nicht, und
-  Extensions landen beim toten Panel. Der Guard dagegen ist `single_instance.py`
-  (Lockfile + Handoff), nicht der Port.
+- **`SO_REUSEADDR` ist in `deck/net/broker.py` schädlich.** Unter Windows erlaubt die
+  Option zwei Listener auf demselben Port; „Port belegt → still deaktiviert" greift dann
+  nicht, und Extensions landen beim toten Panel. Der Guard dagegen ist
+  `deck/ops/instance.py` (Lockfile + Handoff), nicht der Port.
 - **Kachelliste in place aktualisieren**, nie neu aufbauen — ein `delete('all')`-Vollneubau
   setzt Farbe und Statuswert zurück, und dann blitzen beim Auf-/Zuklappen alle Kacheln neu
   auf. `_carry_tile_anim` vererbt den Animationszustand überlebender Kacheln.
@@ -80,7 +100,7 @@ ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes M
   Timer läuft gegen die Bildrate und stottert sichtbar; dazu gehören
   `timeBeginPeriod(1)` und `perf_counter` statt der grob getakteten Tk-Uhr.
 - **Ein halb ausgefahrenes Deck ist der eine unzulässige Zustand** (angedockt gibt es
-  keine Titelleiste, man kommt an nichts mehr heran). Deshalb hat `edge_dock.py` genau
+  keine Titelleiste, man kommt an nichts mehr heran). Deshalb hat `deck/dock/` genau
   einen Ausgang aus der Animation (`_anim_finish`), eine Deadline als Notbremse und einen
   Watchdog. Diese drei nicht wegoptimieren.
 - **Der „gesehen"-Merker muss über den Poll hinaus halten** — in der State-Datei steht
@@ -90,12 +110,13 @@ ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes M
 
 ## Konventionen
 
-- **Eine Datei = ein Konzept, Ziel < 300 Zeilen.** Zwei Altlasten reißen das Ziel:
-  `agent_deck.py` (~2.900 Zeilen) und `edge_dock.py` (~1.900). Neue Konzepte kommen
-  darum in eigene Module, statt dort anzuwachsen.
+- **Eine Datei = ein Konzept, Ziel < 400 Zeilen.** Zwei Altlasten reißen das Ziel noch:
+  `deck/ui/panel.py` (~2.900 Zeilen, eine Klasse mit 103 Methoden) und
+  `deck/dock/controller.py` (~1.900). Beide werden entlang ihrer Abschnittsgrenzen
+  aufgeteilt; neue Konzepte kommen in eigene Module, statt dort anzuwachsen.
 - **Kommentare auf Deutsch**, wie der Rest des Repos. Sie erklären das *Warum* — das
   *Was* steht im Code.
-- **Tests in `tests/test_pure.py`.** Die Suite läuft mit pytest ODER direkt
+- **Tests spiegeln `deck/`.** Die Suite läuft mit pytest ODER direkt
   (`python tests/test_pure.py`, eigener Mini-Runner am Dateiende) und fasst nur
   anzeigefreie Logik an. Ein Testname beschreibt die Regel, nicht die Methode
   (`test_explizites_window_null_loescht_die_zuordnung`).
@@ -105,12 +126,10 @@ ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes M
 ## Der .NET-Port wurde verworfen
 
 Es gab einen Portierungsversuch nach C#/.NET 9 mit WPF. Er ist am **2026-07-29**
-vollständig verworfen und aus dem Arbeitsverzeichnis entfernt worden: die Rechen-Schicht
-war portiert und gegen Python golden-getestet, aber ausgerechnet die Module, die das
-Aussehen machen (`handle_render`, `handle_wave`, `card_render`, `glow_animator`,
-`edge_dock`), fehlten — das Ergebnis sah entsprechend aus.
+vollständig verworfen worden: die Rechen-Schicht war portiert und gegen Python
+golden-getestet, aber ausgerechnet die Module, die das Aussehen machen, fehlten — das
+Ergebnis sah entsprechend aus.
 
-Der Code liegt weiterhin im Commit `3fcddbc` unter `src/`, `tests/AgentDeck.*` und
-`tests/golden/`; ein weiterentwickelter Stand hängt als referenzloser Commit `96c9cae`
-in der Objektdatenbank. **Python ist die einzige produktive Fassung.** Wer den Port
-wiederbeleben will, fängt bei der Zeichnerei an, nicht bei der Mathematik.
+Der Code liegt weiterhin im Commit `3fcddbc` unter `src/`. **Python ist die einzige
+produktive Fassung.** Wer den Port wiederbeleben will, fängt bei der Zeichnerei an,
+nicht bei der Mathematik.

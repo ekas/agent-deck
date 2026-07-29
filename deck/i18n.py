@@ -14,7 +14,7 @@ bleibt lesbar). `current()` ist gecacht; nach dem Speichern der Einstellungen ei
 durchgaengig nach einem Deck-Neustart). Reine stdlib + claude_settings -> von
 ueberall (auch aus den Nebenmodulen) gefahrlos importierbar.
 """
-import claude_settings as cset
+from deck.claude import settings as cset
 
 GERMAN = "german"
 ENGLISH = "english"

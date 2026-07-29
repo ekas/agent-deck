@@ -10,8 +10,8 @@ import math
 import tkinter as tk
 import tkinter.font as tkfont
 
-import hidpi
-import screen_fit
+from deck.platform import dpi
+from deck.platform import monitor
 
 # ── FROSTPANE-Palette: dunkles OS-Glas, heller Text ──────────────────────
 BG          = "#121218"   # Panel-/Fensterkoerper (dunkel getoent)
@@ -189,8 +189,8 @@ class Tooltip:
         # Monitor-Skalierung), Polster und Umbruchbreite dagegen in Pixeln – die
         # muessen wir selbst umrechnen, sonst klebt der Text bei 150 % am Rand.
         lbl = tk.Label(tip, justify="left", anchor="w", bg="#15151c", fg=INK_2,
-                       font=("Segoe UI", 9), wraplength=hidpi.px(self.wrap),
-                       padx=hidpi.px(10), pady=hidpi.px(8))
+                       font=("Segoe UI", 9), wraplength=dpi.px(self.wrap),
+                       padx=dpi.px(10), pady=dpi.px(8))
         lbl.pack(padx=1, pady=1)            # 1px Inset -> der bg schaut als Saum durch
         self._tip, self._lbl = tip, lbl
 
@@ -204,7 +204,7 @@ class Tooltip:
         # Erst den Text setzen, dann platzieren: screen_fit braucht die fertige Groesse,
         # um am Bildschirmrand um den Anker zu klappen (update_idletasks steckt dort).
         # Alles noch im withdraw-Zustand -> kein 1x1-Blitz an der alten Stelle.
-        screen_fit.place(self._tip, x, y, dx=dx, dy=dy)
+        monitor.place(self._tip, x, y, dx=dx, dy=dy)
         self._tip.deiconify()
         self._tip.lift()
 

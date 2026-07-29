@@ -40,7 +40,7 @@ einer fehlenden Bibliothek darf das Deck nicht scheitern.
 """
 from collections import OrderedDict
 
-from canvas_kit import mix as _mix
+from deck.render.kit import mix as _mix
 
 try:                                  # Pillow ist die einzige Nicht-Stdlib-Abhaengigkeit
     from PIL import Image, ImageChops, ImageDraw, ImageFilter

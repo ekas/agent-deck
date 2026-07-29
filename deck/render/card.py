@@ -38,7 +38,7 @@ Polygon-Weg der richtige (das Deck faellt dann selbst darauf zurueck).
 """
 from collections import OrderedDict
 
-from canvas_kit import BG, hex_to_rgb
+from deck.render.kit import BG, hex_to_rgb
 
 try:                                  # Pillow ist die einzige Nicht-Stdlib-Abhaengigkeit
     from PIL import Image, ImageDraw, ImageFilter, ImageTk

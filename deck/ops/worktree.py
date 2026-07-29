@@ -31,7 +31,7 @@ import stat
 import shutil
 import subprocess
 
-from deck_paths import STATE_DIR
+from deck.domain.paths import STATE_DIR
 
 # Auf Windows (pythonw) kein kurz aufblitzendes Konsolenfenster fuer git.
 _NO_WINDOW = 0x08000000 if os.name == "nt" else 0

@@ -13,9 +13,9 @@ import math
 import time
 import tkinter as tk
 
-import card_render as cr
-import config as cfg
-from canvas_kit import BG, CARD_FILL, INK_3, hex_to_rgb as _hex_to_rgb, mix as _mix
+from deck.render import card as cr
+from deck.domain import config as cfg
+from deck.render.kit import BG, CARD_FILL, INK_3, hex_to_rgb as _hex_to_rgb, mix as _mix
 
 # Timing kommt zentral aus der config (Fallback = bisherige Werte).
 ANIM_MS = getattr(cfg, "ANIM_MS", 55)
