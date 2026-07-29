@@ -1,4 +1,4 @@
-"""Die Schichtgrenzen von deck/ - hier erzwungen, nicht nur in CLAUDE.md behauptet.
+"""Die Struktur des Repos - hier erzwungen, nicht nur in CLAUDE.md behauptet.
 
 Eine Schichttabelle in der Doku veraltet still: sie wird gelesen, wenn man sie schon
 nicht mehr braucht, und nicht gelesen, wenn man gerade dagegen verstoesst. Dieser Test
@@ -7,6 +7,10 @@ liest die echten Importe und wird rot, sobald eine Abhaengigkeit nach oben zeigt
 Die Ordnung ist: domain und platform wissen von niemandem. Darauf baut render (Bilder),
 net (Broker), claude (Hooks, Usage) und ops (Betrieb). Darauf dock (Andocken), und ganz
 oben ui, das alles kennen darf.
+
+Am Ende der Datei zwei Regeln ueber das WURZELVERZEICHNIS: dass die Einsprungpunkte da
+sind (ihre Namen stehen auf fremden Rechnern in settings.json und in der
+Aufgabenplanung) und dass dort nichts herumliegt, was nicht hingehoert.
 """
 import ast
 import os
@@ -231,3 +235,58 @@ def test_hooks_haengen_nicht_an_der_anzeige():
                         or mod.startswith("deck.render"):
                     bad.append(f"claude/hooks/{name}:{node.lineno}  {mod}")
     assert not bad, "Hook zieht die Anzeige nach:\n  " + "\n  ".join(bad)
+
+
+# ── Das Wurzelverzeichnis ────────────────────────────────────────────────────
+
+# Die fuenf Einsprungpunkte. Ihre Namen sind VERTRAEGE mit Dingen ausserhalb des Repos:
+# report.py und statusline.py stehen mit absolutem Pfad in ~/.claude/settings.json auf
+# jedem Rechner, agent_deck.py in start.bat und im Waechter, watchdog.py in der
+# Windows-Aufgabenplanung, reenable_glow.py in README und SETUP.
+ENTRY_POINTS = ("report.py", "statusline.py", "agent_deck.py", "watchdog.py",
+                "reenable_glow.py")
+
+# Endungen, die im Wurzelverzeichnis vorkommen duerfen. Bewusst knapp - wer eine neue
+# Art von Datei dort ablegt, soll einmal darueber nachdenken.
+ROOT_SUFFIXES = {".py", ".md", ".txt", ".toml", ".bat", ".ps1", ".json", ".css",
+                 ".example", ".cfg", ".yml"}
+
+# Dateien ohne Endung, die es geben darf.
+ROOT_EXTRALESS = {"LICENSE"}
+
+
+def test_die_einsprungpunkte_liegen_da_wo_sie_versprochen_sind():
+    """Ein umbenannter Einsprungpunkt bricht JEDE bestehende Installation.
+
+    Und zwar leise: in settings.json steht dann ein Pfad ins Leere, der Hook startet
+    nicht, sein Fangnetz greift nicht - und weil jeder Eintrag auf `|| exit 0` endet,
+    meldet auch der Prozessstarter keinen Fehler. Die Kacheln bleiben einfach grau.
+    """
+    for name in ENTRY_POINTS:
+        path = os.path.join(helpers.ROOT, name)
+        assert os.path.isfile(path), f"Einsprungpunkt {name} fehlt - siehe CLAUDE.md"
+        src = _src(path)
+        assert "runpy.run_module" in src, \
+            f"{name} soll nur ein runpy.run_module enthalten (Vertragsdatei)"
+
+
+def test_im_wurzelverzeichnis_liegt_kein_streumuell():
+    """Jede Datei in der Wurzel hat eine bekannte Endung (oder heisst LICENSE).
+
+    Diese Regel gibt es wegen fuenfzehn LEEREN Dateien, die versioniert im Repo lagen:
+    '400', 'PID', 'nicht', 'von', '{m}', '{tgt}' und Geschwister - entstanden aus
+    verrutschten Shell-Umleitungen (`... > 400`). Niemandem fielen sie auf, weil niemand
+    die Wurzel liest. Beim frisch geklonten Repo sind sie das Erste, was man sieht.
+    """
+    bad = []
+    for name in sorted(os.listdir(helpers.ROOT)):
+        path = os.path.join(helpers.ROOT, name)
+        if not os.path.isfile(path) or name.startswith("."):
+            continue                      # Ordner und Dotfiles gehen hier nicht ein
+        if name in ROOT_EXTRALESS:
+            continue
+        suffix = os.path.splitext(name)[1]
+        if suffix not in ROOT_SUFFIXES:
+            bad.append(f"{name}  (Endung {suffix!r} unbekannt)")
+    assert not bad, ("Unerwartete Datei im Wurzelverzeichnis - Tippfehler bei einer "
+                     "Shell-Umleitung?\n  " + "\n  ".join(bad))

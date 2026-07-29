@@ -6,12 +6,18 @@ brauchen wir nur noch, um beim Fokussieren das richtige der 2 Fenster nach vorn
 zu holen - die Auswahl des einzelnen Terminals (Pane) macht die Extension.
 """
 
-# Fenster A / B -> Textstueck, das eindeutig im jeweiligen Fenstertitel vorkommt
+# Fenster-Buchstabe -> Textstueck, das eindeutig im jeweiligen Fenstertitel vorkommt
 # (i.d.R. der Projekt-Ordnername). Wird gross/klein-unabhaengig gesucht.
-WINDOW_MATCH = {
-    "A": "my-frontend",   # Fenster A (autom. aus offenem Fenstertitel erkannt)
-    "B": "my-backend",    # Fenster B (autom. erkannt) - bei Bedarf tauschen
-}
+#
+# LEER LASSEN ist der Normalfall und ausdruecklich richtig: welches Fenster A, B, C ist,
+# legt man im Panel per Klick fest ("Fenster A" anklicken, dann das VS-Code-Fenster),
+# und das Deck merkt sich das in bindings.json. Eintraege hier sind nur eine Vorbelegung
+# fuer den ERSTEN Start - wer immer dieselben zwei Repos offen hat, spart sich damit die
+# zwei Klicks:
+#     WINDOW_MATCH = {"A": "mein-frontend", "B": "mein-backend"}
+# Fremde Namen hier sind schlimmer als keine: sie binden beim ersten Start ein Fenster,
+# das es nicht gibt, und die Kachelreihe bleibt ohne erkennbaren Grund leer.
+WINDOW_MATCH: dict[str, str] = {}
 
 # Tasten fuer die Aktions-Buttons (Namen aus der KEYMAP der Extension).
 APPROVE_KEY = "enter"   # dem fokussierten Agent "Ja/Weiter" schicken

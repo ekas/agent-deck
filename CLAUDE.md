@@ -6,6 +6,9 @@ Farbe = Zustand; dockt am Bildschirmrand an. Windows-only, Python 3.12+ / tkinte
 ## Kommandos
 
 ```powershell
+.\install.ps1                  # EINRICHTUNG: prüft, holt Pillow, kopiert Extension,
+                               #   merged Hooks+statusLine, beweist den Schreibvorgang
+.\install.ps1 -Check           # der Doctor — erste Adresse, wenn Kacheln stumm bleiben
 python tests/run.py            # alle Unit-Tests, immer vor dem Commit
 python tests/test_dock_animation.py   # eine Datei allein läuft auch
 python -m compileall -q .      # Syntaxprüfung aller Module
@@ -15,6 +18,13 @@ start_debug.bat                # Panel mit Konsole — für den ersten Start und
 
 Einzige Pflicht-Abhängigkeit ist **Pillow** (`requirements.txt`); alles andere kommt aus
 der Standardbibliothek.
+
+**Die Einrichtung ist Code, keine Anleitung.** Was in `~/.claude/settings.json` landet,
+schreibt `deck/claude/hook_setup.py` — chirurgisch (fremde Hooks bleiben stehen), am
+Dateinamen wiedererkennend (ein zweiter Lauf ist ein Nulldurchgang, ein verschobenes
+Repo wird repariert statt verdoppelt) und getestet (`tests/test_claude_hook_setup.py`).
+Wer die Hook-Einträge ändert, ändert sie **dort**, nicht in der Doku: `docs/SETUP.md`
+beschreibt nur noch, was das Skript tut.
 
 ## Aufbau
 
@@ -62,6 +72,8 @@ das man auf Papier nachprüfen könnte, gehört sie nach `domain/`.
 | Griff: Verhalten | `dock/handle.py`, Schwappen in `dock/wave.py` |
 | ein neues Kommando an die Extension | `domain/protocol.py` **und** `extension/extension.js` |
 | Hook-Verhalten (was gemeldet wird) | `claude/hooks/report.py` |
+| welche Hooks **eingetragen** werden | `claude/hook_setup.py` (`HOOKS`) — und `docs/SETUP.md`-Anhang nachziehen |
+| Einrichtung, Voraussetzungs-Prüfung | `install.ps1` — Rechnen und Urteile aber in `claude/hook_setup.py`, damit sie getestet sind |
 | Usage: Zahlen holen | `claude/usage.py`, Token in `claude/usage_token.py` |
 | Usage: Anzeige und Ampelfarben | `claude/usage_view.py`, Balken in `ui/bottombar.py` |
 | Ticket zuweisen | `ui/ticket.py` |
@@ -119,6 +131,12 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
    Beim Umbenennen gilt: **erst den neuen Pfad beweisen, dann den alten löschen** — nie
    umgekehrt. Und „bewiesen" heißt: eine Datei in `state\` ist danach frisch, nicht bloß
    Exit-Code 0.
+
+   Diese drei Regeln sind seit 2026-07-30 **ausführbar**: `install.ps1` schreibt die
+   Einträge (statt einer Anleitung, der man von Hand folgt), `install.ps1 -Check` findet
+   `cmd /c`, ein fehlendes `|| exit 0` und Pfade ins Leere — und Schritt 5 des Skripts
+   führt genau den Beweis, den dieser Absatz verlangt: Hook feuern, dann in `state\`
+   nach einer frischen Datei sehen.
 
 4. **Dateien neben dem Code werden über `paths.REPO_ROOT` gefunden**, nie über
    `__file__` des eigenen Moduls. Betroffen sind `bindings.json` und die übrigen

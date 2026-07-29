@@ -27,6 +27,21 @@ jobs:
       - name: Kompilieren aller Module (Syntaxprüfung)
         run: python -m compileall -q .
 
+      - name: PowerShell-Skripte parsen
+        # Die .ps1-Dateien sind der einzige Weg in das Projekt hinein (install.ps1) und
+        # der Wächter-Installer. Ein Tippfehler darin fällt sonst erst dem auf, der das
+        # Repo gerade zum ersten Mal klont - also genau dem falschen.
+        shell: pwsh
+        run: |
+          $fehler = @()
+          foreach ($f in Get-ChildItem -Filter *.ps1) {
+            $t = $null; $e = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$t, [ref]$e) | Out-Null
+            if ($e) { $fehler += "$($f.Name): $($e -join '; ')" }
+          }
+          if ($fehler) { $fehler | ForEach-Object { Write-Host $_ }; exit 1 }
+          Write-Host "ok - $((Get-ChildItem -Filter *.ps1).Count) Skript(e) parsen fehlerfrei"
+
       - name: Linter
         run: python -m ruff check .
 

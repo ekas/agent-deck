@@ -15,65 +15,58 @@ Panel + Broker: reine Python-Stdlib. Extension: reines JS (kein Build).
 
 ---
 
-## Schritt 1 – Extension installieren (pro Rechner einmal)
+## Schritt 1 – `install.ps1` (das ist die Einrichtung)
+
+Im Repo-Wurzelverzeichnis:
 
 ```powershell
-$src = "$PWD\extension"   # im Repo-Wurzelverzeichnis ausführen
-$dst = "$env:USERPROFILE\.vscode\extensions\agent-deck-bridge"
-New-Item -ItemType Directory -Force -Path $dst | Out-Null
-Copy-Item "$src\*" $dst -Recurse -Force   # nur Inhalt -> idempotent
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Dann in **beiden** VS-Code-Fenstern: Command Palette → **„Developer: Reload Window"**.
+Das Skript erledigt in einem Lauf alles, was früher Handarbeit war:
 
-> Kein `agentDeck.window`-Setting und kein Ordnername in `deck/domain/config.py` von Hand nötig —
-> welches Fenster A bzw. B ist, legst du **im Panel per Klick** fest (Schritt 5).
-> Deine erkannten Ordner (`my-frontend`, `my-backend`) sind
-> in [`domain/config.py`](../deck/domain/config.py) als **Auto-Default** hinterlegt, damit es meist sofort passt.
+| | |
+|---|---|
+| **prüft** | Python 3.12+, tkinter (fehlt bei der Store-Python!), VS Code, `claude` auf dem PATH, Anmeldung |
+| **holt** | Pillow (`requirements.txt`) |
+| **kopiert** | die Extension nach `~/.vscode/extensions/agent-deck-bridge` |
+| **merged** | die sechs Hooks **und die `statusLine`** in `~/.claude/settings.json` — mit absolutem Pfad und `\|\| exit 0` |
+| **beweist** | dass ein Hook wirklich schreibt: er wird gefeuert, und danach muss eine Datei in `state\` frisch sein |
+| **startet** | das Panel (falls nicht schon eins läuft) |
 
-## Schritt 2 – Hooks (Status), gehärtet
+Der letzte Punkt ist der wichtigste. **Exit-Code 0 beweist bei einem Hook nichts** — die
+`cmd /c`-Falle (unten) endet mit 0 und sieht darum gesund aus. Bewiesen ist es erst,
+wenn in `state\` eine Datei frisch wird, und genau das prüft Schritt 5 des Skripts.
 
-In `~/.claude/settings.json` (global, weil beide Fenster verschiedene Ordner haben). `PFAD` = echter Pfad zu `report.py`.
+Ein zweiter Lauf ist ein **Nulldurchgang**: fremde Hooks anderer Werkzeuge bleiben
+stehen, eigene werden ersetzt statt verdoppelt. Man kann das Skript also jederzeit
+wieder aufrufen — nach einem Repo-Umzug ist es sogar der Weg, die Pfade zu reparieren.
 
-```json
-{
-  "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" idle || exit 0" }] }],
-    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
-    "PreToolUse":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" running || exit 0" }] }],
-    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
-    "Notification": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" waiting || exit 0" }] }],
-    "Stop": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" done || exit 0" }] }]
-  }
-}
+```powershell
+.\install.ps1 -Check     # nur prüfen und berichten (der Doctor), ändert nichts
+.\install.ps1 -Remove    # Hooks und Extension wieder entfernen
+.\install.ps1 -Force     # auch eine FREMDE statusLine ersetzen
+.\install.ps1 -NoStart   # Panel am Ende nicht starten
 ```
 
-Härtungs-Hinweise aus der Recherche:
-- **`|| exit 0` nicht weglassen.** Ein Hook, der gar nicht startet (Datei verschoben,
-  `python` nicht auf dem PATH), kommt an sein eigenes Fangnetz nicht heran — und Exit ≠ 0
-  gilt bei `UserPromptSubmit`/`PreToolUse` als Veto gegen Prompt bzw. Tool-Aufruf.
-- **Kein `cmd /c` davorsetzen.** Claude Code führt Hooks über eine POSIX-Shell aus; deren
-  Pfadkonvertierung macht aus `/c` den Pfad `C:\`, `cmd` startet interaktiv und ruft
-  `python` nie auf. Der Hook endet dann mit 0 und sieht gesund aus, meldet aber nichts.
-- **npm-`claude` (`claude.cmd`)** benutzen, nicht eine native `claude.exe` auf dem PATH ([#25577](https://github.com/anthropics/claude-code/issues/25577)).
-- Hook direkt über **`python`** (nicht `bash`) → umgeht die Git-Bash-Fallen unter Windows.
-- **Kein `idle_prompt`** verwenden. „wartet" = `Notification`, „fertig" = `Stop`.
-- **`SessionStart`** meldet einen frisch geöffneten Agenten sofort (Kachel wird gleich „idle" statt grau/leer). Nötig für den automatischen Start-Modus neuer Agenten (`config.NEW_AGENT_MODE`, siehe unten) – ohne ihn schaltet der Modus erst beim ersten Prompt. Für Nicht-Deck-Sessions (ohne `AGENT_SLOT`) tut der Hook nichts.
-- Nach dem Setup **einmal prüfen**, dass Hooks feuern (Kachel muss beim Tippen reagieren).
+**`-Check` ist die erste Adresse, wenn etwas nicht geht.** Er nennt jeden Befund
+einzeln — fehlender Hook, `cmd /c`, fehlendes `|| exit 0`, Pfad ins Leere, Pfad in ein
+anderes Repo, veraltete installierte Extension (ein Fehlerbild, das schon zweimal hinter
+„verbindet nicht mehr" stand).
 
-`AGENT_SLOT` musst du **nicht** setzen — die Extension setzt es beim Anlegen der Terminals (Schritt 6).
+> Kein `agentDeck.window`-Setting und kein Ordnername in `deck/domain/config.py` von Hand
+> nötig — welches Fenster A bzw. B ist, legst du **im Panel per Klick** fest (Schritt 3).
 
----
+## Schritt 2 – In jedem offenen VS-Code-Fenster: „Developer: Reload Window"
 
-## Schritt 3 – Panel starten
+Command Palette → **„Developer: Reload Window"**. Erst danach läuft die kopierte
+Extension; ein Reload gilt **pro Fenster**, alter Code läuft in den anderen weiter.
 
-`start_debug.bat` (erster Start, mit Konsole) oder `start.bat` (leise). Der Broker startet mit.
+Sobald ein Fenster neu geladen ist, geht im Panel sein Punkt an (**`Extension A:●`**).
 
-## Schritt 4 – Warten bis Extensions verbinden
+> Reload startet die Terminals **dieses** Fensters neu (inkl. laufender Claude-Session).
 
-Sobald beide Fenster neu geladen sind, sollten im Panel die Punkte **`Extension A:● B:●`** angehen (Auto-Default greift dank der hinterlegten Ordnernamen).
-
-## Schritt 5 – Fenster verbinden / umbinden (per Klick)
+## Schritt 3 – Fenster verbinden / umbinden (per Klick)
 
 Falls ein Punkt grau bleibt oder du ein anderes Fenster zuordnen willst:
 1. Im Panel oben auf **„Fenster A"** (bzw. „Fenster B") klicken → es steht „… VS Code klicken".
@@ -82,7 +75,7 @@ Falls ein Punkt grau bleibt oder du ein anderes Fenster zuordnen willst:
 
 Die Zuordnung wird in `bindings.json` gemerkt und beim nächsten Start automatisch wiederhergestellt.
 
-## Schritt 6 – Chats anlegen & erkennen
+## Schritt 4 – Chats anlegen & erkennen
 
 Sobald ein Fenster verbunden ist, erscheint dort eine **„＋"-Kachel**. Ein Klick
 darauf öffnet **ein** neues Claude-Terminal (`A1`, dann `A2`, … – der Index wächst
@@ -110,7 +103,7 @@ hast – ohne dass sie über das Deck angelegt wurden.
 
 ---
 
-## Schritt 7 – Nutzungsanzeige (läuft von allein)
+## Schritt 5 – Nutzungsanzeige (läuft von allein)
 
 Unten links zeigt das Deck die Auslastung deines Kontos als Ampel-Badge (Session,
 Hover → Woche und Modell-Limits, Klick → `claude.ai/settings/usage`). Dafür ist
@@ -130,6 +123,67 @@ Wenn dort dauerhaft „—" steht, sagt der Hover-Tooltip warum:
 > gehört Anthropic. Ändert er sich, zeigt das Badge „—" und sonst passiert nichts —
 > die Datenschicht ist durchgehend defensiv. Abschalten mit `SHOW_USAGE = False` in
 > `deck/domain/config.py`; dann wird auch keine der Token-Dateien angefasst.
+
+---
+
+## Anhang – was in `~/.claude/settings.json` landet
+
+Der Installer schreibt das; hier steht es, damit man es **nachlesen und prüfen** kann
+(und für den Fall, dass man es doch von Hand machen will). Global, weil die VS-Code-
+Fenster verschiedene Ordner haben. `PFAD` = Repo-Wurzel.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" idle || exit 0" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
+    "PreToolUse":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" running || exit 0" }] }],
+    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
+    "Notification": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" waiting || exit 0" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" done || exit 0" }] }]
+  },
+  "statusLine": { "type": "command", "command": "python \"PFAD\\statusline.py\"" }
+}
+```
+
+Die **`statusLine` ist kein Beiwerk**: sie liefert Modell, Effort, Kontext-% und Kosten
+in `state\<slot>.live.json`, und nur daraus zeigt die Kachel diese Werte. Ohne sie läuft
+das Deck vollständig — die Felder bleiben aber leer, ohne dass irgendwo ein Fehler
+auftaucht. (Genau das war jahrelang die Lücke in dieser Anleitung.)
+
+Warum die Einträge so und nicht anders aussehen — jeder Punkt ist einmal wehgetan:
+
+- **`|| exit 0` nicht weglassen.** Ein Hook, der gar nicht startet (Datei verschoben,
+  `python` nicht auf dem PATH), kommt an sein eigenes Fangnetz nicht heran — und Exit ≠ 0
+  gilt bei `UserPromptSubmit`/`PreToolUse` als Veto gegen Prompt bzw. Tool-Aufruf.
+- **Kein `cmd /c` davorsetzen.** Claude Code führt Hooks über eine POSIX-Shell aus; deren
+  Pfadkonvertierung macht aus `/c` den Pfad `C:\`, `cmd` startet interaktiv und ruft
+  `python` nie auf. Der Hook endet dann mit 0 und sieht gesund aus, meldet aber nichts.
+  `install.ps1 -Check` findet beides.
+- **npm-`claude` (`claude.cmd`)** benutzen, nicht eine native `claude.exe` auf dem PATH ([#25577](https://github.com/anthropics/claude-code/issues/25577)).
+- Hook direkt über **`python`** (nicht `bash`) → umgeht die Git-Bash-Fallen unter Windows.
+- **Kein `idle_prompt`** verwenden. „wartet" = `Notification`, „fertig" = `Stop`.
+- **`SessionStart`** meldet einen frisch geöffneten Agenten sofort (Kachel wird gleich „idle" statt grau/leer). Nötig für den automatischen Start-Modus neuer Agenten (`config.NEW_AGENT_MODE`) – ohne ihn schaltet der Modus erst beim ersten Prompt. Für Nicht-Deck-Sessions (ohne `AGENT_SLOT`) tut der Hook nichts.
+
+`AGENT_SLOT` musst du **nicht** setzen — die Extension setzt es beim Anlegen der
+Terminals (Schritt 4).
+
+Beim Umbenennen oder Verschieben des Repos gilt: **erst den neuen Pfad beweisen, dann
+den alten löschen**, nie umgekehrt. `install.ps1` macht genau das — es ersetzt die alten
+Einträge und führt danach den Schreibbeweis.
+
+---
+
+## Optional – Der Wächter (hält das Panel am Leben)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install_watchdog.ps1
+```
+
+Registriert einen kurzen Lauf in der Aufgabenplanung (bei Anmeldung + alle 3 Minuten),
+der das Panel nach einem Absturz neu startet. Braucht keine Admin-Rechte.
+`-Autostart` legt stattdessen eine Verknüpfung im Autostart-Ordner an, `-Remove`
+entfernt beides wieder.
 
 ---
 

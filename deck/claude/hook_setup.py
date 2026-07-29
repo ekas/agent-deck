@@ -19,6 +19,12 @@ Aufruf (aus install.ps1, oder von Hand im Repo-Wurzelverzeichnis):
   python -m deck.claude.hook_setup --check    nur pruefen, Exit 1 bei einem Befund
   python -m deck.claude.hook_setup --remove   unsere Eintraege wieder herausnehmen
   python -m deck.claude.hook_setup --force    auch eine FREMDE statusLine ersetzen
+  python -m deck.claude.hook_setup --settings <pfad>   gegen eine ANDERE Datei laufen
+
+--settings ist die Sicherung fuer den Installer-Test: ein Probelauf gegen eine
+Wegwerf-Datei biegt nicht die Hooks des Rechners um, auf dem geprueft wird. Es ist
+kein Weg, das Deck anderswohin zu konfigurieren - Claude Code liest nur den einen
+Pfad.
 """
 import copy
 import os
@@ -89,6 +95,25 @@ def command_path(command: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _points_here(command: str | None, repo_root: str, leaf: str) -> bool:
+    """Zeigt ein Kommando schon auf unsere Datei IN DIESEM Repo?
+
+    Gebraucht fuer die statusLine, und zwar mit Absicht toleranter als ein
+    Stringvergleich: wer an seine Statuszeile ein `|| exit 0` gehaengt hat, hat eine
+    FUNKTIONIERENDE Zeile, und die schreibt der Installer nicht jedes Mal neu. Bei den
+    sechs Hooks gilt das NICHT - dort ist die exakte Form der Zweck (fehlt die aeussere
+    Schale, blockiert ein nicht startender Hook den Agenten).
+    """
+    if not command:
+        return False
+    p = command_path(command)
+    if not p or os.path.basename(p).lower() != leaf:
+        return False
+    def norm(s: str) -> str:
+        return os.path.normcase(os.path.normpath(s))
+    return norm(p) == norm(os.path.join(repo_root, leaf))
+
+
 def _strip_ours(groups: list[Any]) -> tuple[list[Any], list[str]]:
     """Unsere Eintraege aus den Gruppen EINES Events entfernen.
 
@@ -120,15 +145,16 @@ def _strip_ours(groups: list[Any]) -> tuple[list[Any], list[str]]:
 
 
 def merge(settings: dict[str, Any], repo_root: str, *,
-          force_statusline: bool = False) -> tuple[dict[str, Any], list[str]]:
+          force_statusline: bool = False) -> tuple[dict[str, Any], list[tuple[str, str]]]:
     """Hooks + statusLine in ein GELESENES settings-Dict mergen. Rein, kein IO.
 
-    Rueckgabe: (neues Dict, Klartext-Meldungen fuer den Nutzer). Ob geschrieben werden
-    muss, entscheidet der Aufrufer am Vergleich `neu != alt` - nicht an der Meldungs-
-    liste, denn die enthaelt auch Hinweise zu Dingen, die wir bewusst NICHT aendern.
+    Rueckgabe: (neues Dict, Meldungen als (grad, text) wie bei audit - grad ist "info"
+    fuer Getanes und "warn" fuer bewusst Ausgelassenes). Ob geschrieben werden muss,
+    entscheidet der Aufrufer am Vergleich `neu != alt` und NICHT an der Meldungsliste:
+    die enthaelt auch Hinweise zu Dingen, die wir gerade nicht geaendert haben.
     """
     out = copy.deepcopy(settings)
-    notes: list[str] = []
+    notes: list[tuple[str, str]] = []
 
     raw = out.get("hooks")
     hooks: dict[str, Any] = dict(raw) if isinstance(raw, dict) else {}
@@ -140,11 +166,11 @@ def merge(settings: dict[str, Any], repo_root: str, *,
         if matcher:
             entry["matcher"] = matcher
         entry["hooks"] = [{"type": "command", "command": hook_command(repo_root, status)}]
-        after = rest + [entry]
+        after = [*rest, entry]
         if after != before:
             hooks[event] = after
-            notes.append(f"{event} -> report.py {status}"
-                         + (f" (ersetzt: {len(removed)} alter Eintrag)" if removed else ""))
+            notes.append(("info", f"{event} -> report.py {status}"
+                          + (f" (ersetzt: {len(removed)} alter Eintrag)" if removed else "")))
     if hooks:
         out["hooks"] = hooks
 
@@ -154,19 +180,19 @@ def merge(settings: dict[str, Any], repo_root: str, *,
     if isinstance(cur, str) and cur.strip() and not is_ours(cur) and not force_statusline:
         # Eine fremde Statuszeile platt zu machen waere eine sichtbare Verschlechterung
         # fuer den Nutzer. Also stehenlassen und sagen, was dadurch fehlt.
-        notes.append("statusLine gehoert einem anderen Werkzeug und bleibt stehen — "
-                     "Modell, Effort und Kontext-% bleiben auf den Kacheln leer "
-                     "(mit --force ersetzen)")
-    elif cur != want:
+        notes.append(("warn", "statusLine gehoert einem anderen Werkzeug und bleibt "
+                              "stehen — Modell, Effort und Kontext-% bleiben auf den "
+                              "Kacheln leer (mit --force ersetzen)"))
+    elif not _points_here(cur, repo_root, "statusline.py"):
         out["statusLine"] = {"type": "command", "command": want}
-        notes.append("statusLine -> statusline.py")
+        notes.append(("info", "statusLine -> statusline.py"))
     return out, notes
 
 
-def remove(settings: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+def remove(settings: dict[str, Any]) -> tuple[dict[str, Any], list[tuple[str, str]]]:
     """Unsere Eintraege wieder herausnehmen; fremde bleiben unangetastet."""
     out = copy.deepcopy(settings)
-    notes: list[str] = []
+    notes: list[tuple[str, str]] = []
     raw = out.get("hooks")
     hooks: dict[str, Any] = dict(raw) if isinstance(raw, dict) else {}
     for event in list(hooks):
@@ -176,7 +202,7 @@ def remove(settings: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
         rest, removed = _strip_ours(groups)
         if not removed:
             continue
-        notes.append(f"{event}: {len(removed)} Eintrag entfernt")
+        notes.append(("info", f"{event}: {len(removed)} Eintrag entfernt"))
         if rest:
             hooks[event] = rest
         else:
@@ -189,7 +215,7 @@ def remove(settings: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     cur = sl.get("command") if isinstance(sl, dict) else None
     if isinstance(cur, str) and is_ours(cur):
         del out["statusLine"]
-        notes.append("statusLine entfernt")
+        notes.append(("info", "statusLine entfernt"))
     return out, notes
 
 
@@ -210,15 +236,21 @@ def _our_commands(settings: dict[str, Any], event: str) -> list[str]:
 
 
 def audit(settings: dict[str, Any], repo_root: str, *,
-          exists: Callable[[str], bool] = os.path.isfile) -> list[tuple[str, str]]:
+          exists: Callable[[str], bool] = os.path.isfile,
+          resolve: Callable[[str], str] = os.path.realpath) -> list[tuple[str, str]]:
     """Urteile ueber die Eintraege: Liste von (grad, text), grad in {ok, warn, fail}.
 
-    Rein bis auf die Dateiexistenz, und die kommt als Funktion herein - so ist jede
-    Regel ohne Dateisystem pruefbar. Geprueft wird genau das, was am Exit-Code NICHT
+    Rein bis auf zwei Dateisystem-Fragen, und die kommen als Funktionen herein - so ist
+    jede Regel ohne Dateisystem pruefbar. Geprueft wird genau das, was am Exit-Code NICHT
     auffaellt: die drei dokumentierten Fallen und ein Pfad in ein anderes Repo.
+
+    `resolve` ist realpath und nicht abspath, weil Windows denselben Ordner unter zwei
+    Namen kennt: den 8.3-Kurznamen (C:\\Users\\JORRIT~1\\...) und den langen. normcase
+    macht daraus nicht denselben String - ohne Aufloesung meldet der Doctor "anderes
+    Repo", obwohl es dasselbe ist.
     """
     out: list[tuple[str, str]] = []
-    want_root = os.path.normcase(os.path.abspath(repo_root))
+    want_root = os.path.normcase(resolve(repo_root))
     for event, status, _matcher in HOOKS:
         cmds = _our_commands(settings, event)
         if not cmds:
@@ -243,7 +275,7 @@ def audit(settings: dict[str, Any], repo_root: str, *,
             out.append(("fail", f"{event}: kein .py-Pfad im Kommando erkennbar"))
         elif not exists(p):
             out.append(("fail", f"{event}: {p} gibt es nicht"))
-        elif os.path.normcase(os.path.dirname(os.path.abspath(p))) != want_root:
+        elif os.path.normcase(os.path.dirname(resolve(p))) != want_root:
             out.append(("warn", f"{event}: zeigt auf ein anderes Repo ({p})"))
 
     sl = settings.get("statusLine")
@@ -273,17 +305,36 @@ def _backup(path: str) -> str | None:
     return dst
 
 
+def _arg_value(args: list[str], name: str) -> str | None:
+    """Wert eines `--name wert`-Paares. Fehlt der Wert, gilt der Schalter als ungesetzt."""
+    if name in args:
+        i = args.index(name)
+        if i + 1 < len(args) and not args[i + 1].startswith("--"):
+            return args[i + 1]
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(argv if argv is not None else sys.argv[1:])
     root = paths.REPO_ROOT
-    path = cset.SETTINGS_PATH
+    path = _arg_value(args, "--settings") or cset.SETTINGS_PATH
     before = cset.load(path)
+
+    # install.ps1 kann unsere Befunde nicht zaehlen, ohne unsere Ausgabe zu parsen -
+    # und geparste Meldungstexte sind eine Kopplung, die beim naechsten Umformulieren
+    # still bricht. Darum eine ausdrueckliche Bilanzzeile, die nur der maschinelle
+    # Aufrufer anfordert (und die er aus der Anzeige wieder herausfiltert).
+    porcelain = "--porcelain" in args
 
     if "--check" in args:
         findings = audit(before, root)
         for grad, text in findings:
             print(f"  {'[ok]  ' if grad == 'ok' else '[' + grad + ']'} {text}")
-        return 1 if any(g == "fail" for g, _ in findings) else 0
+        fails = sum(1 for g, _t in findings if g == "fail")
+        warns = sum(1 for g, _t in findings if g == "warn")
+        if porcelain:
+            print(f"## fails={fails} warns={warns}")
+        return 1 if fails else 0
 
     if "--remove" in args:
         after, notes = remove(before)
@@ -291,15 +342,17 @@ def main(argv: list[str] | None = None) -> int:
         after, notes = merge(before, root, force_statusline="--force" in args)
 
     if after == before:
-        print(f"  Nichts zu tun — {path} ist schon auf Stand.")
+        print(f"  [ok]   Nichts zu tun — {path} ist schon auf Stand.")
     else:
         bak = _backup(path)
         cset.save(after, path)
-        print(f"  {path}")
+        print(f"  [ok]   {path}")
         if bak:
-            print(f"  Sicherung: {bak}")
-    for n in notes:
-        print(f"    · {n}")
+            print(f"         Sicherung: {bak}")
+    for grad, text in notes:
+        print(f"    {'·' if grad == 'info' else '[warn]'} {text}")
+    if porcelain:
+        print(f"## fails=0 warns={sum(1 for g, _t in notes if g == 'warn')}")
     return 0
 
 

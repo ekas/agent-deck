@@ -6,7 +6,7 @@
 
 ![Plattform](https://img.shields.io/badge/Plattform-Windows-0078d4)
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab)
-![Tests](https://img.shields.io/badge/Tests-158%20passing-2ea44f)
+![Tests](https://img.shields.io/badge/Tests-191%20passing-2ea44f)
 ![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue)
 
 ---
@@ -104,27 +104,33 @@ soll so bleiben.
 
 ## Einrichtung
 
-Vier Schritte, ausführlich in **[docs/SETUP.md](docs/SETUP.md)**:
-
 ```powershell
-pip install -r requirements.txt
-
-# 1. Extension in VS Code installieren (einmal pro Rechner)
-$dst = "$env:USERPROFILE\.vscode\extensions\agent-deck-bridge"
-New-Item -ItemType Directory -Force -Path $dst | Out-Null
-Copy-Item ".\extension\*" $dst -Recurse -Force
-# danach in jedem VS-Code-Fenster: "Developer: Reload Window"
-
-# 2. Hooks in ~/.claude/settings.json eintragen  -> SETUP.md Schritt 2
-# 3. Panel starten
-.\start_debug.bat      # mit Konsole, für den ersten Start
-.\start.bat            # leise (pythonw), danach
-
-# 4. Im Panel auf "Fenster A" klicken, dann das VS-Code-Fenster anklicken
+git clone <repo> agent-deck; cd agent-deck
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Schritt 2 ist der einzige mit Handarbeit: sechs Hook-Einträge, in denen der Pfad zu
-`report.py` steht. Die Zuordnung aus Schritt 4 merkt sich das Deck in `bindings.json`.
+Das ist alles. Der Installer prüft die Voraussetzungen, holt Pillow, kopiert die
+Extension, merged die sechs Hooks **und die `statusLine`** in `~/.claude/settings.json`
+— und **beweist** danach, dass ein Hook wirklich schreibt, indem er einen feuert und in
+`state\` nach einer frischen Datei sieht. Dieser Beweis ist der Punkt: die
+`cmd /c`-Falle endet mit Exit 0 und sieht darum gesund aus, meldet aber nichts.
+
+Zwei Handgriffe bleiben, weil sie niemandem abgenommen werden können:
+
+1. In jedem offenen VS-Code-Fenster: **„Developer: Reload Window"**
+2. Im Panel oben auf **„Fenster A"** klicken, dann das VS-Code-Fenster anklicken
+
+```powershell
+.\install.ps1 -Check     # der Doctor: prüft alles, ändert nichts — erste Adresse bei Problemen
+.\install.ps1 -Remove    # Hooks und Extension wieder entfernen
+```
+
+Ein zweiter Lauf ist ein Nulldurchgang: fremde Hooks anderer Werkzeuge bleiben stehen,
+eigene werden ersetzt statt verdoppelt. Nach einem Repo-Umzug ist der Installer darum
+auch der Weg, die Pfade zu reparieren.
+
+Ausführlich — inklusive dem, was in `settings.json` landet und warum jeder Teil so
+aussehen muss — in **[docs/SETUP.md](docs/SETUP.md)**.
 
 Anfassen muss man sonst nur [`domain/config.py`](deck/domain/config.py) — und auch das nur, wenn man die
 Vorgaben ändern will (Jira-Projekt-Key, Startmodus neuer Agenten, Abschalter für
@@ -178,19 +184,24 @@ Deck läuft ansonsten vollständig.
 
 ## Projektstruktur
 
-Bewusst **flache Module ohne Package**: `restart()` startet sich über `sys.argv[0]`
-neu, ein `python -m`-Layout würde das brechen.
+Der Code liegt im Paket `deck/`, geschnitten in Schichten — 73 Module, keines über 400
+Zeilen. Abhängigkeiten zeigen **nur nach unten**, und das ist keine Absichtserklärung,
+sondern [getestet](tests/test_architecture.py): ein Import nach oben macht die Suite rot
+und nennt Datei und Zeile.
 
-Der Code liegt im Paket `deck/`, geschnitten in Schichten — 62 Module, keines über 400
-Zeilen. Abhängigkeiten zeigen **nur
-nach unten** — und das ist keine Absichtserklärung, sondern
-[getestet](tests/test_architecture.py): ein Import nach oben macht die Suite rot und
-nennt Datei und Zeile.
-
-Im Wurzelverzeichnis liegen nur fünf Einsprungpunkte mit je einem `runpy`-Aufruf. Ihre
-Namen sind Verträge: `report.py` und `statusline.py` stehen mit absolutem Pfad in
+Im Wurzelverzeichnis liegen nur fünf Einsprungpunkte mit je einem `runpy`-Aufruf — sie
+sind **kein** `python -m`-Layout, weil `restart()` sich über `sys.argv[0]` neu startet.
+Ihre Namen sind Verträge: `report.py` und `statusline.py` stehen mit absolutem Pfad in
 `~/.claude/settings.json`, `agent_deck.py` in `start.bat` und im Wächter, `watchdog.py`
-in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
+in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku. Dass es sie gibt und
+dass sie nur den `runpy`-Aufruf enthalten, ist ebenfalls
+[getestet](tests/test_architecture.py) — ein umbenannter Einsprungpunkt bricht sonst
+still jede bestehende Installation.
+
+Dazu **`install.ps1`** als einziger Einstieg von außen (siehe [Einrichtung](#einrichtung)).
+Was es in `settings.json` schreibt, rechnet [`claude/hook_setup.py`](deck/claude/hook_setup.py)
+aus — damit die Merge-Regeln und die Prüfurteile unter Test stehen und nicht in einem
+Shell-Skript wohnen.
 
 <details>
 <summary><b>deck/domain</b> — anzeigefreier Kern, ohne tkinter/Pillow/ctypes</summary>
@@ -239,6 +250,7 @@ in der Windows-Aufgabenplanung, `reenable_glow.py` in dieser Doku.
 | `claude/summarize.py` | Kurzzusammenfassung des Chats |
 | `claude/refs.py` | Ticket- und PR-Nummer aus dem Chat (reine Regex) |
 | `claude/settings.py` | `~/.claude/settings.json` lesen |
+| `claude/hook_setup.py` | dieselbe Datei **einrichten**: Hooks mergen, prüfen, entfernen (was `install.ps1` aufruft) |
 | `net/broker.py` · `net/commands.py` | TCP-Server · Fassade über die Wire-Dicts |
 | `extension/` | VS-Code-Extension (reines JS, kein Build) |
 
@@ -287,20 +299,31 @@ Die anzeigefreie Logik ist unit-getestet — Statusmodell, Ticket-/PR-Erkennung,
 Farb- und Text-Helfer, Worktree-Parsing, Usage-Auswertung, Watchdog-Urteile:
 
 ```powershell
-python tests/run.py                   # alle 158 Tests, kein pytest nötig
+python tests/run.py                   # alle 191 Tests, kein pytest nötig
 python tests/test_dock_animation.py   # eine Datei allein läuft auch
 python -m pytest tests/               # geht ebenfalls
 ```
 
-Stand: **158/158** in 22 Dateien, die `deck/` spiegeln. Läuft in der
+Stand: **191/191** in 23 Dateien, die `deck/` spiegeln. Läuft in der
 [CI](.github/workflows/ci.yml) bei jedem Push, dort zusammen mit einer Syntaxprüfung
-aller Module (`python -m compileall`).
+aller Module (`python -m compileall`) und einem Parse-Lauf über die `.ps1`-Dateien —
+ein Tippfehler in `install.ps1` fällt sonst erst dem auf, der das Repo gerade zum
+ersten Mal klont, also genau dem falschen.
 
-Vier davon prüfen nicht Verhalten, sondern die **Architektur**
+Eine Datei prüft nicht Verhalten, sondern die **Struktur**
 ([`test_architecture.py`](tests/test_architecture.py)): dass kein Import nach oben
-zeigt, dass `domain/` ohne `tkinter`/`PIL`/`ctypes` bleibt und dass die Hooks nicht die
-Anzeige nachziehen — sie starten bei jedem Tool-Aufruf neu. Eine Schichttabelle in der
-Doku veraltet still; dieser Test wird rot und nennt Datei und Zeile.
+zeigt, dass jeder `from deck.x import y` ein existierendes `y` trifft, dass `domain/`
+ohne `tkinter`/`PIL`/`ctypes` bleibt, dass die Hooks nicht die Anzeige nachziehen (sie
+starten bei jedem Tool-Aufruf neu), dass die fünf Einsprungpunkte da sind und dass im
+Wurzelverzeichnis kein Streumüll liegt. Eine Schichttabelle in der Doku veraltet still;
+diese Tests werden rot und nennen Datei und Zeile.
+
+Der Hook-Merge hat seine eigene Datei
+([`test_claude_hook_setup.py`](tests/test_claude_hook_setup.py)) — er fasst die eine
+Stelle an, an der ein Fehler den **Agenten blockiert**: ein kaputter Eintrag unter
+`UserPromptSubmit` gilt Claude Code als Veto gegen den Prompt. Geprüft wird deshalb
+nicht nur, dass er das Richtige schreibt, sondern auch, dass er fremde Hooks stehen
+lässt und dass ein zweiter Lauf nichts verändert.
 
 ## Bekannte Grenzen
 
