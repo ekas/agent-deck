@@ -94,7 +94,8 @@ filterwarnings = [
 python_version = "3.12"
 # Zunächst nur die anzeigefreien Schichten. ui/ und dock/ hängen an tkinter, wo
 # Annotationen wenig tragen und viele Ignores nötig wären.
-files = ["deck/domain", "deck/net", "deck/platform", "deck/claude", "deck/ops"]
+files = ["deck/domain", "deck/net", "deck/platform", "deck/claude", "deck/ops",
+         "deck/render"]
 ignore_missing_imports = true      # PIL und tkinter bringen keine vollständigen Stubs
 warn_unused_ignores = true
 warn_redundant_casts = true
@@ -104,7 +105,7 @@ no_implicit_optional = true
 # Fertig annotierte Pakete werden hier scharf gestellt: eine neue Funktion ohne
 # Signatur macht mypy rot. Die Liste wächst, während die Annotationen wandern -
 # so bleibt der Fortschritt geprüft statt behauptet.
-module = ["deck.domain.*", "deck.net.*", "deck.platform.*", "deck.ops.*", "deck.claude.*"]
+module = ["deck.domain.*", "deck.net.*", "deck.platform.*", "deck.ops.*", "deck.claude.*", "deck.render.*"]
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]

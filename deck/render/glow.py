@@ -12,6 +12,7 @@ nur Koordinaten -> beide stoeren sich nicht.
 import math
 import time
 import tkinter as tk
+from typing import Any
 
 from deck.domain import config as cfg
 from deck.render import card as cr
@@ -53,18 +54,18 @@ _SURGE_BORDER = "#ffffff"   # Ruhefarbe der Kante der gewählten Kachel (spiegel
 
 
 class GlowAnimator:
-    def __init__(self, root, canvas, tiles):
+    def __init__(self, root: Any, canvas: Any, tiles: Any) -> None:
         self.root = root
         self.canvas = canvas      # der Deck-Canvas (stabil, wird nie ersetzt)
         self.tiles = tiles        # dasselbe Dict wie im Panel (tiles.clear(), nie neu)
         self._pulse_i = 0         # Zähler für das langsame Atmen der Status-Glows
         self._paused = 0          # >0: Tick läuft leer (siehe pause())
 
-    def start(self):
+    def start(self) -> None:
         """Den schnellen Animations-Timer starten (laeuft dann selbst weiter)."""
         self._tick()
 
-    def pause(self):
+    def pause(self) -> None:
         """Das Faden/Atmen kurz stilllegen – der Timer läuft weiter, sein teurer
         Rumpf aber nicht.
 
@@ -79,17 +80,17 @@ class GlowAnimator:
         gleich wieder Zuklappen) nicht gegenseitig die Pause beenden."""
         self._paused += 1
 
-    def resume(self):
+    def resume(self) -> None:
         if self._paused > 0:
             self._paused -= 1
 
-    def pulse_factor(self):
+    def pulse_factor(self) -> float:
         """Sanftes Atmen 0.60..1.00 (Cosinus) für pulsierende Status."""
         n = 42                                   # Ticks je Atemzug (~2.3 s bei 55 ms)
         ang = 2 * math.pi * (self._pulse_i % n) / n
         return 0.60 + 0.40 * (0.5 - 0.5 * math.cos(ang))
 
-    def _stale(self, slot, ids):
+    def _stale(self, slot: str, ids: Any) -> bool:
         """Gehoert dieser Record noch zur GEZEICHNETEN Kachel?
 
         Nach einem Neuaufbau (Panel: canvas.delete('all') + tiles.clear() +
@@ -101,7 +102,7 @@ class GlowAnimator:
         danach dauerhaft schief (bis zum naechsten Redraw)."""
         return self.tiles.get(slot) is not ids
 
-    def set_border(self, ids, color, width):
+    def set_border(self, ids: Any, color: str | None, width: float) -> bool:
         """Kantenfarbe/-breite der Kachel setzen – die EINE Stelle dafür (auch das
         Panel geht in _update_tiles hier durch).
 
@@ -117,7 +118,7 @@ class GlowAnimator:
                 return False
         return True
 
-    def effective_glow(self, ids, factor):
+    def effective_glow(self, ids: Any, factor: float) -> float:
         """Leuchtkraft dieser Kachel im aktuellen Frame: Ruhe-Intensität (ggf.
         atmend), plus Statuswechsel-Bloom, plus Klick-Surge. _EFF_MAX deckelt, damit
         der äußere Halo auch am Spitzenwert weich bleibt."""
@@ -125,7 +126,7 @@ class GlowAnimator:
         eff = base + ids.get("bloom", 0.0) + ids.get("surge", 0.0)
         return _EFF_MAX if eff > _EFF_MAX else eff
 
-    def apply_glow(self, slot, factor):
+    def apply_glow(self, slot: str, factor: float) -> None:
         """Fläche, Kante und Halo einer Karte auf den Ist-Zustand ihres Records
         bringen. `factor` = Puls.
 
@@ -152,7 +153,7 @@ class GlowAnimator:
         except tk.TclError:
             pass                                 # Kachel gerade neu gezeichnet -> egal
 
-    def _paint_image_tile(self, ids, color, eff):
+    def _paint_image_tile(self, ids: Any, color: str, eff: float) -> None:
         """Das Kachelbild neu anfordern und setzen – aber nur, wenn sich wirklich
         etwas geändert hat (sonst liefe je Frame ein itemconfig für ein identisches
         Bild). Press & Pop skaliert die Kachel: dessen Maßstab geht in die Bildgröße
@@ -183,7 +184,7 @@ class GlowAnimator:
         ids["photo"] = photo                     # Referenz halten (siehe Docstring)
         ids["img_key"] = key
 
-    def _tick(self):
+    def _tick(self) -> None:
         """Schneller Timer für alle Bewegung: die Kartenfläche weich in ihre
         Ziel-Tönung faden (FILL_EASE/Frame), den Glow atmen lassen und das
         Statuswechsel-Aufleuchten (bloom) abklingen. Fertig eingefadete, ruhige
@@ -226,7 +227,7 @@ class GlowAnimator:
             pass
         self.root.after(ANIM_MS, self._tick)
 
-    def press(self, slot):
+    def press(self, slot: str) -> None:
         """Auswahl-Feedback beim Klick: 'Press & Pop' – die ganze Kachel drückt sich
         kurz ein und federt mit leichtem Überschwingen zurück (taktil wie eine Taste).
         Skaliert ALLE Items der Kachel als Gruppe (gtag) um ihr Zentrum. Das Glow-Feedback
@@ -262,11 +263,11 @@ class GlowAnimator:
         cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
         ids["press_cx"], ids["press_cy"] = cx, cy
 
-        def s_of(p):
-            def eo(q):                                 # ease-out
+        def s_of(p: float) -> float:
+            def eo(q: float) -> float:                 # ease-out
                 return 1 - (1 - q) ** 3
 
-            def eio(q):                                # smoothstep
+            def eio(q: float) -> float:                # smoothstep
                 return q * q * (3 - 2 * q)
 
             if p < _PHASE_IN:                          # 1) eindrücken
@@ -279,7 +280,7 @@ class GlowAnimator:
 
         start = time.time()
 
-        def step():
+        def step() -> None:
             try:
                 if not c.winfo_exists() or self._stale(slot, ids):
                     ids["press_job"] = None
@@ -305,7 +306,7 @@ class GlowAnimator:
                 ids["press_job"] = None            # Kachel neu gezeichnet -> Press egal
         step()
 
-    def surge(self, slot):
+    def surge(self, slot: str) -> None:
         """Auswahl-Feedback beim Klick: 'Glow Surge' (Effekt 02) – der Status-Halo
         schwillt kurz stark an und die Kante blitzt cyan auf. Ein Wert b = sin(pi*p)
         läuft über _SURGE_DUR (0 -> Peak in der Mitte -> 0); er hebt die Ring-Intensität
@@ -336,7 +337,7 @@ class GlowAnimator:
             return
         start = time.time()
 
-        def step():
+        def step() -> None:
             try:
                 if not c.winfo_exists() or self._stale(slot, ids):
                     ids["surge_job"] = None

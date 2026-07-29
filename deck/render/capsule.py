@@ -39,6 +39,8 @@ Fehlt Pillow, ist AVAILABLE False und edge_dock bleibt beim alten Linien-Pfad �
 einer fehlenden Bibliothek darf das Deck nicht scheitern.
 """
 
+from typing import Any
+
 # Masse und Masken liegen in capsule_masks - dieses Modul setzt daraus die Schichten
 # zusammen und faerbt sie ein.
 from deck.render.capsule_masks import (
@@ -69,10 +71,11 @@ try:                                  # Pillow ist die einzige Nicht-Stdlib-Abha
     from PIL import Image, ImageChops, ImageDraw, ImageFilter
     AVAILABLE = True
 except Exception:                     # ohne Pillow bleibt der Linien-Pfad
-    Image = ImageChops = ImageDraw = ImageFilter = None
+    # Ohne Pillow bleibt der Linien-Pfad; die Namen muessen aber existieren.
+    Image = ImageChops = ImageDraw = ImageFilter = None  # type: ignore[assignment]
     AVAILABLE = False
 
-def _lit(color, eff, fade, bg=None):
+def _lit(color: str, eff: float, fade: float, bg: str | None = None) -> str:
     """Eine Schicht von der Statusfarbe Richtung Grundton verblassen, skaliert mit der
     Leuchtkraft – genau die Rechnung der Vorlage (und von edge_dock.neon_color), damit
     idle, arbeitet, ungelesen und Rueckfrage dieselben Helligkeiten treffen wie im
@@ -80,7 +83,7 @@ def _lit(color, eff, fade, bg=None):
     return _mix(color, bg or GROUND, 1 - (1 - fade) * min(eff, 1.0))
 
 
-def _dim(mask, factor):
+def _dim(mask: Any, factor: float) -> Any:
     """Deckung einer Schicht skalieren (fuer den aufziehenden Bloom beim Aufblitzen)."""
     f = max(0.0, factor)
     if 0.999 <= f <= 1.001:
@@ -88,14 +91,15 @@ def _dim(mask, factor):
     return mask.point(lambda v: min(255, int(v * f)))
 
 
-def _layer(size, color, mask):
+def _layer(size: Any, color: str, mask: Any) -> Any:
     """Eine RGBA-Schicht: durchgehende Farbe, Deckung aus der Maske."""
     img = Image.new("RGBA", size, color)
     img.putalpha(mask)
     return img
 
 
-def handle_rgba(w, h, edge, tube, color, eff, hot=False, prof=None):
+def handle_rgba(w: int, h: int, edge: str, tube: int, color: str, eff: float,
+                hot: bool = False, prof: list[float] | None = None) -> Any:
     """Ein fertiges Griff-Bild als RGBA (PIL) – die Kapsel und ihr Bloom, sonst nichts.
     Alles ausserhalb bleibt unsichtbar (Deckung HIT_ALPHA, siehe dort): dort ist der
     Desktop zu sehen, kein Kasten.
@@ -111,15 +115,15 @@ def handle_rgba(w, h, edge, tube, color, eff, hot=False, prof=None):
     size = (w, h)
     flash = min(1.0, max(0.0, eff - 1.0))
 
-    def tone(col):
+    def tone(col: str) -> str:
         return _mix(col, "#ffffff", flash * FLASH_WHITE) if flash else col
 
     img = Image.new("RGBA", size, (0, 0, 0, 0))
 
-    def put(mask, col):
+    def put(mask: Any, col: str) -> Any:
         return Image.alpha_composite(img, _layer(size, tone(col), mask))
 
-    def put_raw(mask, col):
+    def put_raw(mask: Any, col: str) -> Any:
         """Wie put, aber OHNE die Flash-Toenung: der Grundton, mit dem die Welle
         abdunkelt, darf beim Aufblitzen nicht mitweiss werden – sonst hellt gerade
         die dunkle Seite der Welle auf."""
@@ -153,7 +157,7 @@ def handle_rgba(w, h, edge, tube, color, eff, hot=False, prof=None):
     return img
 
 
-def _premultiplied_bgra(img):
+def _premultiplied_bgra(img: Any) -> bytes:
     """RGBA (PIL) -> Bytes, wie UpdateLayeredWindow sie will: BGRA mit
     VORMULTIPLIZIERTEM Alpha. Die Multiplikation macht ImageChops.multiply exakt
     ((c*a)/255) – von Hand ueber Python-Schleifen waere es je Frame zu teuer."""
@@ -161,7 +165,7 @@ def _premultiplied_bgra(img):
     return Image.merge("RGBA", (_mul(b, a), _mul(g, a), _mul(r, a), a)).tobytes()
 
 
-def _qc(color, step=6):
+def _qc(color: str, step: int = 6) -> str:
     """Farbe grob rastern – haelt den Cache klein, waehrend der Griff in eine neue
     Statusfarbe fadet. Der Sprung liegt unter der Wahrnehmungsschwelle."""
     c = color.lstrip("#")
@@ -169,7 +173,7 @@ def _qc(color, step=6):
     return f"#{r // step * step:02x}{g // step * step:02x}{b // step * step:02x}"
 
 
-def _qe(eff, step=0.015):
+def _qe(eff: float, step: float = 0.015) -> float:
     """Leuchtkraft rastern (dito, fuer den atmenden Griff).
 
     Der Schritt war bis 2026-07-28 mit 0.07 von den Kacheln uebernommen (card_render)
@@ -186,7 +190,8 @@ def _qe(eff, step=0.015):
     return round(max(0.0, min(3.0, eff)) / step) * step
 
 
-def handle_bits(w, h, edge, tube, color, eff, hot=False, prof=None):
+def handle_bits(w: int, h: int, edge: str, tube: int, color: str, eff: float,
+                hot: bool = False, prof: list[float] | None = None) -> bytes | None:
     """Wie handle_rgba, aber als fertige BGRA-Bytes fuer win_focus.layered_push –
     gecacht. Gibt None zurueck, wenn Pillow fehlt oder die Groesse unbrauchbar ist;
     dann bleibt der Linien-Pfad in edge_dock.
@@ -223,7 +228,7 @@ def handle_bits(w, h, edge, tube, color, eff, hot=False, prof=None):
     return bits
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Beide Caches leeren – nach einem Monitorwechsel (andere Groessen) oder in
     Tests."""
     _mask_cache.clear()

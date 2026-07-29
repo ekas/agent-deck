@@ -8,12 +8,14 @@ Masken werden gecacht (_trim haelt den Cache klein). Wellenbilder dagegen NICHT:
 aendern sich je Frame, ein Cache dafuer waere reiner Speicherfrass.
 """
 from collections import OrderedDict
+from typing import Any
 
 try:                                  # Pillow ist die einzige Nicht-Stdlib-Abhaengigkeit
     from PIL import Image, ImageChops, ImageDraw, ImageFilter
     AVAILABLE = True
 except Exception:                     # ohne Pillow bleibt der Linien-Pfad
-    Image = ImageChops = ImageDraw = ImageFilter = None
+    # Ohne Pillow bleibt der Linien-Pfad; die Namen muessen aber existieren.
+    Image = ImageChops = ImageDraw = ImageFilter = None  # type: ignore[assignment]
     AVAILABLE = False
 
 
@@ -106,36 +108,37 @@ WAVE_WHITE = 0.55        # Weissglut ueber WARM_WHITE hinaus, wo sie hell ist
 WAVE_BLOOM = 0.75        # Leuchthof je Zeile mitziehen (die Bewegung im Augenwinkel)
 WAVE_WARM = 0.45         # Deckung der Warm-Schicht – Beiwerk, siehe oben
 
-_mask_cache = OrderedDict()      # (W, H, edge, tube, hot, grip) -> dict der Masken
-_bits_cache = OrderedDict()      # + Farbschluessel -> BGRA-Bytes (vormultipliziert)
+_mask_cache: OrderedDict[Any, Any] = OrderedDict()      # (W, H, edge, tube, hot, grip) -> dict der Masken
+_bits_cache: OrderedDict[Any, Any] = OrderedDict()      # + Farbschluessel -> BGRA-Bytes (vormultipliziert)
 _MASK_MAX, _BITS_MAX = 24, 64
 
 
-def _trim(cache, limit):
+def _trim(cache: Any, limit: int) -> None:
     while len(cache) > limit:
         cache.popitem(last=False)
 
 
-def _canon(w, h, edge):
+def _canon(w: int, h: int, edge: str) -> tuple[int, int]:
     """Kanonische Groesse (Dicke quer, Laenge laengs). Am oberen Rand liegt der Griff
     quer, dort sind Breite und Hoehe getauscht."""
     return (h, w) if edge == "top" else (w, h)
 
 
-def _orient(m, edge):
+def _orient(m: Any, edge: str) -> Any:
     """Die Masken entstehen KANONISCH senkrecht, mit der Dockkante links (x=0) – so
     gibt es nur einen Zeichenweg. Fuer die anderen Kanten wird die fertige Maske
     gedreht/gespiegelt, damit die Kapsel immer richtig zur Bildschirmkante liegt
     (Glaskante nach aussen): rechts andocken spiegelt, oben andocken dreht um 90 Grad
     im Uhrzeigersinn (dabei wird aus der linken Spalte die obere Zeile)."""
     if edge == "right":
-        return m.transpose(Image.FLIP_LEFT_RIGHT)
+        return m.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     if edge == "top":
-        return m.transpose(Image.ROTATE_270)
+        return m.transpose(Image.Transpose.ROTATE_270)
     return m
 
 
-def _shape(W, H, x0, y0, x1, y1, blur=0.0, grow=0.0, cap=1.0):
+def _shape(W: int, H: int, x0: float, y0: float, x1: float, y1: float,
+           blur: float = 0.0, grow: float = 0.0, cap: float = 1.0) -> Any:
     """Kapsel-Maske in kanonisch senkrechter Ausrichtung (W x H Pixel). Gezeichnet
     wird SS-fach, danach LANCZOS herunter – daher die weichen Rundungen."""
     k = SS
@@ -146,13 +149,13 @@ def _shape(W, H, x0, y0, x1, y1, blur=0.0, grow=0.0, cap=1.0):
     ImageDraw.Draw(big).rounded_rectangle(box, radius=r, fill=255)
     if blur > 0:
         big = big.filter(ImageFilter.GaussianBlur(blur * k))
-    m = big.resize((W, H), Image.LANCZOS)
+    m = big.resize((W, H), Image.Resampling.LANCZOS)
     if cap < 1.0:
         m = m.point(lambda v: int(v * cap))
     return m
 
 
-def _gradient(W, H, ends, mid=255):
+def _gradient(W: int, H: int, ends: int, mid: int = 255) -> Any:
     """Laengs-Verlauf ueber das ganze Bild: an den Enden `ends`, in der Mitte `mid`.
     Wie in der Vorlage ueber die volle Bildhoehe, nicht nur ueber die Kapsel."""
     vals = []
@@ -164,7 +167,7 @@ def _gradient(W, H, ends, mid=255):
     return col.resize((W, H))
 
 
-def _byte(v):
+def _byte(v: float) -> int:
     """Anteil 0..1 -> Deckung 0..255, geklemmt."""
     if v <= 0.0:
         return 0
@@ -173,7 +176,7 @@ def _byte(v):
     return int(v * 255.0 + 0.5)
 
 
-def _column(W, H, raw, edge):
+def _column(W: int, H: int, raw: Any, edge: str) -> Any:
     """Ein Graustufen-Bild aus EINEM Byte je Bildzeile, auf die Breite gezogen – der
     Weg, auf dem ein 1D-Profil zu einer Maske wird.
 
@@ -185,10 +188,10 @@ def _column(W, H, raw, edge):
     Gebaut wird KANONISCH senkrecht wie alle Masken hier; die Drehung zur Dockkante
     macht _orient gleich mit, sonst laege das Profil am oberen Rand quer."""
     col = Image.frombytes("L", (1, H), raw)
-    return _orient(col.resize((W, H), Image.NEAREST), edge)
+    return _orient(col.resize((W, H), Image.Resampling.NEAREST), edge)
 
 
-def _wave_layers(m, W, H, edge, prof):
+def _wave_layers(m: Any, W: int, H: int, edge: str, prof: list[float]) -> Any:
     """Aus dem Wellen-Profil die fuenf Schichten machen, mit denen es sichtbar wird.
 
     `prof` traegt je Bildzeile die Abweichung vom Ruhezustand (handle_wave.profile):
@@ -226,7 +229,7 @@ def _wave_layers(m, W, H, edge, prof):
     }
 
 
-def _tail_cut(mask, floor=BLOOM_FLOOR):
+def _tail_cut(mask: Any, floor: int = BLOOM_FLOOR) -> Any:
     """Den blassen Schweif eines Verlaufs auf 0 kappen und den Rest wieder auf die
     volle Spanne ziehen (siehe BLOOM_FLOOR)."""
     if floor <= 0:
@@ -235,11 +238,11 @@ def _tail_cut(mask, floor=BLOOM_FLOOR):
     return mask.point(lambda v: 0 if v <= floor else min(255, int((v - floor) * scale)))
 
 
-def _mul(a, b):
+def _mul(a: Any, b: Any) -> Any:
     return ImageChops.multiply(a, b)
 
 
-def capsule_extent(tube):
+def capsule_extent(tube: int) -> int:
     """Wie weit die SICHTBARE Kapsel von der Dockkante nach innen reicht (px).
 
     Daran haengen die Zonen des Griffs: bis hierher ist Kapsel (Hover -> Deck klappt
@@ -248,7 +251,7 @@ def capsule_extent(tube):
     return round(tube * OUT) + int(tube)
 
 
-def _masks(W, H, edge, tube, hot):
+def _masks(W: int, H: int, edge: str, tube: int, hot: bool) -> Any:
     """Der Masken-Satz fuer diese Groesse (gecacht). `hot` gehoert in den Schluessel,
     damit er zum Bild-Cache passt – die Vorlage aendert unter dem Zeiger nur Farben,
     aber das darf sich hier nicht auf ein Detail verlassen."""

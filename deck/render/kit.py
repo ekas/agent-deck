@@ -9,6 +9,7 @@ loest die vierfach kopierte Enter/Leave-Faerbung ab.
 import math
 import tkinter as tk
 import tkinter.font as tkfont
+from typing import Any
 
 from deck.platform import dpi, monitor
 
@@ -22,12 +23,12 @@ INK_3       = "#8b8b99"   # Hinweise / Statuszeile / dezente Icons
 
 
 # ── Pure Farb-/Text-Helfer ───────────────────────────────────────────────
-def hex_to_rgb(h):
+def hex_to_rgb(h: str) -> tuple[int, int, int]:
     h = h.lstrip("#")
     return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
 
-def mix(c1, c2, t):
+def mix(c1: str, c2: str, t: float) -> str:
     """Zwei Hexfarben linear mischen: t=0 -> c1, t=1 -> c2. Fuer den weichen
     Glow-Halo (Statusfarbe -> BG) und leicht getoente Kartenkanten."""
     t = 0.0 if t < 0 else 1.0 if t > 1 else t
@@ -35,14 +36,14 @@ def mix(c1, c2, t):
     return "#{:02x}{:02x}{:02x}".format(*tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3)))
 
 
-def short_model(s):
+def short_model(s: str) -> str:
     """Modellname fuers Kartenlabel kuerzen: 'Opus 5 (1M context)' -> 'Opus 5 (1M)'.
     Kurze Namen ('Opus 5', 'Fable 5') bleiben unveraendert. Der Name kommt live von
     Claude Code (statusLine) – hier steht bewusst keine feste Version."""
     return str(s or "—").replace(" context)", ")")
 
 
-def fit_label(font, text, maxw, max_lines=2):
+def fit_label(font: Any, text: str, maxw: int, max_lines: int = 2) -> str:
     """Label so umbrechen/kuerzen, dass es in eine Kachel (maxw Breite, max_lines
     Zeilen) passt – sonst wuerde tkinter-Canvas-Text ueber die Kachel/den Rand
     hinauslaufen (Canvas bricht nur an Leerzeichen um und kuerzt nie). Lange
@@ -50,7 +51,7 @@ def fit_label(font, text, maxw, max_lines=2):
     text = " ".join(str(text).split())          # Whitespace/Zeilenumbrueche glaetten
     if not text or font.measure(text) <= maxw:
         return text
-    def fits(s):
+    def fits(s: str) -> bool:
         return font.measure(s) <= maxw
     # In Stuecke zerlegen, die je fuer sich auf eine Zeile passen (lange Woerter hart trennen).
     pieces = []
@@ -63,7 +64,8 @@ def fit_label(font, text, maxw, max_lines=2):
             w = w[k:]
         pieces.append(w)
     # Stuecke gierig in bis zu max_lines Zeilen packen.
-    lines, cur, i = [], "", 0
+    lines: list[str] = []
+    cur, i = "", 0
     while i < len(pieces) and len(lines) < max_lines:
         cand = (cur + " " + pieces[i]).strip() if cur else pieces[i]
         if fits(cand):
@@ -87,18 +89,20 @@ def fit_label(font, text, maxw, max_lines=2):
 
 
 # ── tk-Canvas-Primitive ──────────────────────────────────────────────────
-def rr_pts(x1, y1, x2, y2, r):
+def rr_pts(x1: float, y1: float, x2: float, y2: float, r: float) -> list[float]:
     """Punktliste einer abgerundeten Kachel (fuer create_polygon/coords)."""
     return [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2,
             x2 - r, y2, x1 + r, y2, x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
 
 
-def round_rect(c, x1, y1, x2, y2, r, **kw):
+def round_rect(c: Any, x1: float, y1: float, x2: float, y2: float, r: float,
+               **kw: Any) -> int:
     """Gefuellte, abgerundete Kachel auf dem Canvas (Polygon mit smooth)."""
     return c.create_polygon(rr_pts(x1, y1, x2, y2, r), smooth=True, **kw)
 
 
-def plus_geom(cx, cy, arm, thick):
+def plus_geom(cx: float, cy: float, arm: float,
+              thick: float) -> tuple[float, float, int, int]:
     """Achsen, halbe Armlaenge und Strichdicke eines Plus – aufs Pixelraster gelegt.
     Liefert (ax, ay, a, w); reine Rechnung, damit sie ohne Canvas pruefbar ist.
 
@@ -115,7 +119,8 @@ def plus_geom(cx, cy, arm, thick):
             max(1, math.floor(arm + 0.5)), max(1, math.floor(thick + 0.5)))
 
 
-def plus(c, cx, cy, arm, thick, **kw):
+def plus(c: Any, cx: float, cy: float, arm: float, thick: float,
+         **kw: Any) -> tuple[Any, Any]:
     """Ein Plus aus zwei Strichen, zentriert um (cx, cy). Liefert beide Item-IDs.
 
     Warum nicht `create_text(text="＋")`: tk zentriert die ZEILENBOX (ascent+descent)
@@ -130,20 +135,20 @@ def plus(c, cx, cy, arm, thick, **kw):
             c.create_line(ax, ay - a, ax, ay + a, width=w, **kw))
 
 
-def make_hoverable(canvas, tag, recolors, *, guard=None):
+def make_hoverable(canvas: Any, tag: str, recolors: Any, *, guard: Any = None) -> None:
     """Hover-Verhalten fuer ein Canvas-Tag: Hand-Cursor + Umfaerben beim Betreten,
     zuruecksetzen beim Verlassen. `recolors` = [(item_id, base_farbe, hover_farbe), …].
     `guard` = optionale Funktion; liefert sie True, wird der Hover unterdrueckt
     (z.B. waehrend eines laufenden Drags). Ersetzt die frueher 4x kopierte
     Enter/Leave-Boilerplate."""
-    def enter(_e):
+    def enter(_e: Any) -> None:
         if guard and guard():
             return
         for it, _base, hov in recolors:
             canvas.itemconfig(it, fill=hov)
         canvas.configure(cursor="hand2")
 
-    def leave(_e):
+    def leave(_e: Any) -> None:
         if guard and guard():
             return
         for it, base, _hov in recolors:
@@ -168,13 +173,13 @@ class Tooltip:
     Monitor-Groesse und zog den Tooltip auf einem zweiten Monitor faelschlich auf den
     Hauptschirm zurueck."""
 
-    def __init__(self, root, *, wrap=300):
+    def __init__(self, root: Any, *, wrap: int = 300) -> None:
         self.root = root
         self.wrap = wrap
-        self._tip = None
-        self._lbl = None
+        self._tip: Any = None
+        self._lbl: Any = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._tip is not None:
             return
         tip = tk.Toplevel(self.root)
@@ -194,7 +199,7 @@ class Tooltip:
         lbl.pack(padx=1, pady=1)            # 1px Inset -> der bg schaut als Saum durch
         self._tip, self._lbl = tip, lbl
 
-    def show(self, x, y, text, *, dx=0, dy=0):
+    def show(self, x: int, y: int, text: str, *, dx: int = 0, dy: int = 0) -> None:
         text = (text or "").strip()
         if not text:
             self.hide()
@@ -208,12 +213,12 @@ class Tooltip:
         self._tip.deiconify()
         self._tip.lift()
 
-    def hide(self):
+    def hide(self) -> None:
         if self._tip is not None:
             self._tip.withdraw()
 
 
-def pill_bar(parent, items, side="left"):
+def pill_bar(parent: Any, items: Any, side: str = "left") -> Any:
     """Reihe runder Pill-Chips auf einem Canvas (passend zum Deck-Look).
     side='right' haengt die Leiste rechts in <parent> ein (z.B. Enter unten rechts)."""
     font = tkfont.Font(family="Segoe UI", size=9)
@@ -234,14 +239,15 @@ def pill_bar(parent, items, side="left"):
         tag = f"pill{i}"
         c.addtag_withtag(tag, rect)
         c.addtag_withtag(tag, txt)
-        c.tag_bind(tag, "<Button-1>", lambda e, cb=cb: cb())
+        c.tag_bind(tag, "<Button-1>", lambda _e, cb=cb: cb())   # type: ignore[misc]
         make_hoverable(c, tag, [(rect, base, hov), (txt, base_fg, hov_fg)])
         x += w + GAP
     return c
 
 
-def ghost_btn(c, x, y, text, cmd, *, size=11, bold=True,
-              fg=INK, h=26, padx=12, tag=None):
+def ghost_btn(c: Any, x: float, y: float, text: str, cmd: Any, *, size: int = 11,
+              bold: bool = True, fg: str = INK, h: int = 26, padx: int = 12,
+              tag: str | None = None) -> Any:
     """Transparenter (Ghost-)Button: Fuellung = Panel-BG (durchsichtig, aber
     klickbar), duenner Rand, Hover hebt leicht an. Gibt die Breite zurueck."""
     font = tkfont.Font(family="Segoe UI", size=size,
@@ -258,7 +264,7 @@ def ghost_btn(c, x, y, text, cmd, *, size=11, bold=True,
     return w
 
 
-def btn(parent, text, cmd):
+def btn(parent: Any, text: str, cmd: Any) -> Any:
     """Kleiner Standard-tk.Button im Deck-Look (fuer Dialoge)."""
     tk.Button(parent, text=text, command=cmd, bg="#3f3f46", fg="#fafafa",
               activebackground="#52525b", activeforeground="#fff",

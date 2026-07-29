@@ -73,10 +73,10 @@ LO, HI = -1.0, 1.2       # Grenzen von m: nach unten bis Grundton, nach oben etw
 # baut sich einen sichtbaren Sprung an der Stelle, wo das Profil wegfällt.
 QUIET = 0.01
 
-_shape_cache = {}        # n -> (cos(pi*u), cos(2*pi*u)) je Stützstelle
+_shape_cache: dict[int, tuple[list[float], list[float]]] = {}        # n -> (cos(pi*u), cos(2*pi*u)) je Stützstelle
 
 
-def _shapes(n):
+def _shapes(n: int) -> tuple[list[float], list[float]]:
     """Die beiden Modenformen über die Länge. Sie hängen nur an der Zahl der
     Stützstellen, nicht an der Zeit – also einmal rechnen und behalten. Ohne das
     stünden hier 2n Kosinusse je Frame."""
@@ -94,7 +94,7 @@ def _shapes(n):
     return hit
 
 
-def amplitudes(t):
+def amplitudes(t: float) -> tuple[float, float]:
     """Ausschlag der beiden Moden zum Zeitpunkt t (Sekunden, beliebiger Nullpunkt).
 
     Beide sind gedämpfte Sinusse ab dem letzten Anstoß. Weil der Anstoß periodisch
@@ -113,7 +113,7 @@ def amplitudes(t):
     return a, b
 
 
-def quiet(t):
+def quiet(t: float) -> bool:
     """Steht das Wasser gerade praktisch still? Dann braucht der Griff kein neues
     Bild – er nimmt seinen gecachten Ruhezustand, und das ist derselbe, den er ohne
     dieses Modul hätte."""
@@ -121,7 +121,7 @@ def quiet(t):
     return GAIN * (abs(a) + abs(b)) < QUIET     # b traegt MODE2_AMP schon in sich
 
 
-def profile(n, t):
+def profile(n: int, t: float) -> list[float] | None:
     """n Werte längs der Röhre: die Abweichung m vom heutigen Zustand, in [LO, HI].
 
     n ist die LÄNGE des Griff-Bildes in Pixeln (bei HiDPI also mehr) – das Profil

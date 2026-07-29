@@ -37,6 +37,7 @@ Desktop, sondern verschwindet mit ihm. Fuer diesen Fall bleibt der alte
 Polygon-Weg der richtige (das Deck faellt dann selbst darauf zurueck).
 """
 from collections import OrderedDict
+from typing import Any
 
 from deck.render.kit import BG, hex_to_rgb
 
@@ -44,7 +45,7 @@ try:                                  # Pillow ist die einzige Nicht-Stdlib-Abha
     from PIL import Image, ImageDraw, ImageFilter, ImageTk
     AVAILABLE = True
 except Exception:                     # ohne Pillow bleibt das Deck beim Polygon-Weg
-    Image = ImageDraw = ImageFilter = ImageTk = None
+    Image = ImageDraw = ImageFilter = ImageTk = None  # type: ignore[assignment]
     AVAILABLE = False
 
 # Aufloesungs-Faktor beim Zeichnen der Form. 4x ist der Punkt, ab dem eine
@@ -62,24 +63,24 @@ HALO_BLUR = 0.55     # Weichheit, ebenfalls als Anteil von pad
 # nicht heller – hier lieber nachjustieren als am Rest.
 HALO_MAX = 0.75
 
-_mask_cache = OrderedDict()      # (w,h,r,pad) -> (halo, body, edge)
-_photo_cache = OrderedDict()     # Farbschluessel -> PhotoImage
+_mask_cache: OrderedDict[Any, Any] = OrderedDict()      # (w,h,r,pad) -> (halo, body, edge)
+_photo_cache: OrderedDict[Any, Any] = OrderedDict()     # Farbschluessel -> PhotoImage
 _MASK_MAX, _PHOTO_MAX = 24, 160
 
 
-def pad_for(scale):
+def pad_for(scale: float) -> int:
     """Randstreifen (in Pixeln), den der Halo ausserhalb der Kachel braucht.
     Entspricht der Ausdehnung der frueheren drei Glow-Ringe (3 x 2 px), damit
     das Layout unveraendert bleibt – nur eben weich statt gestuft."""
     return max(3, round(6 * scale))
 
 
-def _trim(cache, limit):
+def _trim(cache: Any, limit: int) -> None:
     while len(cache) > limit:
         cache.popitem(last=False)
 
 
-def _masks(w, h, r, pad):
+def _masks(w: int, h: int, r: int, pad: int) -> Any:
     """Die drei Graustufen-Masken fuer diese Groesse (gecacht)."""
     key = (w, h, r, pad)
     hit = _mask_cache.get(key)
@@ -94,7 +95,7 @@ def _masks(w, h, r, pad):
     # 1) Flaeche: volle Deckung innerhalb der Kachelform.
     big = Image.new("L", (iw * k, ih * k), 0)
     ImageDraw.Draw(big).rounded_rectangle(box, radius=rad, fill=255)
-    body = big.resize((iw, ih), Image.LANCZOS)
+    body = big.resize((iw, ih), Image.Resampling.LANCZOS)
 
     # 2) Halo: dieselbe Form, um HALO_GROW aufgeblasen und dann weichgezeichnet.
     #    Der Blur laeuft auf der grossen Fassung (sonst treppt der Verlauf selbst
@@ -107,7 +108,7 @@ def _masks(w, h, r, pad):
         [box[0] - grow, box[1] - grow, box[2] + grow, box[3] + grow],
         radius=rad + grow, fill=255)
     halo = halo_big.filter(ImageFilter.GaussianBlur(radius=pad * k * HALO_BLUR))
-    halo = halo.resize((iw, ih), Image.LANCZOS)
+    halo = halo.resize((iw, ih), Image.Resampling.LANCZOS)
     halo = halo.point(lambda v: int(v * HALO_MAX))
 
     # 3) Kante: Ring der Kachelform (aussen minus innen), damit die Umrandung
@@ -119,7 +120,7 @@ def _masks(w, h, r, pad):
     edge = Image.new("L", (iw * k, ih * k), 0)
     ImageDraw.Draw(edge).rounded_rectangle(box, radius=rad, fill=255)
     edge.paste(0, (0, 0), inner)
-    edge = edge.resize((iw, ih), Image.LANCZOS)
+    edge = edge.resize((iw, ih), Image.Resampling.LANCZOS)
 
     out = (halo, body, edge)
     _mask_cache[key] = out
@@ -127,19 +128,20 @@ def _masks(w, h, r, pad):
     return out
 
 
-def _qc(color, step=6):
+def _qc(color: str, step: int = 6) -> str:
     """Farbe grob rastern – haelt den Bildcache klein, waehrend eine Flaeche in
     ihre Zielfarbe fadet. Der Sprung liegt unter der Wahrnehmungsschwelle."""
     r, g, b = hex_to_rgb(color)
     return f"#{r // step * step:02x}{g // step * step:02x}{b // step * step:02x}"
 
 
-def _qe(eff, step=0.07):
+def _qe(eff: float, step: float = 0.07) -> float:
     """Leuchtkraft rastern (dito, fuer den atmenden Halo)."""
     return round(max(0.0, min(3.0, eff)) / step) * step
 
 
-def tile_image(w, h, r, pad, fill, glow, eff, border, border_w, bg=BG):
+def tile_image(w: int, h: int, r: int, pad: int, fill: str, glow: str, eff: float,
+               border: str | None, border_w: int, bg: str = BG) -> Any:
     """Ein fertiges Kachelbild (PIL, RGB) – Halo, Flaeche und Kante in einem."""
     halo, body, edge = _masks(w, h, r, pad)
     size = halo.size
@@ -162,14 +164,15 @@ def tile_image(w, h, r, pad, fill, glow, eff, border, border_w, bg=BG):
     return img
 
 
-def tile_photo(w, h, r, pad, fill, glow, eff, border, border_w=1, bg=BG):
+def tile_photo(w: int, h: int, r: int, pad: int, fill: str, glow: str, eff: float,
+               border: str | None, border_w: int = 1, bg: str = BG) -> Any:
     """Wie tile_image, aber als Tk-PhotoImage und gecacht.
 
     Der Aufrufer MUSS die zurueckgegebene Referenz halten (siehe Modul-Kopf).
     Gibt None zurueck, wenn Pillow fehlt – dann bleibt der Polygon-Weg."""
     if not AVAILABLE:
         return None
-    key = (w, h, r, pad, _qc(fill), _qc(glow), _qe(eff), _qc(border),
+    key = (w, h, r, pad, _qc(fill), _qc(glow), _qe(eff), _qc(border or ""),
            int(border_w), bg)
     hit = _photo_cache.get(key)
     if hit is not None:
@@ -183,7 +186,7 @@ def tile_photo(w, h, r, pad, fill, glow, eff, border, border_w=1, bg=BG):
     return photo
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Beide Caches leeren – nach einem Monitorwechsel (andere Groessen) oder in
     Tests."""
     _mask_cache.clear()
