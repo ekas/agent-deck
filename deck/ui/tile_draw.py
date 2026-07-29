@@ -79,7 +79,7 @@ class TileDrawMixin:
         # Polygon + drei Ring-Umrisse.
         rings, rect, img = [], None, None
         geom = None
-        if cr.AVAILABLE and not getattr(cfg, "TRANSPARENT_BG", False):
+        if cr.AVAILABLE and not cfg.TRANSPARENT_BG:
             pad = cr.pad_for(s)
             geom = (max(1, round(W)), max(1, round(H)),
                     max(1, round(R)), pad)

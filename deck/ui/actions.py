@@ -66,7 +66,7 @@ class ActionsMixin:
         slot_mode zu verlassen. Gibt True zurueck, wenn der Modus als gesetzt gilt (nichts
         zu tun ODER Senden erfolgreich), False nur bei fehlgeschlagenem Senden -> dann NICHT
         gemerkt, der Aufrufer kann erneut versuchen."""
-        start = getattr(cfg, "MODE_START", "manual")
+        start = cfg.MODE_START
         remembered = current if current is not None else self.slot_mode.get(slot)
         got = sm.mode_steps(remembered, target, cycle, start)
         if got is None:

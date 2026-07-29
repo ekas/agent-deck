@@ -65,7 +65,7 @@ def ticket_branch(ticket: str, prefix: str | None = None) -> str:
     slug = ticket_slug(ticket)
     if not slug:
         return ""
-    pref = prefix if prefix is not None else getattr(cfg, "TICKET_BRANCH_PREFIX", "ticket/")
+    pref = prefix if prefix is not None else cfg.TICKET_BRANCH_PREFIX
     return pref + slug
 
 
@@ -85,7 +85,7 @@ def jira_key(ticket: str, project: str | None = None) -> str:
         return m.group(1).upper() + "-" + m.group(2)
     num = t.lstrip("#").strip()
     proj = (project if project is not None
-            else getattr(cfg, "JIRA_PROJECT_KEY", "") or "").strip().upper()
+            else cfg.JIRA_PROJECT_KEY or "").strip().upper()
     if proj and num.isdigit():               # nur Nummer + Projekt bekannt -> Key bauen
         return proj + "-" + num
     return t
@@ -114,7 +114,7 @@ class BindStore:
         raw = load_json(self.bind_file)
         if not isinstance(raw, dict):
             # Erst-Start / kaputt / kein Objekt -> aus config.WINDOW_MATCH vorbelegen.
-            raw = dict(getattr(cfg, "WINDOW_MATCH", {}) or {})
+            raw = dict(cfg.WINDOW_MATCH or {})
         # Selbstheilung: Platzhalter-/Leer-/Alt-'unknown'-Bindungen beim Laden
         # rauswerfen und die bereinigte Datei zurueckschreiben -> nach einem
         # Neustart ist ein altes Phantom weg.

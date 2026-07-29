@@ -1,14 +1,17 @@
-"""Farben, Timings und Anzeigetexte des Panels.
+"""Farben, Statusstile und Anzeigetexte des Panels — das Aussehen, nicht die Schalter.
 
-Diese Werte lagen früher auf der Modulebene von panel.py. Sie stehen hier, weil
-die ui-Mixins sie brauchen: würden sie aus panel.py importieren, das die Mixins
-selbst einbindet, entstünde ein Zirkelbezug.
+Diese Werte lagen früher auf der Modulebene von panel.py. Sie stehen hier, weil die
+ui-Mixins sie brauchen: würden sie aus panel.py importieren, das die Mixins selbst
+einbindet, entstünde ein Zirkelbezug.
 
-Die Fallback-Werte in getattr(cfg, ...) greifen nur, wenn ein config-Eintrag fehlt.
+Was hier NICHT mehr steht, sind die einstellbaren Werte (Takte, Fristen, Schalter).
+Die hielt dieses Modul früher als Kopie aus `config` — `POLL_MS = getattr(cfg,
+"POLL_MS", 400)`. Eine Kopie friert beim Import ein, und weil mehrere Module dieselbe
+Zahl kopierten, gab es sie mehrfach: ein Testpatch am falschen Ort blieb still
+wirkungslos. Solche Werte liest jetzt jede Stelle direkt als `cfg.POLL_MS`.
 """
 
 from deck import i18n
-from deck.domain import config as cfg
 from deck.render.kit import BG, CARD_BORDER, CARD_FILL, INK_3
 from deck.render.kit import mix as _mix
 
@@ -88,28 +91,8 @@ RAIL_DIM  = _mix(CARD_BORDER, BG, 0.55)   # fremde Gruppe, waehrend woanders geh
 # Faden/Atmen/Abklingen (FILL_EASE/BLOOM_DECAY im ANIM_MS-Timer) macht jetzt der
 # GlowAnimator. Poll-Takt + Stale-Grenze bleiben hier (refresh gehoert dem Panel);
 # die Fallback-Werte greifen nur, falls ein config-Eintrag fehlt.
-BLOOM_ON_CHANGE = getattr(cfg, "BLOOM_ON_CHANGE", 0.90)
-POLL_MS         = getattr(cfg, "POLL_MS", 400)
 # So kurz wird nachgefasst, wenn der Poll wegen einer laufenden Ein-/Ausklapp-Bewegung
 # aussetzt (siehe refresh). Klein genug, dass die Anzeige direkt nach dem Aufklappen
 # frisch ist, gross genug, dass das Nachfragen selbst keine Frames kostet.
 SLIDE_RETRY_MS  = 50
-STALE_S         = getattr(cfg, "STALE_S", 900)  # so lange ohne Update -> als "idle" zeigen
-STALE_WINDOW_S  = getattr(cfg, "STALE_WINDOW_S", 3.0)  # getrennt+Fenster-zu so lange -> Bindung abraeumen
-WT_ORPHAN_GRACE_S = getattr(cfg, "WT_ORPHAN_GRACE_S", 20.0)  # worktree-Marker ohne lebenden Agenten so lange -> abraeumen
-WT_DISK_SWEEP_INTERVAL_S = getattr(cfg, "WT_DISK_SWEEP_INTERVAL_S", 60.0)  # so oft (s) die '<repo>.wt'-Ordner direkt auf verwaiste worktrees absuchen
-WT_DISK_ORPHAN_GRACE_S = getattr(cfg, "WT_DISK_ORPHAN_GRACE_S", 90.0)  # so lange (s) muss ein '.wt'-worktree ohne zugehoerigen Agenten bestehen, bevor der Disk-Sweep ihn faellt
-UI_PUMP_MS      = getattr(cfg, "UI_PUMP_MS", 80)     # Takt, in dem Thread-Ergebnisse abgeholt werden (siehe _post)
-HOVER_TIP_MS    = getattr(cfg, "HOVER_TIP_MS", 250)  # Hover-Verzoegerung fuer den Tooltip
-TIP_LEAVE_MS    = getattr(cfg, "TIP_LEAVE_MS", 80)   # verzoegertes Ausblenden (ueberbrueckt Tk-Leave+Enter zwischen Kachel-Items)
-SUMMARY_ON      = getattr(cfg, "HOVER_SUMMARY", True)      # Hover -> KI-Kurzzusammenfassung statt letzter Frage
-SUMMARY_MODEL   = getattr(cfg, "HOVER_SUMMARY_MODEL", "haiku")  # Modell fuer die Zusammenfassung
-SUMMARY_PREFETCH = getattr(cfg, "HOVER_SUMMARY_PREFETCH", True)  # Zusammenfassungen vorab erzeugen (Hover sofort)
-TICKET_AUTO     = getattr(cfg, "TICKET_AUTODETECT", True)        # Ticket-ID selbst aus dem Chat lesen
-TICKET_AUTO_CARD = getattr(cfg, "TICKET_AUTODETECT_ON_CARD", True)  # … und auf der Karte zeigen
-TICKET_PROJECT  = getattr(cfg, "JIRA_PROJECT_KEY", "")           # bevorzugtes Jira-Projekt bei der Erkennung
 PREFETCH_EVERY_S = 5.0    # so oft (s) den Prefetch-Scan laufen lassen (nicht jeden Poll)
-PENDING_AUTO_TTL = getattr(cfg, "PENDING_AUTO_TTL", 300)  # s: so lange auf den 1. Hook eines neuen Agenten warten, dann Auto-Startmodus aufgeben
-AUTO_READY_GRACE = getattr(cfg, "AUTO_READY_GRACE", 1.5)  # s: nach dem 1. Hook warten, bevor der Auto-Startmodus getippt wird (TUI-Eingabe warmlaufen lassen)
-AUTO_MAX_TRIES  = getattr(cfg, "AUTO_MAX_TRIES", 3)       # so oft den Auto-Startmodus (nach)treiben, dann aufgeben
-WINDOWS = getattr(cfg, "WINDOWS", ["A", "B", "C", "D"])  # unterstuetzte Fenster

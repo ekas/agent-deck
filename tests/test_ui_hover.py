@@ -3,9 +3,9 @@
 
 import os
 
-import helpers  # noqa: F401 - Import MIT Absicht: legt die Repo-Wurzel auf den
+import helpers  # noqa: F401 - setzt sys.path und die Deck-Sprache
 
-                # sys.path und nagelt die Deck-Sprache auf Deutsch.
+from deck.domain import config as cfg
 
 
 def _tip_deck(cached=None, cached_summary=None, auto=None, bindings=None,
@@ -82,16 +82,15 @@ def test_tip_refs_prefers_memory_over_cache_file():
     try:
         assert f._tip_refs("sess-3")["ticket"] == "NEU-2"  # frisch gescannt > Cache-Datei
         assert f._tip_refs("")["ticket"] == ""
-        # Gepatcht wird in hover, NICHT in panel: _tip_refs lebt im HoverMixin und
-        # liest TICKET_AUTO aus dem Namensraum von deck/ui/hover.py. panel hat eine
-        # eigene Bindung desselben Werts - ein Patch dort bliebe wirkungslos, und der
-        # Test waere still gruen, ohne den Aus-Fall zu pruefen.
-        from deck.ui import hover
-        prev, hover.TICKET_AUTO = hover.TICKET_AUTO, False
+        # Gepatcht wird die QUELLE, nicht eine Kopie. Früher hielt jedes Modul seine
+        # eigene Bindung (theme.TICKET_AUTO, hover.TICKET_AUTO, panel.TICKET_AUTO), und
+        # ein Patch an der falschen Stelle blieb still wirkungslos. Jetzt gibt es den
+        # Wert nur einmal - in config.
+        prev, cfg.TICKET_AUTODETECT = cfg.TICKET_AUTODETECT, False
         try:
             assert f._tip_refs("sess-3") == {"ticket": "", "pr": ""}   # Erkennung aus
         finally:
-            hover.TICKET_AUTO = prev
+            cfg.TICKET_AUTODETECT = prev
     finally:
         ad.cs.cached_refs, ad.cs.cached_summary = orig
 

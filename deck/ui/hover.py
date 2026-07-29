@@ -9,20 +9,10 @@ import tkinter as tk
 
 from deck import i18n
 from deck.claude import summarize as cs
+from deck.domain import config as cfg
 from deck.platform import dpi
 from deck.render.kit import INK, INK_3
-from deck.ui.theme import (
-    HOVER_TIP_MS,
-    PREFETCH_EVERY_S,
-    RAIL_DIM,
-    RAIL_HOT,
-    RAIL_IDLE,
-    SUMMARY_ON,
-    SUMMARY_PREFETCH,
-    TICKET_AUTO,
-    TICKET_MAX_CHARS,
-    TIP_LEAVE_MS,
-)
+from deck.ui.theme import PREFETCH_EVERY_S, RAIL_DIM, RAIL_HOT, RAIL_IDLE, TICKET_MAX_CHARS
 
 
 class HoverMixin:
@@ -38,7 +28,7 @@ class HoverMixin:
         Flaeche/Halo malt der GlowAnimator je Frame neu, ein Eingriff hier waere im
         naechsten Tick wieder ueberschrieben (und wuerde den Status-Kanal stoeren).
 
-        Billig genug fuer jedes Enter (hoechstens len(WINDOWS) itemconfigs), und der
+        Billig genug fuer jedes Enter (hoechstens len(cfg.WINDOWS) itemconfigs), und der
         _hot_win-Vergleich haelt den Wechsel zwischen Geschwisterkacheln kostenlos."""
         if win == self._hot_win:
             return
@@ -68,20 +58,20 @@ class HoverMixin:
         if slot == self._hover_slot:
             return
         self._hover_slot = slot
-        # SOFORT, nicht erst mit dem Tooltip nach HOVER_TIP_MS: die Zugehoerigkeit ist
+        # SOFORT, nicht erst mit dem Tooltip nach cfg.HOVER_TIP_MS: die Zugehoerigkeit ist
         # die Frage, die man beim blossen Drueberfahren hat.
         self._highlight_group(slot[0])
         self._cancel_tip_show()
         self._tip_show_job = self.root.after(
-            HOVER_TIP_MS, lambda s=slot: self._show_prompt_tip(s))
+            cfg.HOVER_TIP_MS, lambda s=slot: self._show_prompt_tip(s))
 
     def _hover_leave(self):
         """Zeiger verlaesst ein Item der Kachel. Feuert auch beim Wechsel auf ein Nachbar-
         Item DERSELBEN Kachel -> NICHT sofort ausblenden, sondern verzoegert: ein unmittel-
         bar folgendes _hover_enter derselben Kachel bricht das Ausblenden ab. Bleibt es aus
-        (echtes Verlassen), verschwindet der Tooltip nach TIP_LEAVE_MS."""
+        (echtes Verlassen), verschwindet der Tooltip nach cfg.TIP_LEAVE_MS."""
         self._cancel_tip_hide()
-        self._tip_hide_job = self.root.after(TIP_LEAVE_MS, self._do_hide_tip)
+        self._tip_hide_job = self.root.after(cfg.TIP_LEAVE_MS, self._do_hide_tip)
 
     def _do_hide_tip(self):
         """Verzoegertes Ausblenden faellig -> wir sind wirklich weg von der Kachel:
@@ -147,7 +137,7 @@ class HoverMixin:
         gefuellt), sonst EINMAL aus der Cache-Datei nachladen – die ueberlebt einen
         Deck-Neustart, der Hover zeigt die IDs also sofort und nicht erst nach dem
         naechsten Scan."""
-        if not (TICKET_AUTO and sid):
+        if not (cfg.TICKET_AUTODETECT and sid):
             return {"ticket": "", "pr": ""}
         refs = self._auto_refs.get(sid)
         if refs is None:
@@ -209,7 +199,7 @@ class HoverMixin:
         head = self._refs_label(self._tip_refs(sid))
         if head:
             lines.append(head)
-        if not SUMMARY_ON:
+        if not cfg.HOVER_SUMMARY:
             text = ids.get("prompt") or ""
             if text:
                 lines.append(i18n.L("Letzte Frage:\n", "Last question:\n") + text)
@@ -260,7 +250,7 @@ class HoverMixin:
         ensure_refs/generate (Cache- + Wachstums-/Cooldown-Gate, Concurrency-Cap).
         Der Ticket-Scan laeuft auch ohne HOVER_SUMMARY_PREFETCH (kostet nichts ausser
         dem Lesen des Transcripts)."""
-        if not (TICKET_AUTO or (SUMMARY_ON and SUMMARY_PREFETCH)):
+        if not (cfg.TICKET_AUTODETECT or (cfg.HOVER_SUMMARY and cfg.HOVER_SUMMARY_PREFETCH)):
             return
         if now - self._last_prefetch < PREFETCH_EVERY_S:
             return
@@ -269,4 +259,4 @@ class HoverMixin:
             sid = ids.get("session_id") or ""
             if sid and sid not in self._summary_jobs:
                 self._ensure_chat_info(sid, ids.get("cwd") or "",
-                                       summary=SUMMARY_ON and SUMMARY_PREFETCH)
+                                       summary=cfg.HOVER_SUMMARY and cfg.HOVER_SUMMARY_PREFETCH)

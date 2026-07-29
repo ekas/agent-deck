@@ -90,12 +90,12 @@ class TicketMixin:
         worktree-Pfad schreibt (Vorwaerts-Slashes -> shell-/tool-unabhaengig)."""
         branch = _ticket_branch(ticket) or ("ticket/" + str(ticket).strip())
         slug = _ticket_slug(ticket) or "ticket"
-        prefix = self.settings.get("jira_prefix", getattr(cfg, "JIRA_PROJECT_KEY", ""))
+        prefix = self.settings.get("jira_prefix", cfg.JIRA_PROJECT_KEY)
         jira = _jira_key(ticket, project=prefix) or str(ticket).strip()   # nur Nummer -> <prefix>-<nr>
         wt_marker = dp.worktree_marker_path(slot).replace("\\", "/")
         task = " ".join(str(task or "").split()) or getattr(
             cfg, "TICKET_TASK_FALLBACK", "Then wait for my next instruction.")
-        tmpl = getattr(cfg, "TICKET_PROMPT", "")
+        tmpl = cfg.TICKET_PROMPT
         try:
             return tmpl.format(ticket=ticket, jira_key=jira, branch=branch, slug=slug,
                                wt_marker=wt_marker, task=task)
@@ -113,10 +113,10 @@ class TicketMixin:
         tool-unabhaengig zuverlaessig). Das Deck kennt die ID vorher nicht."""
         marker = dp.found_ticket_path(slot).replace("\\", "/")
         wt_marker = dp.worktree_marker_path(slot).replace("\\", "/")
-        prefix = getattr(cfg, "TICKET_BRANCH_PREFIX", "ticket/")
+        prefix = cfg.TICKET_BRANCH_PREFIX
         task = " ".join(str(task or "").split()) or getattr(
             cfg, "TICKET_TASK_FALLBACK", "Then wait for my next instruction.")
-        tmpl = getattr(cfg, "TICKET_SEARCH_PROMPT", "")
+        tmpl = cfg.TICKET_SEARCH_PROMPT
         try:
             return tmpl.format(prefix=prefix, marker=marker, wt_marker=wt_marker, task=task)
         except (KeyError, IndexError, ValueError):

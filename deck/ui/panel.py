@@ -51,7 +51,6 @@ from deck.ui.layout import LayoutMixin
 from deck.ui.refresh import RefreshMixin
 from deck.ui.reorder import ReorderMixin
 from deck.ui.settings_dialog import SettingsMixin
-from deck.ui.theme import SUMMARY_ON, TICKET_AUTO
 from deck.ui.ticket import TicketMixin
 from deck.ui.tile_draw import TileDrawMixin
 from deck.ui.tiles import TilesMixin
@@ -149,7 +148,7 @@ class AgentDeck(
         # Vom Hintergrund-Job gefuellt, damit Tooltip UND Karte sie ohne Datei-I/O im
         # 400-ms-Poll haben.
         self._auto_refs = {}
-        if SUMMARY_ON or TICKET_AUTO:
+        if cfg.HOVER_SUMMARY or cfg.TICKET_AUTODETECT:
             cs.prune()            # alte Cache-Dateien laengst geschlossener Sessions weg
         # Alt+Tab ohne Mausbewegung feuert kein <Leave> -> beim App-Fokusverlust ausblenden.
         self.root.bind("<FocusOut>", self._on_focus_out)
@@ -262,13 +261,13 @@ class AgentDeck(
         """Windows: Hintergrund durchsichtig (transparentcolor = BG) und/oder ganzes
         Fenster halbtransparent (alpha). Faellt bei fehlender Unterstuetzung leise
         auf ein normales Fenster zurueck."""
-        if getattr(cfg, "TRANSPARENT_BG", False):
+        if cfg.TRANSPARENT_BG:
             try:
                 self.root.attributes("-transparentcolor", BG)
             except tk.TclError:
                 pass
         try:
-            alpha = float(getattr(cfg, "WINDOW_ALPHA", 1.0))
+            alpha = float(cfg.WINDOW_ALPHA)
             if alpha < 1.0:
                 self.root.attributes("-alpha", alpha)
         except (tk.TclError, TypeError, ValueError):
@@ -300,8 +299,8 @@ class AgentDeck(
         self.bottombar = BottomBar(
             self.root, self.root,
             on_settings=self._open_settings,
-            show_usage=getattr(cfg, "SHOW_USAGE", True),
-            poll_seconds=getattr(cfg, "USAGE_POLL_SECONDS", 120))
+            show_usage=cfg.SHOW_USAGE,
+            poll_seconds=cfg.USAGE_POLL_SECONDS)
         # Packbares Widget fuer _apply_slim_layout (das Canvas IST die Leiste).
         self.bottom_bar = self.bottombar.canvas
 

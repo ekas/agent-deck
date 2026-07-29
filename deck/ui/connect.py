@@ -160,7 +160,7 @@ class ConnectMixin:
         m.add_cascade(label="Effort", menu=em)
 
         # ── Mode: gezielt per Shift+Tab in den Ziel-Permission-Mode (siehe _set_slot_mode)
-        cycle = getattr(cfg, "MODE_CYCLE", ["manual", "accept", "plan", "auto"])
+        cycle = cfg.MODE_CYCLE
         om = tk.Menu(m, tearoff=0)
         for md in cycle:
             om.add_command(label=md.capitalize(),

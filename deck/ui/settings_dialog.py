@@ -137,7 +137,7 @@ class SettingsMixin:
                  fg=INK_2, font=("Segoe UI", 10)).grid(
                      row=7, column=0, sticky="w", padx=(16, 10), pady=4)
         jira_var = tk.StringVar(
-            value=self.settings.get("jira_prefix", getattr(cfg, "JIRA_PROJECT_KEY", "")))
+            value=self.settings.get("jira_prefix", cfg.JIRA_PROJECT_KEY))
         jira_entry = tk.Entry(dlg, textvariable=jira_var, bg="#23232b", fg=INK,
                               insertbackground=INK, relief="flat",
                               font=("Segoe UI", 10), width=12)

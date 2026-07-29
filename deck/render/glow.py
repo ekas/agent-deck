@@ -21,9 +21,6 @@ from deck.render.kit import hex_to_rgb as _hex_to_rgb
 from deck.render.kit import mix as _mix
 
 # Timing kommt zentral aus der config (Fallback = bisherige Werte).
-ANIM_MS = getattr(cfg, "ANIM_MS", 55)
-FILL_EASE = getattr(cfg, "FILL_EASE", 0.30)
-BLOOM_DECAY = getattr(cfg, "BLOOM_DECAY", 0.82)
 # Fade der 3 Glow-Ringe (innen -> außen): Anteil, um den zur BG-Farbe gemischt
 # wird. Innerster Ring am kräftigsten, äußerster fast unsichtbar -> weicher Halo.
 GLOW_RINGS = (0.30, 0.58, 0.80)
@@ -186,14 +183,14 @@ class GlowAnimator:
 
     def _tick(self) -> None:
         """Schneller Timer für alle Bewegung: die Kartenfläche weich in ihre
-        Ziel-Tönung faden (FILL_EASE/Frame), den Glow atmen lassen und das
+        Ziel-Tönung faden (cfg.FILL_EASE/Frame), den Glow atmen lassen und das
         Statuswechsel-Aufleuchten (bloom) abklingen. Fertig eingefadete, ruhige
         Karten werden übersprungen (kein unnötiges Neuzeichnen/Flackern)."""
         if self._paused:
             # Pausiert (Dock-Slide läuft): den Takt halten, aber nichts rendern.
             # _pulse_i bleibt stehen, damit das Atmen nach der Pause dort
             # weitergeht, wo es aufgehört hat – ein Sprung wäre sichtbar.
-            self.root.after(ANIM_MS, self._tick)
+            self.root.after(cfg.ANIM_MS, self._tick)
             return
         self._pulse_i += 1
         f = self.pulse_factor()
@@ -210,9 +207,9 @@ class GlowAnimator:
                 if not moving and bloom < 0.01 and not ids.get("glow_pulse"):
                     continue                     # nichts mehr zu tun -> ruhen lassen
                 if moving:
-                    cur[0] += dr * FILL_EASE
-                    cur[1] += dg * FILL_EASE
-                    cur[2] += db * FILL_EASE
+                    cur[0] += dr * cfg.FILL_EASE
+                    cur[1] += dg * cfg.FILL_EASE
+                    cur[2] += db * cfg.FILL_EASE
                 else:
                     cur[0], cur[1], cur[2] = float(tgt[0]), float(tgt[1]), float(tgt[2])
                 hexf = f"#{round(cur[0]):02x}{round(cur[1]):02x}{round(cur[2]):02x}"
@@ -220,12 +217,12 @@ class GlowAnimator:
                     ids["fill_hex"] = hexf
                     if ids.get("rect"):          # Polygon-Fallback: Fläche direkt
                         c.itemconfig(ids["rect"], fill=hexf)
-                ids["bloom"] = bloom * BLOOM_DECAY if bloom >= 0.01 else 0.0
+                ids["bloom"] = bloom * cfg.BLOOM_DECAY if bloom >= 0.01 else 0.0
                 # Im Bildmodus zieht apply_glow die neue Füllfarbe mit ins Bild.
                 self.apply_glow(slot, f)
         except tk.TclError:
             pass
-        self.root.after(ANIM_MS, self._tick)
+        self.root.after(cfg.ANIM_MS, self._tick)
 
     def press(self, slot: str) -> None:
         """Auswahl-Feedback beim Klick: 'Press & Pop' – die ganze Kachel drückt sich

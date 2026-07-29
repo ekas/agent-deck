@@ -92,10 +92,11 @@ from deck.dock.clipping import ClippingMixin
 from deck.dock.frameless import FramelessMixin
 from deck.dock.geometry import GeometryMixin
 from deck.dock.handle import HandleMixin
-from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, NEON_BLOOM, scale_metrics
+from deck.dock.metrics import BORDER_COLOR, HANDLE_ACCENT, scale_metrics
 from deck.dock.poll import PollMixin
 from deck.dock.reveal import RevealMixin
 from deck.dock.wave import WaveMixin
+from deck.domain import config as cfg
 from deck.render import capsule as hrender
 
 
@@ -294,7 +295,7 @@ class EdgeDock(
         # Dasselbe Ereignis stößt den Kern neu an – der Blitz sagt „jetzt", die Welle
         # danach sagt „gerade passiert" (siehe _wave_kick).
         if flash and self._handle_shown:
-            self._bloom = NEON_BLOOM
+            self._bloom = cfg.BLOOM_ON_CHANGE
             self._wave_kick()
         self._paint_handle()
         self._start_glow()

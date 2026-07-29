@@ -9,10 +9,10 @@ import threading
 
 from deck import i18n
 from deck.claude import summarize as cs
+from deck.domain import config as cfg
 from deck.ops import log
 from deck.render import kit as ck
 from deck.render.kit import CARD_BORDER, INK_3
-from deck.ui.theme import SUMMARY_MODEL, SUMMARY_ON, TICKET_AUTO, TICKET_PROJECT, UI_PUMP_MS
 
 
 class UiThreadMixin:
@@ -44,7 +44,7 @@ class UiThreadMixin:
                 fn()
             except Exception:
                 log.exc("_ui_pump")
-        self.root.after(UI_PUMP_MS, self._ui_pump)
+        self.root.after(cfg.UI_PUMP_MS, self._ui_pump)
 
     def _ensure_chat_info(self, sid, cwd, summary=True):
         """Im Hintergrund Ticket-ID + Zusammenfassung dieser Session sicherstellen.
@@ -63,17 +63,17 @@ class UiThreadMixin:
         """Daemon-Thread: erst Ticket/PR (billig, reine Regex -> sofort nachziehen),
         dann die Zusammenfassung (teuer, claude). Fasst hier KEIN Tk an – der Rueckweg
         laeuft ueber _post (Queue), NICHT ueber root.after; siehe dort, warum."""
-        if TICKET_AUTO:
+        if cfg.TICKET_AUTODETECT:
             try:
-                refs = cs.ensure_refs(sid, cwd, project=TICKET_PROJECT)
+                refs = cs.ensure_refs(sid, cwd, project=cfg.JIRA_PROJECT_KEY)
             except Exception:
                 refs = None
             if refs is not None:                # Bezugs-Zeile sofort, ohne auf claude zu warten
                 self._post(lambda: self._refs_ready(sid, refs))
         text = None
-        if summary and SUMMARY_ON:
+        if summary and cfg.HOVER_SUMMARY:
             try:
-                text = cs.generate(sid, cwd, model=SUMMARY_MODEL, lang=i18n.current())
+                text = cs.generate(sid, cwd, model=cfg.HOVER_SUMMARY_MODEL, lang=i18n.current())
             except Exception:
                 text = None
         self._post(lambda: self._chat_info_ready(sid, text))

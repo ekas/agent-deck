@@ -10,16 +10,11 @@ worktree bestaetigt.
 import os
 import threading
 
+from deck.domain import config as cfg
 from deck.domain import slot_state as dc
 from deck.domain.binding import ticket_branch as _ticket_branch
 from deck.domain.binding import ticket_slug as _ticket_slug
 from deck.ops import worktree as wtc
-from deck.ui.theme import (
-    WINDOWS,
-    WT_DISK_ORPHAN_GRACE_S,
-    WT_DISK_SWEEP_INTERVAL_S,
-    WT_ORPHAN_GRACE_S,
-)
 
 
 class WorktreeSweepMixin:
@@ -80,7 +75,7 @@ class WorktreeSweepMixin:
         """Verwaiste git worktrees im Hintergrund abraeumen: fuer jeden gemeldeten
         worktree-Marker (state/<slot>.worktree) pruefen, ob der zugehoerige Agent noch
         LEBT (Slot unter den Terminals seines VERBUNDENEN Fensters). Fehlt er, ist der
-        worktree verwaist und wird – nach einer kurzen Grace (WT_ORPHAN_GRACE_S) gegen
+        worktree verwaist und wird – nach einer kurzen Grace (cfg.WT_ORPHAN_GRACE_S) gegen
         Terminal-Listen-Aussetzer – ueber dieselbe sichere Maschinerie wie beim Agenten-
         Schliessen entfernt (Marker/Ticket mit). Deckt die Faelle ab, in denen
         _cleanup_worktrees NIE lief: Agent extern geschlossen (Terminal gekillt), Deck
@@ -96,7 +91,7 @@ class WorktreeSweepMixin:
             return
         # Lebende Slots = Terminals aller VERBUNDENEN Fenster.
         live, connected = set(), set()
-        for w in WINDOWS:
+        for w in cfg.WINDOWS:
             if self.broker.connected(w):
                 connected.add(w)
                 live.update(self.broker.terminals(w))
@@ -114,7 +109,7 @@ class WorktreeSweepMixin:
             t0 = self._wt_gone_since.get(slot)
             if t0 is None:
                 self._wt_gone_since[slot] = now        # erstmals als verwaist gesehen -> Uhr starten
-            elif now - t0 >= WT_ORPHAN_GRACE_S:
+            elif now - t0 >= cfg.WT_ORPHAN_GRACE_S:
                 orphans.append(slot)
         for slot in orphans:
             self._cleanup_worktrees(slot)              # entfernt worktree (bg-Thread) + loescht den Marker
@@ -150,10 +145,10 @@ class WorktreeSweepMixin:
         Nur der leichte Teil (Zustand einsammeln + throtteln) laeuft hier auf dem Tk-
         Thread; das blockierende `git worktree list` + os.listdir + das Loeschen macht
         _disk_sweep_bg in einem Daemon-Thread (nie zwei parallel: _disk_sweep_busy). Die
-        Grace (WT_DISK_ORPHAN_GRACE_S) gegen frisch angelegte, noch nicht gemeldete
+        Grace (cfg.WT_DISK_ORPHAN_GRACE_S) gegen frisch angelegte, noch nicht gemeldete
         worktrees traegt _wt_disk_gone_since – das fasst NUR der bg-Thread an, und da
         der Tk-Thread waehrenddessen keinen zweiten startet, ist der Zugriff race-frei."""
-        if self._disk_sweep_busy or (now - self._last_disk_sweep) < WT_DISK_SWEEP_INTERVAL_S:
+        if self._disk_sweep_busy or (now - self._last_disk_sweep) < cfg.WT_DISK_SWEEP_INTERVAL_S:
             return
         # Repo-Roots dieser Session sammeln: aus den cwds gemeldeter Agenten (report.py
         # schreibt das Repo-Root als cwd) und aus vorhandenen worktree-Markern
@@ -171,7 +166,7 @@ class WorktreeSweepMixin:
         if not self._known_repos:
             return
         # Lebende Slots = Terminals aller VERBUNDENEN Fenster (wie im Marker-Sweep).
-        connected = {w for w in WINDOWS if self.broker.connected(w)}
+        connected = {w for w in cfg.WINDOWS if self.broker.connected(w)}
         live = set()
         for w in connected:
             live.update(self.broker.terminals(w))
@@ -196,7 +191,7 @@ class WorktreeSweepMixin:
         # unabhaengig vom evtl. abweichenden VS-Code-Workspace-Namen; die Repo-Namens-
         # Bindung (disc_names) dient nur als Fallback, falls ein Fenster (noch) keinen
         # Slot-Zustand gemeldet hat.
-        bound_disc = {w for w in WINDOWS if self.bindings.get(w) and w not in connected}
+        bound_disc = {w for w in cfg.WINDOWS if self.bindings.get(w) and w not in connected}
         disc_names = {(self.bindings.get(w) or "").lower() for w in bound_disc}
         skip_roots = set()
 
@@ -248,7 +243,7 @@ class WorktreeSweepMixin:
                     t0 = self._wt_disk_gone_since.get(nd)
                     if t0 is None:
                         self._wt_disk_gone_since[nd] = now       # erstmals verwaist -> Uhr an
-                    elif now - t0 >= WT_DISK_ORPHAN_GRACE_S:
+                    elif now - t0 >= cfg.WT_DISK_ORPHAN_GRACE_S:
                         if self._remove_orphan_worktree(d, root):
                             self._wt_disk_gone_since.pop(nd, None)
             # Grace-Uhren nur fuer Pfade tilgen, deren '<repo>.wt' diesen Lauf DURCHSUCHT

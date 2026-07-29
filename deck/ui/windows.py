@@ -18,13 +18,6 @@ from deck.domain import status_model as sm
 from deck.domain.binding import is_placeholder_ws as _is_placeholder_ws
 from deck.domain.binding import repo_from_title as _repo_from_title
 from deck.platform import focus as wf
-from deck.ui.theme import (
-    AUTO_MAX_TRIES,
-    AUTO_READY_GRACE,
-    PENDING_AUTO_TTL,
-    STALE_WINDOW_S,
-    WINDOWS,
-)
 
 
 class WindowSyncMixin:
@@ -46,8 +39,8 @@ class WindowSyncMixin:
             # forget/neu-verbinden stabil und die Kacheln bleiben ansprechbar.
             slots = self.broker.workspace_slots(ws)
             pref = slots[0][0].upper() if (slots and slots[0]) else None
-            free = pref if (pref in WINDOWS and not self.bindings.get(pref)) else \
-                next((w for w in WINDOWS if not self.bindings.get(w)), None)
+            free = pref if (pref in cfg.WINDOWS and not self.bindings.get(pref)) else \
+                next((w for w in cfg.WINDOWS if not self.bindings.get(w)), None)
             if not free:
                 break
             self.bindings[free] = ws
@@ -78,9 +71,9 @@ class WindowSyncMixin:
         Reload/kurzen Verbindungsabriss: bei einem Reload bleibt das native VS-Code-Fenster
         offen, sein Titel (mit dem Repo-Namen) also sichtbar -> wir raeumen NUR ab, wenn KEIN
         offenes VS-Code-Fenster mehr zu diesem Repo existiert. Ein kurzer Grace
-        (STALE_WINDOW_S) faengt den Socket-zu/HWND-noch-da-Moment und Titel-Aussetzer ab. Ein
+        (cfg.STALE_WINDOW_S) faengt den Socket-zu/HWND-noch-da-Moment und Titel-Aussetzer ab. Ein
         noch lebendes Fenster bindet sich wie gehabt automatisch neu (_sync_bindings)."""
-        pending = [w for w in WINDOWS
+        pending = [w for w in cfg.WINDOWS
                    if self.bindings.get(w) and not self.broker.connected(w)]
         if not pending:
             self._gone_since.clear()
@@ -98,7 +91,7 @@ class WindowSyncMixin:
             t0 = self._gone_since.get(w)
             if t0 is None:
                 self._gone_since[w] = now           # erstmals als "weg" gesehen -> Uhr starten
-            elif now - t0 >= STALE_WINDOW_S:
+            elif now - t0 >= cfg.STALE_WINDOW_S:
                 # Fenster ist wirklich zu. Wurde es NICHT ueber die Deck-Knoepfe geschlossen
                 # (Alt+F4/OS-X/Absturz), lief close_window nie -> hier dieselbe Slot-Aufraeumung
                 # nachholen wie dort, sonst bleiben worktree + Marker/Ticket verwaist (und ein
@@ -150,14 +143,14 @@ class WindowSyncMixin:
             Restdatei (Slot-Reuse) loest NICHT faelschlich aus, und der Wechsel greift auch,
             wenn die Vormerkung (z.B. bei offenem Dialog) erst NACH dem SessionStart-Report
             passiert (base ist die ALTE ts, nicht 'jetzt').
-          • reg_ts   = jetzt, nur als Anker fuer PENDING_AUTO_TTL (Geduld ab Vormerkung).
+          • reg_ts   = jetzt, nur als Anker fuer cfg.PENDING_AUTO_TTL (Geduld ab Vormerkung).
           • ready_ts = 0; wird auf 'jetzt' gesetzt, sobald der erste frische Hook da ist
-            (Anker fuer AUTO_READY_GRACE, damit die TUI-Eingabe erst warmlaeuft).
+            (Anker fuer cfg.AUTO_READY_GRACE, damit die TUI-Eingabe erst warmlaeuft).
           • sent_ts  = 0; Zeitpunkt, zu dem wir zuletzt Shift+Tab geschickt haben (0 = noch
             nie). Trennt 'erst-antreiben' von 'bestaetigen/nachfassen'.
-          • tries    = Anzahl bisheriger (Nach-)Antriebe (gedeckelt per AUTO_MAX_TRIES).
+          • tries    = Anzahl bisheriger (Nach-)Antriebe (gedeckelt per cfg.AUTO_MAX_TRIES).
         Ohne gesetzten NEW_AGENT_MODE passiert nichts (Automatik aus)."""
-        if not getattr(cfg, "NEW_AGENT_MODE", None):
+        if not cfg.NEW_AGENT_MODE:
             return
         # Sobald die globale settings.json einen Start-Permission-Modus vorgibt
         # (permissions.defaultMode – vom Einstellungs-Fenster gesetzt), startet jeder
@@ -181,7 +174,7 @@ class WindowSyncMixin:
         z.B. 'auto') treiben, sobald ihr erster Hook feuert (mit SessionStart-Hook beim
         Oeffnen, sonst beim ersten Prompt) – NICHT feuern-und-vergessen, sondern:
 
-          1) Readiness-Gate: nach dem ersten frischen Hook erst AUTO_READY_GRACE warten,
+          1) Readiness-Gate: nach dem ersten frischen Hook erst cfg.AUTO_READY_GRACE warten,
              DANN blind ab MODE_START die noetigen Shift+Tab schicken. Der SessionStart-Hook
              feuert sehr frueh, oft bevor die Claude-TUI die Back-Tab-Sequenz verarbeitet ->
              ohne die kurze Wartezeit gehen einzelne Taps verloren und der Agent 'bleibt auf
@@ -190,23 +183,23 @@ class WindowSyncMixin:
              Hook NACH sent_ts einen echten Ist-Modus (rep_ts > sent_ts – so faellt der
              leere/vererbte SessionStart-Modus bewusst raus), gilt: im Ziel -> fertig; kurz
              gelandet -> vom gemeldeten Ist-Modus die Rest-Taps nachschicken (bis
-             AUTO_MAX_TRIES). Ohne echtes Signal (Agent im Leerlauf) bleibt der Blind-Antrieb
-             stehen, bis PENDING_AUTO_TTL abgelaufen ist.
+             cfg.AUTO_MAX_TRIES). Ohne echtes Signal (Agent im Leerlauf) bleibt der Blind-Antrieb
+             stehen, bis cfg.PENDING_AUTO_TTL abgelaufen ist.
 
         Nur fuer im Deck angelegte Slots; sobald das Ziel EINMAL bestaetigt (oder das
         Zeitfenster zu) ist, wird der Slot vergessen -> ein manueller Moduswechsel danach
         bleibt unangetastet."""
         if not self._pending_auto:
             return
-        target = getattr(cfg, "NEW_AGENT_MODE", None)
+        target = cfg.NEW_AGENT_MODE
         if not (target and target in cycle):
             self._pending_auto.clear()             # nichts Sinnvolles zu tun (Automatik faktisch aus)
             return
         tgt_idx = cycle.index(target)
-        start = getattr(cfg, "MODE_START", "manual")
+        start = cfg.MODE_START
         start_idx = cycle.index(start) if start in cycle else 0
         for slot, p in list(self._pending_auto.items()):
-            if now - p["reg_ts"] > PENDING_AUTO_TTL:
+            if now - p["reg_ts"] > cfg.PENDING_AUTO_TTL:
                 del self._pending_auto[slot]       # Zeitfenster abgelaufen -> Automatik aufgeben
                 continue
             st = states.get(slot)
@@ -222,7 +215,7 @@ class WindowSyncMixin:
                 # gleichnamigen Vorgaenger vererbt sein -> nicht darauf verlassen.) Erst bei
                 # ERFOLGREICHEM Senden sent_ts setzen; scheitert es (Verbindungsabriss), bleibt
                 # sent_ts=0 -> der naechste Poll versucht es erneut.
-                if now - p["ready_ts"] < AUTO_READY_GRACE:
+                if now - p["ready_ts"] < cfg.AUTO_READY_GRACE:
                     continue                        # noch in der Warmlaufzeit
                 if self._set_slot_mode(slot, target, cycle, current=start_idx):
                     p["sent_ts"] = now
@@ -235,7 +228,7 @@ class WindowSyncMixin:
                 continue                            # (noch) keine neue Ist-Meldung -> geduldig warten
             if cycle.index(rmode) == tgt_idx:
                 del self._pending_auto[slot]        # im Ziel angekommen -> fertig
-            elif p["tries"] >= AUTO_MAX_TRIES:
+            elif p["tries"] >= cfg.AUTO_MAX_TRIES:
                 del self._pending_auto[slot]        # gibt auf (falscher MODE_CYCLE/Account?)
             elif self._set_slot_mode(slot, target, cycle, current=cycle.index(rmode)):
                 p["sent_ts"] = now                  # kurz gelandet -> vom Ist-Modus nachtreiben

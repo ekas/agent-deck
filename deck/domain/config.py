@@ -296,9 +296,17 @@ GRID_COLS = 4
 # ── Feinschliff (selten noetig) ──────────────────────────────────────────
 # Interne Tuning-Werte. Der Standard passt fast immer; hier nur aendern, wenn du
 # das Verhalten bewusst justieren willst. Fruere lagen diese Werte fest in
-# agent_deck.py – jetzt sind sie hier zentral (agent_deck faellt auf dieselben
-# Standardwerte zurueck, falls ein Eintrag fehlt).
+# agent_deck.py – jetzt sind sie hier zentral. Die Werte werden DIREKT gelesen
+# (cfg.POLL_MS), nicht mehr per getattr mit Ersatzwert kopiert: ein Ersatzwert
+# verbirgt einen Tippfehler im Schlüsselnamen und lässt das Deck stillschweigend
+# mit einer anderen Zahl laufen als hier steht.
 POLL_MS = 400            # Takt, in dem Status/Verbindungen neu eingelesen werden (ms)
+UI_PUMP_MS = 80          # Takt, in dem Ergebnisse aus Arbeits-Threads abgeholt werden
+HOVER_TIP_MS = 250       # Verzoegerung, bis der Hover-Tooltip erscheint (ms)
+TIP_LEAVE_MS = 80        # verzoegertes Ausblenden - ueberbrueckt Tks Leave+Enter
+                         # zwischen zwei Items DERSELBEN Kachel (sonst flackert er)
+PENDING_AUTO_TTL = 300   # s: so lange auf den 1. Hook eines neuen Agenten warten,
+                         # dann den Auto-Startmodus aufgeben
 STALE_S = 900            # so lange (s) ohne Update -> "denkt" gilt als eingeschlafen (idle)
 # So lange (s) darf ein gebundenes Fenster getrennt UND ohne offenes VS-Code-Fenster
 # sein, bevor das Deck seine Bindung automatisch abraeumt (Kachel verschwindet). Klein

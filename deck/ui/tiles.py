@@ -7,10 +7,11 @@ beim Auf- und Zuklappen alle Kacheln neu auf.
 import tkinter as tk
 
 from deck import i18n
+from deck.domain import config as cfg
 from deck.platform import dpi
 from deck.render.glow import GLOW_RINGS
 from deck.render.kit import INK, INK_3
-from deck.ui.theme import RAIL_IDLE, WINDOWS
+from deck.ui.theme import RAIL_IDLE
 
 
 class TilesMixin:
@@ -35,7 +36,7 @@ class TilesMixin:
         return tuple(
             (w, self.bindings.get(w), self.broker.connected(w),
              tuple(self._ordered_slots(w)) if self.broker.connected(w) else ())
-            for w in WINDOWS
+            for w in cfg.WINDOWS
         )
 
     def _render_agents(self):
@@ -82,7 +83,7 @@ class TilesMixin:
         RING = len(GLOW_RINGS) * 2
         name_h = nf.metrics("linespace")
         y, maxx = self._SLIM_TOP, X0 + W
-        shown = [w for w in WINDOWS if self.bindings.get(w) or self.broker.connected(w)]
+        shown = [w for w in cfg.WINDOWS if self.bindings.get(w) or self.broker.connected(w)]
         for i, w in enumerate(shown):
             if i:
                 y += self._SLIM_BLOCK_GAP        # Luft zum vorigen Block
@@ -144,7 +145,7 @@ class TilesMixin:
         small_font = dpi.fontpx(8, s)
         rail_x, rail_w = self._SLIM_RAIL_X * s, self._SLIM_RAIL_W * s
         y = self._SLIM_TOP * s
-        shown = [w for w in WINDOWS if self.bindings.get(w) or self.broker.connected(w)]
+        shown = [w for w in cfg.WINDOWS if self.bindings.get(w) or self.broker.connected(w)]
         for i, w in enumerate(shown):
             if i:
                 y += self._SLIM_BLOCK_GAP * s      # Luft zum vorigen Block

@@ -234,11 +234,11 @@ NEON_MS = 33
 # Spalte `pulse`) das andere ab.
 WAVE_ON = True
 NEON_PULSE_TICKS = 70                                 # Ticks je Atemzug (~2,3 s bei 33 ms – wie vorher)
-NEON_BLOOM = getattr(cfg, "BLOOM_ON_CHANGE", 0.90)    # Aufblitzen, wenn es dringlicher wird
-# Abklingen dieses Aufblitzens JE FRAME – der Wert aus config gilt für dessen 55-ms-Takt.
-# Bei feinerem Takt muss er angehoben werden, sonst ist der Blitz nach derselben Zahl
-# Frames, aber in 40 % weniger ZEIT verbrannt. Umgerechnet über die Zeit: decay^(neu/alt).
-NEON_DECAY = getattr(cfg, "BLOOM_DECAY", 0.82) ** (NEON_MS / float(getattr(cfg, "ANIM_MS", 55)))
+# Abklingen des Aufblitzens JE FRAME – cfg.BLOOM_DECAY gilt für dessen 55-ms-Takt
+# (cfg.ANIM_MS). Bei feinerem Takt muss der Wert angehoben werden, sonst ist der Blitz
+# nach derselben Zahl Frames, aber in 40 % weniger ZEIT verbrannt. Umgerechnet über die
+# Zeit: decay^(neu/alt). Das ist eine ABLEITUNG, keine Kopie - darum steht sie hier.
+NEON_DECAY = cfg.BLOOM_DECAY ** (NEON_MS / float(cfg.ANIM_MS))
 
 
 # ── HiDPI ────────────────────────────────────────────────────────────────

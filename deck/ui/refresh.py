@@ -14,15 +14,11 @@ from deck.render.kit import CARD_BORDER, CARD_FILL, INK_3
 from deck.render.kit import mix as _mix
 from deck.render.kit import short_model as _short_model
 from deck.ui.theme import (
-    BLOOM_ON_CHANGE,
     GLOW_STYLE,
     LOST_FILL,
     LOST_GLOW,
-    POLL_MS,
     SEL_BORDER,
     SLIDE_RETRY_MS,
-    STALE_S,
-    TICKET_AUTO_CARD,
     TICKET_AUTO_INK,
     TICKET_INK,
     TICKET_MAX_CHARS,
@@ -35,7 +31,7 @@ class RefreshMixin:
     """Wird in AgentDeck eingemischt (siehe panel.py)."""
 
     def refresh(self):
-        """Poll-Schleife (alle POLL_MS): Zweitstart-Wunsch bedienen, Verbindungen
+        """Poll-Schleife (alle cfg.POLL_MS): Zweitstart-Wunsch bedienen, Verbindungen
         synchronisieren, Layout bei Bedarf neu zeichnen, neuen Chat auto-fokussieren,
         dann Zustaende einlesen und jede Kachel aktualisieren. In benannte Schritte
         zerlegt (jeweils unten)."""
@@ -45,7 +41,7 @@ class RefreshMixin:
             # Waehrend eines laufenden Kachel-Drags NICHT neu zeichnen (c.delete("all")
             # wuerde das Ziehen zerreissen). Poll pausiert kurz; _tile_release zeichnet
             # danach sauber neu. Timer aber weiterlaufen lassen.
-            self.root.after(POLL_MS, self.refresh)
+            self.root.after(cfg.POLL_MS, self.refresh)
             return
         if self.dock is not None and self.dock.sliding():
             # Das Deck gleitet gerade an den Rand oder heraus. Diese Bewegung laeuft im
@@ -56,7 +52,7 @@ class RefreshMixin:
             # demselben Grund fuer die Dauer des Slides angehalten
             # (edge_dock._anim_hold); dieser Poll war der letzte Mitbewerber.
             #
-            # Kurz nachfassen statt POLL_MS abzuwarten: die Bewegung ist gleich vorbei,
+            # Kurz nachfassen statt cfg.POLL_MS abzuwarten: die Bewegung ist gleich vorbei,
             # und danach soll die Anzeige unverzueglich stimmen. Der Leerlauf-Durchlauf
             # kostet nichts, und haengen kann das nicht – ein Slide endet garantiert
             # (Notbremse + Watchdog in edge_dock).
@@ -79,14 +75,14 @@ class RefreshMixin:
         self._found = dc.read_found_tickets()   # vom Agenten gemeldete Ticket-IDs (Such-Modus)
         self._worktrees = dc.read_found_worktrees()  # gemeldete worktree-Pfade (Ticket-Anzeige + Orphan-Sweep haengen daran)
         now = time.time()
-        cycle = getattr(cfg, "MODE_CYCLE", ["manual", "accept", "plan", "auto"])
+        cycle = cfg.MODE_CYCLE
         self._sweep_orphan_worktrees(now)       # (marker-getrieben) worktrees ohne lebenden Agenten abraeumen
         self._sweep_disk_worktrees(now, states) # (fs-getrieben) verwaiste '<repo>.wt'-worktrees OHNE Marker abraeumen
         self._adopt_hook_modes(states, cycle)
         self._apply_pending_auto(states, now, cycle)
         self._update_tiles(states, live, now, cycle)
         self._prefetch_summaries(now)   # Ticket-ID + Zusammenfassung im Hintergrund vorwaermen
-        self.root.after(POLL_MS, self.refresh)
+        self.root.after(cfg.POLL_MS, self.refresh)
 
     def _beat(self):
         """Lebenszeichen fuer den Waechter (watchdog.py), gedrosselt auf BEAT_EVERY_S.
@@ -147,7 +143,7 @@ class RefreshMixin:
             st = states.get(slot)
             lv = live.get(slot) or {}
             status = st.get("status") if st else "idle"   # gerenderte Kachel = verbundener Agent -> hell
-            fresh = sm.is_fresh(st, now, STALE_S)
+            fresh = sm.is_fresh(st, now, cfg.STALE_S)
             status = sm.normalize_status(status, fresh, GLOW_STYLE)
             lost = sm.is_lost(status, fresh, self.broker.connected(slot[0]))
             label = i18n.L("getrennt", "disconnected") if lost else status_label(status)
@@ -173,7 +169,7 @@ class RefreshMixin:
                 # ~1 s "ausrasten", obwohl die Kachel gerade RUHIGER wird. Das Klick-
                 # Feedback traegt bereits surge() (0,4 s); nur echte Zustandswechsel leuchten.
                 if not (prev_skey == "done" and skey == "idle"):
-                    ids["bloom"] = BLOOM_ON_CHANGE
+                    ids["bloom"] = cfg.BLOOM_ON_CHANGE
             # Kartenkante: Auswahl / Rückfrage / Verlust betont, sonst dezent getönt.
             if slot == self.active_slot:
                 border, bw = SEL_BORDER, 2                # ausgewählte Kachel
@@ -210,7 +206,7 @@ class RefreshMixin:
                 tid = self.tickets.get(slot) or self._found.get(slot, "")
             else:
                 tid = ""
-            if not tid and TICKET_AUTO_CARD:
+            if not tid and cfg.TICKET_AUTODETECT_ON_CARD:
                 tid = self._refs_card_label(self._auto_refs.get(ids["session_id"]))
                 tink = TICKET_AUTO_INK
             if len(tid) > TICKET_MAX_CHARS:

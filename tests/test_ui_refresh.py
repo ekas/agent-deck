@@ -42,7 +42,7 @@ def _pa(base_ts=0.0, reg_ts=100.0, ready_ts=0.0, sent_ts=0.0, tries=0):
 
 def test_apply_pending_auto():
     assert cfg.NEW_AGENT_MODE == "auto"          # Testdaten gehen von diesem Ziel aus
-    GRACE = theme.AUTO_READY_GRACE
+    GRACE = cfg.AUTO_READY_GRACE
 
     # Readiness-Gate: der ERSTE frische Hook armt nur die Uhr, es wird NICHT sofort getippt.
     f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(base_ts=0.0, reg_ts=100.0)}
@@ -69,7 +69,7 @@ def test_apply_pending_auto():
     assert f._pending_auto["A1"]["tries"] == 2 and f._pending_auto["A1"]["sent_ts"] == 110.0
 
     # AUTO_MAX_TRIES erschoepft + immer noch nicht im Ziel -> aufgeben (kein weiteres Senden).
-    f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(ready_ts=101.0, sent_ts=103.0, tries=theme.AUTO_MAX_TRIES)}
+    f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(ready_ts=101.0, sent_ts=103.0, tries=cfg.AUTO_MAX_TRIES)}
     f._apply_pending_auto({"A1": {"ts": 105.0, "mode": "plan"}}, 110.0, _CYCLE)
     assert f.cmds.calls == [] and f._pending_auto == {}
 
@@ -92,7 +92,7 @@ def test_apply_pending_auto():
 
     # TTL abgelaufen (relativ zur reg-ts) -> aufgeben, nichts senden.
     f, _ = _fake_deck(); f._pending_auto = {"A1": _pa(reg_ts=100.0)}
-    f._apply_pending_auto({"A1": {"ts": 101.0}}, 100.0 + theme.PENDING_AUTO_TTL + 1, _CYCLE)
+    f._apply_pending_auto({"A1": {"ts": 101.0}}, 100.0 + cfg.PENDING_AUTO_TTL + 1, _CYCLE)
     assert f.cmds.calls == [] and f._pending_auto == {}
 
     # Button-Pfad (_set_slot_mode current=None) folgt dem gemerkten slot_mode: plan(2)->auto = 1 Schritt.

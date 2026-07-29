@@ -48,7 +48,7 @@ class LayoutMixin:
         states = dc.read_all()
         live = dc.read_live()
         self._found = dc.read_found_tickets()
-        cycle = getattr(cfg, "MODE_CYCLE", ["manual", "accept", "plan", "auto"])
+        cycle = cfg.MODE_CYCLE
         self._update_tiles(states, live, time.time(), cycle)
 
     def _sync_ui_scale(self, redraw=True):
