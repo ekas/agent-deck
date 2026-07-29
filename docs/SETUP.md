@@ -38,17 +38,23 @@ In `~/.claude/settings.json` (global, weil beide Fenster verschiedene Ordner hab
 ```json
 {
   "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" idle" }] }],
-    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking" }] }],
-    "PreToolUse":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" running" }] }],
-    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking" }] }],
-    "Notification": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" waiting" }] }],
-    "Stop": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" done" }] }]
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" idle || exit 0" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
+    "PreToolUse":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" running || exit 0" }] }],
+    "PostToolUse": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" thinking || exit 0" }] }],
+    "Notification": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" waiting || exit 0" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "python \"PFAD\\report.py\" done || exit 0" }] }]
   }
 }
 ```
 
 Härtungs-Hinweise aus der Recherche:
+- **`|| exit 0` nicht weglassen.** Ein Hook, der gar nicht startet (Datei verschoben,
+  `python` nicht auf dem PATH), kommt an sein eigenes Fangnetz nicht heran — und Exit ≠ 0
+  gilt bei `UserPromptSubmit`/`PreToolUse` als Veto gegen Prompt bzw. Tool-Aufruf.
+- **Kein `cmd /c` davorsetzen.** Claude Code führt Hooks über eine POSIX-Shell aus; deren
+  Pfadkonvertierung macht aus `/c` den Pfad `C:\`, `cmd` startet interaktiv und ruft
+  `python` nie auf. Der Hook endet dann mit 0 und sieht gesund aus, meldet aber nichts.
 - **npm-`claude` (`claude.cmd`)** benutzen, nicht eine native `claude.exe` auf dem PATH ([#25577](https://github.com/anthropics/claude-code/issues/25577)).
 - Hook direkt über **`python`** (nicht `bash`) → umgeht die Git-Bash-Fallen unter Windows.
 - **Kein `idle_prompt`** verwenden. „wartet" = `Notification`, „fertig" = `Stop`.

@@ -100,12 +100,25 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
    bzw. Tool-Aufruf. Jeder Pfad in `deck/claude/hooks/` hat ein Fangnetz und Exit-Code 0.
 
    Das reicht aber nicht: **ein Hook, der nicht startet, kommt an sein Fangnetz nicht
-   heran.** Fehlt die Datei, urteilt der Prozessstarter. Darum steht in `settings.json`
-   zusätzlich `cmd /c … || exit 0` — die äußere Schale, die auch einen fehlenden
-   Einsprungpunkt in Exit 0 verwandelt. Diese Härtung nicht entfernen; sie ist der
-   Unterschied zwischen „Kachel bleibt grau" und „Claude Code lässt sich nicht mehr
-   bedienen". Beim Umbenennen gilt: **erst den neuen Pfad beweisen, dann den alten
-   löschen** — nie umgekehrt.
+   heran.** Fehlt die Datei, urteilt der Prozessstarter. Darum endet jeder Eintrag in
+   `settings.json` auf `|| exit 0` — die äußere Schale, die auch einen fehlenden
+   Einsprungpunkt in Exit 0 verwandelt:
+
+   ```
+   python "C:\…\agent-deck\report.py" thinking || exit 0
+   ```
+
+   **KEIN `cmd /c` davorsetzen.** Claude Code führt Hooks über eine POSIX-Shell aus, und
+   deren MSYS-Pfadkonvertierung macht aus `/c` den Pfad `C:\`. `cmd` startet dann ohne
+   Schalter, also interaktiv: es gibt seinen Banner aus, liest das Hook-JSON von stdin als
+   Befehl — und ruft `python` nie auf. Der Hook endet mit 0 und sieht darum gesund aus,
+   meldet aber keinen Status mehr; die Kacheln bleiben stumm grau. Genau das ist am
+   2026-07-29 passiert, und es war am Exit-Code nicht zu erkennen, sondern nur daran, dass
+   in `state\` keine Datei mehr frisch wurde.
+
+   Beim Umbenennen gilt: **erst den neuen Pfad beweisen, dann den alten löschen** — nie
+   umgekehrt. Und „bewiesen" heißt: eine Datei in `state\` ist danach frisch, nicht bloß
+   Exit-Code 0.
 
 4. **Dateien neben dem Code werden über `paths.REPO_ROOT` gefunden**, nie über
    `__file__` des eigenen Moduls. Betroffen sind `bindings.json` und die übrigen
