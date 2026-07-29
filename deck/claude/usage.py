@@ -40,6 +40,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from typing import Any
 
 from deck import i18n
 from deck.claude.usage_token import NoTokenError, read_oauth_token
@@ -55,10 +56,10 @@ USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 # pollen (das erschoepfte sonst das Account-Limit -> HTTP 429). Gesucht wird es
 # unter CLAUDE_USAGE_SHARED_DIR bzw. im Nachbarordner 'claude-usage-shared'.
 # Fehlt es — der Normalfall —, ruft UsagePoller unten einfach selbst ab.
-_shared_mod = "unset"
+_shared_mod: Any = "unset"
 
 
-def _shared():
+def _shared() -> Any:
     global _shared_mod
     if _shared_mod != "unset":
         return _shared_mod
@@ -83,7 +84,7 @@ def _shared():
 
 
 # ── Usage-API abfragen ───────────────────────────────────
-def _fetch_one(token):
+def _fetch_one(token: str) -> dict[str, Any]:
     req = urllib.request.Request(USAGE_URL, headers={
         "Authorization": "Bearer " + token,
         "anthropic-beta": "oauth-2025-04-20",
@@ -94,7 +95,7 @@ def _fetch_one(token):
         return json.loads(r.read().decode("utf-8"))
 
 
-def fetch_usage(tokens):
+def fetch_usage(tokens: str | list[str]) -> dict[str, Any]:
     """Probiert die Tokens der Reihe nach; nimmt das erste, das 200 liefert.
     401/403 -> naechstes Token; alles andere (429, 5xx, Timeout) fliegt hoch."""
     if isinstance(tokens, str):
@@ -112,7 +113,7 @@ def fetch_usage(tokens):
 
 
 # ── Hintergrund-Poller ───────────────────────────────────
-def _empty_snapshot():
+def _empty_snapshot() -> dict[str, Any]:
     return {"state": "pending", "session_percent": None, "session_severity": "",
             "session_resets_at": None, "limits": [], "error": None, "ts": None}
 
@@ -128,31 +129,31 @@ class UsagePoller:
     API-Rate-Limit (v.a. wenn parallel der Usage-Monitor pollt). Auf 429/Netzfehler
     bleibt der letzte Wert stehen (nur der Fehlertext wird vermerkt)."""
 
-    def __init__(self, poll_seconds=120):
+    def __init__(self, poll_seconds: float = 120) -> None:
         self.poll_seconds = max(30, int(poll_seconds))
         self._snap = _empty_snapshot()
         self._lock = threading.Lock()
         self._stop = threading.Event()
-        self._thread = None
+        self._thread: threading.Thread | None = None
 
-    def start(self):
+    def start(self) -> None:
         if self._thread is not None:
             return
         self._thread = threading.Thread(target=self._loop, name="usage-poll", daemon=True)
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop.set()
 
-    def snapshot(self):
+    def snapshot(self) -> dict[str, Any]:
         with self._lock:
             return dict(self._snap)
 
-    def _set(self, **kw):
+    def _set(self, **kw: Any) -> None:
         with self._lock:
             self._snap.update(kw)
 
-    def poll_once(self):
+    def poll_once(self) -> None:
         """Ein Abruf ueber den gemeinsamen Poller (Fallback: lokaler Direktabruf);
         aktualisiert den Snapshot. Fehler landen im 'error'-Feld, harte Fehler
         (Token/Ordner weg) blenden zusaetzlich die Zahl aus."""
@@ -220,7 +221,7 @@ class UsagePoller:
         except Exception as e:
             self._fail(f"{type(e).__name__}", hard=False)
 
-    def _fail(self, msg, hard):
+    def _fail(self, msg: str, hard: bool) -> None:
         with self._lock:
             self._snap["state"] = "error"
             self._snap["error"] = msg
@@ -229,7 +230,7 @@ class UsagePoller:
                 self._snap["session_severity"] = ""
                 self._snap["limits"] = []
 
-    def _loop(self):
+    def _loop(self) -> None:
         while not self._stop.is_set():
             try:
                 self.poll_once()

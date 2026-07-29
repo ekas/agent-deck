@@ -14,6 +14,7 @@ ueberall gefahrlos nutzbar (auch aus den Tests).
 """
 import json
 import os
+from typing import Any
 
 # %USERPROFILE%\.claude\settings.json — dieselbe globale Datei, in der die
 # report.py-Hooks und die statusLine stehen (global, weil die VS-Code-Fenster
@@ -54,12 +55,12 @@ _EFFORT_MAP = {
 }
 
 
-def effort_spec(label):
+def effort_spec(label: str) -> tuple[str, bool]:
     """Anzeige-Label -> (effortLevel, ultracode). Fallback: xhigh ohne ultracode."""
     return _EFFORT_MAP.get(label, ("xhigh", False))
 
 
-def effort_label(effort, ultracode):
+def effort_label(effort: str, ultracode: bool) -> str:
     """(effortLevel, ultracode) aus der Datei -> Anzeige-Label. ultracode gewinnt;
     sonst per effortLevel; nichts passt -> 'xhigh'."""
     if ultracode:
@@ -71,7 +72,7 @@ def effort_label(effort, ultracode):
     return "xhigh"
 
 
-def load(path=None):
+def load(path: str | None = None) -> dict[str, Any]:
     """settings.json als Dict lesen; fehlt/kaputt/kein Objekt -> {} (nie Exception)."""
     path = path or SETTINGS_PATH
     try:
@@ -82,7 +83,7 @@ def load(path=None):
         return {}
 
 
-def save(data, path=None):
+def save(data: dict[str, Any], path: str | None = None) -> None:
     """Atomar + eingerueckt schreiben: erst <path>.tmp, dann os.replace -> nie halbe
     Dateien. ensure_ascii=False haelt Umlaute/ß in den Hook-Pfaden lesbar (wie bisher).
     Legt den Zielordner bei Bedarf an."""
@@ -94,10 +95,11 @@ def save(data, path=None):
     os.replace(tmp, path)
 
 
-def read_values(path=None):
+def read_values(path: str | None = None) -> dict[str, Any]:
     """Die vier gesteuerten Werte aus der Datei ziehen (roh; nicht gesetzt -> None)."""
     d = load(path)
-    perms = d.get("permissions") if isinstance(d.get("permissions"), dict) else {}
+    raw_perms = d.get("permissions")
+    perms: dict[str, Any] = raw_perms if isinstance(raw_perms, dict) else {}
     return {
         "model": d.get("model"),
         "mode": perms.get("defaultMode"),
@@ -107,8 +109,10 @@ def read_values(path=None):
     }
 
 
-def write_values(model=None, mode=None, effort=None, ultracode=None,
-                 language=None, path=None):
+def write_values(model: str | None = None, mode: str | None = None,
+                 effort: str | None = None, ultracode: bool | None = None,
+                 language: str | None = None,
+                 path: str | None = None) -> dict[str, Any]:
     """Nur die gesteuerten Keys in die BESTEHENDE Datei mergen; alles andere bleibt.
     Ein Argument = None -> diesen Key nicht anfassen. Gibt das geschriebene Dict zurueck."""
     d = load(path)
@@ -130,7 +134,7 @@ def write_values(model=None, mode=None, effort=None, ultracode=None,
     return d
 
 
-def label_to_value(choices, label):
+def label_to_value(choices: list[tuple[str, str]], label: str) -> str:
     """Anzeige-Label -> settings.json-Wert (Fallback: erster Eintrag)."""
     for lbl, val in choices:
         if lbl == label:
@@ -138,7 +142,8 @@ def label_to_value(choices, label):
     return choices[0][1]
 
 
-def value_to_label(choices, value, *, contains=False):
+def value_to_label(choices: list[tuple[str, str]], value: str, *,
+                   contains: bool = False) -> str:
     """settings.json-Wert -> Anzeige-Label. Erst exakt, dann (bei contains=True) per
     Teilstring auf dem Basis-Namen vor '[' (z.B. 'opus' aus 'opus[1m]' oder aus einer
     vollen ID wie 'claude-opus-5'). Nichts passt / value=None -> erster Eintrag."""

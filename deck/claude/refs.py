@@ -6,6 +6,8 @@ zaehlt jeder Fund Punkte (Kontextwoerter, URL-Form, Wiederholung) und muss eine
 Mindestschwelle reissen.
 """
 import re
+from collections.abc import Iterator
+from typing import Any
 
 # ── Ticketnummer aus dem Chat ziehen (pur, unit-getestet) ────────────────
 # Jira-Key-Form PROJEKT-123. BEWUSST case-sensitiv gross: sonst wuerde jedes
@@ -38,13 +40,13 @@ _NUM_CTX_RE = re.compile(
     r"(?:{})s?\b[\s:#/-]*#?(\d{{2,6}})(?!\d)".format("|".join(_CTX_WORDS)), re.I)
 
 
-def _ctx_bonus(text, pos, span=24):
+def _ctx_bonus(text: str, pos: int, span: int = 24) -> int:
     """Steht kurz VOR der Fundstelle ein Wort wie 'Ticket'/'Jira'? -> Bonuspunkte."""
     before = text[max(0, pos - span):pos].lower()
     return 2 if any(w in before for w in _CTX_WORDS) else 0
 
 
-def _iter_turns(turns):
+def _iter_turns(turns: list[Any]) -> Iterator[tuple[str, str, int, int]]:
     """Ueber (rolle, text, gewicht, index) laufen und Muell (None, halbe Tupel, Nicht-
     Strings) ueberspringen. Gewicht: was DU sagst zaehlt doppelt – der Agent echot IDs
     nur nach, du nennst sie, weil es darum geht."""
@@ -59,7 +61,7 @@ def _iter_turns(turns):
         yield role, text, (2 if role == "user" else 1), idx
 
 
-def _best(hits, min_score):
+def _best(hits: dict[str, list[int]], min_score: int) -> str:
     """Aus {kandidat: [punkte, letzter-index]} den Gewinner: meiste Punkte, bei
     Gleichstand der ZULETZT erwaehnte. Unter min_score -> '' (lieber nichts anzeigen
     als etwas Falsches)."""
@@ -69,7 +71,7 @@ def _best(hits, min_score):
     return key if score >= min_score else ""
 
 
-def find_ticket(turns, project=None, min_score=2):
+def find_ticket(turns: list[Any], project: str | None = None, min_score: int = 2) -> str:
     """Aus den Gespraechs-Zuegen die Ticket-ID herausziehen, um die es geht ('' = keine).
 
     `turns` ist die Liste aus extract_turns (oder ein einzelner String). Gewertet wird
@@ -86,9 +88,9 @@ def find_ticket(turns, project=None, min_score=2):
     proj = (project or "").strip().upper()
     proj_re = re.compile(rf"(?<![A-Za-z0-9_-]){re.escape(proj)}-(\d{{1,6}})(?!\d)",
                          re.I) if proj else None
-    hits = {}                                  # "ABC-123" -> [Punkte, letzter Zug-Index]
+    hits: dict[str, list[int]] = {}                                  # "ABC-123" -> [Punkte, letzter Zug-Index]
 
-    def bump(key, weight, idx):
+    def bump(key: str, weight: int, idx: int) -> None:
         rec = hits.get(key)
         if rec is None:
             hits[key] = [weight, idx]
@@ -133,7 +135,7 @@ _HASH_NOT_PR = ("issue", "ticket", "jira", "zeile", "line", "seite", "page",
                 "kommentar", "comment", "spalte", "column")
 
 
-def find_pr(turns, min_score=3):
+def find_pr(turns: list[Any], min_score: int = 3) -> str:
     """Aus den Gespraechs-Zuegen die Pull-/Merge-Request-Nummer ziehen ('' = keine).
     Rueckgabe ist die reine Nummer als String ("62") – wie sie beschriftet wird,
     entscheidet die Oberflaeche.
@@ -142,9 +144,9 @@ def find_pr(turns, min_score=3):
     juengste Treffer). Der Default min_score=3 ist bewusst haerter als beim Ticket:
     eine EINZELNE "#62"-Erwaehnung reicht damit nicht, "PR #62" vom Nutzer (2x2) oder
     eine PR-URL schon – sonst landet jede Issue-Nummer als PR im Hover."""
-    hits = {}
+    hits: dict[str, list[int]] = {}
 
-    def bump(num, weight, idx):
+    def bump(num: str, weight: int, idx: int) -> None:
         rec = hits.get(num)
         if rec is None:
             hits[num] = [weight, idx]
@@ -165,7 +167,7 @@ def find_pr(turns, min_score=3):
     return _best(hits, min_score)
 
 
-def find_refs(turns, project=None):
+def find_refs(turns: list[Any], project: str | None = None) -> dict[str, str]:
     """Ticket UND PR in EINEM Durchgang: {"ticket": "ABC-123"|"", "pr": "62"|""}.
     Beides kann gleichzeitig gelten (ein PR zu einem Ticket) – die Oberflaeche zeigt
     dann beides."""

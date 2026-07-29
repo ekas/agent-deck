@@ -17,19 +17,20 @@ import json
 import os
 import sys
 import time
+from typing import Any
 
 from deck.claude.hooks import resolve  # Slot-Aufloesung + State-Ordner (gemeinsamer Hook-Leaf)
 from deck.domain import paths
 
 
-def _num(*vals):
+def _num(*vals: Any) -> float | None:
     for v in vals:
         if isinstance(v, (int, float)):
             return v
     return None
 
 
-def _msg_tokens(cw):
+def _msg_tokens(cw: Any) -> float | None:
     """Tokens der aktuellen Nachricht (best effort ueber wechselnde Feldnamen)."""
     cur = cw.get("current_usage") or {}
     i = _num(cur.get("input_tokens"), cur.get("input"))
@@ -39,7 +40,7 @@ def _msg_tokens(cw):
     return _num(cw.get("total_output_tokens"))
 
 
-def _extract(data):
+def _extract(data: dict[str, Any]) -> dict[str, Any]:
     model = None
     m = data.get("model")
     if isinstance(m, dict):
@@ -48,8 +49,10 @@ def _extract(data):
         model = m
     eff = data.get("effort")
     effort = eff.get("level") if isinstance(eff, dict) else (eff if isinstance(eff, str) else None)
-    cw = data.get("context_window") if isinstance(data.get("context_window"), dict) else {}
-    cost = data.get("cost") if isinstance(data.get("cost"), dict) else {}
+    raw_cw = data.get("context_window")
+    cw: dict[str, Any] = raw_cw if isinstance(raw_cw, dict) else {}
+    raw_cost = data.get("cost")
+    cost: dict[str, Any] = raw_cost if isinstance(raw_cost, dict) else {}
     return {
         "model": model,
         "effort": effort,
@@ -60,7 +63,7 @@ def _extract(data):
     }
 
 
-def _line(rec):
+def _line(rec: dict[str, Any]) -> str:
     """Kompakte Statuszeile fuers Terminal."""
     parts = []
     if rec.get("model"):
@@ -74,7 +77,7 @@ def _line(rec):
     return "  ·  ".join(parts)
 
 
-def main():
+def main() -> None:
     try:
         # Rohe Bytes selbst als UTF-8 dekodieren (siehe report._read_stdin_json):
         # sys.stdin.read() nimmt auf Windows die ANSI-Codepage und zerstoert Umlaute.

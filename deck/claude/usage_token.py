@@ -15,6 +15,7 @@ import json
 import os
 import time
 from ctypes import wintypes
+from typing import Any
 
 # ── Windows-API defensiv laden ───────────────────────────
 # Schlaegt ein Laden fehl (z.B. Nicht-Windows beim Test-Import), bleibt _WINOK
@@ -33,7 +34,7 @@ except Exception:
 
 
 # ── Speicherorte von Claude Desktops Nutzerdaten ─────────
-def _known_folder(csidl):
+def _known_folder(csidl: int) -> str | None:
     try:
         buf = ctypes.create_unicode_buffer(260)
         if ctypes.windll.shell32.SHGetFolderPathW(None, csidl, None, 0, buf) == 0 and buf.value:
@@ -43,7 +44,7 @@ def _known_folder(csidl):
     return ""
 
 
-def _candidate_dirs():
+def _candidate_dirs() -> list[str]:
     """Moegliche Speicherorte: Claude Desktop ist eine MSIX-/Store-App -> AppData ist
     virtualisiert; je nach Start-Kontext ist nur EINER dieser Pfade sichtbar."""
     dirs = []
@@ -57,7 +58,7 @@ def _candidate_dirs():
     return dirs
 
 
-def claude_dir():
+def claude_dir() -> str | None:
     """Der Ordner, in dem aktuell wirklich eine config.json liegt (sonst der erste
     Kandidat als Fallback fuer die Fehlermeldung)."""
     cands = _candidate_dirs()
@@ -76,12 +77,12 @@ _OPEN_EXISTING = 3
 _INVALID_HANDLE = ctypes.c_void_p(-1).value
 
 
-def _read_shared(path, retries=5):
+def _read_shared(path: str, retries: int = 5) -> bytes:
     """Liest eine Datei mit voller Freigabe (blockiert keinen anderen Prozess).
     Retries fangen das kurze Fenster ab, in dem Claude die Datei beim Start
     atomar ersetzt (dann ist sie 1-2 ms 'nicht vorhanden')."""
-    if not _WINOK:
-        with open(path, "rb") as f:                # Fallback (Test/Nicht-Windows)
+    if _k32 is None:                               # kein Windows-API -> Fallback
+        with open(path, "rb") as f:                # (Test/Nicht-Windows)
             return f.read()
     last = None
     for _ in range(retries):
@@ -110,7 +111,7 @@ class _DATA_BLOB(ctypes.Structure):
     _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
 
 
-def _dpapi_unprotect(data):
+def _dpapi_unprotect(data: bytes) -> bytes:
     """Windows DPAPI CryptUnprotectData (kein Drittpaket noetig)."""
     blob_in = _DATA_BLOB(len(data),
                          ctypes.cast(ctypes.create_string_buffer(data, len(data)),
@@ -138,11 +139,12 @@ class _CNG_AUTH_INFO(ctypes.Structure):
     ]
 
 
-def _bcrypt_gcm_decrypt(key, nonce, ct_with_tag, aad=None, tag_len=16):
+def _bcrypt_gcm_decrypt(key: bytes, nonce: bytes, ct_with_tag: bytes,
+                        aad: bytes | None = None, tag_len: int = 16) -> bytes:
     bcrypt = ctypes.WinDLL("bcrypt", use_last_error=True)
     ct, tag = ct_with_tag[:-tag_len], ct_with_tag[-tag_len:]
 
-    def chk(status, what):
+    def chk(status: int, what: str) -> None:
         if status != 0:
             raise OSError(f"BCrypt {what}: 0x{status & 0xffffffff:08x}")
 
@@ -184,7 +186,8 @@ def _bcrypt_gcm_decrypt(key, nonce, ct_with_tag, aad=None, tag_len=16):
         bcrypt.BCryptCloseAlgorithmProvider(hAlg, 0)
 
 
-def _aesgcm_decrypt(key, nonce, ct_with_tag, aad=None):
+def _aesgcm_decrypt(key: bytes, nonce: bytes, ct_with_tag: bytes,
+                    aad: bytes | None = None) -> bytes:
     """Zuerst Windows CNG (dependency-frei); scheitert das, 'cryptography'."""
     try:
         return _bcrypt_gcm_decrypt(key, nonce, ct_with_tag, aad)
@@ -193,7 +196,7 @@ def _aesgcm_decrypt(key, nonce, ct_with_tag, aad=None):
         return AESGCM(key).decrypt(nonce, ct_with_tag, aad)
 
 
-def _decrypt_v10(blob, key):
+def _decrypt_v10(blob: bytes, key: bytes) -> bytes:
     """Chromium 'v10'-Blob: [3B 'v10'][12B nonce][ciphertext+16B tag]."""
     return _aesgcm_decrypt(key, blob[3:15], blob[15:], None)
 
@@ -206,7 +209,7 @@ _CLI_TOKEN_KEYS = ("accessToken", "access_token", "token")
 _CLI_EXPIRY_KEYS = ("expiresAt", "expires_at")
 
 
-def cli_credentials_path():
+def cli_credentials_path() -> str:
     """Pfad zu .credentials.json. CLAUDE_CONFIG_DIR verlegt den Ordner der CLI —
     wer das gesetzt hat, soll nicht durchs Raster fallen."""
     base = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(
@@ -214,7 +217,8 @@ def cli_credentials_path():
     return os.path.join(base, ".credentials.json")
 
 
-def tokens_from_credentials(data, now_ms=None):
+def tokens_from_credentials(data: dict[str, Any],
+                            now_ms: float | None = None) -> list[str]:
     """Pur (headless testbar): geparstes .credentials.json -> Liste noch gueltiger
     Tokens, langlebigstes zuerst.
 
@@ -246,7 +250,7 @@ def tokens_from_credentials(data, now_ms=None):
     return [t for _, t in sorted(out, key=lambda p: p[0], reverse=True)]
 
 
-def _read_tokens_from_cli():
+def _read_tokens_from_cli() -> list[str]:
     """Tokens der CLI. Wirft, wenn die Datei fehlt oder unlesbar ist — der Aufrufer
     faellt dann auf Claude Desktop zurueck."""
     return tokens_from_credentials(json.loads(
@@ -254,12 +258,12 @@ def _read_tokens_from_cli():
 
 
 # ── Token aus Claude Desktop lesen (mit Cache) ───────────
-# [(token, ablauf_ms)] - eine Liste, damit sie in place ersetzt werden kann,
-# ohne dass Aufrufer eine neue Referenz brauchen.
-_token_cache: list[tuple[str, int | None]] = []
+# Die gueltigen Tokens, langlebigstes zuerst. Eine Liste (nicht neu gebunden),
+# damit read_oauth_token() sie in place ersetzen kann.
+_token_cache: list[str] = []
 
 
-def _read_tokens_from_disk():
+def _read_tokens_from_disk() -> list[str]:
     cdir = claude_dir()
     if not cdir:
         raise FileNotFoundError("Claude-Desktop-Ordner nicht gefunden")
@@ -286,7 +290,7 @@ class NoTokenError(RuntimeError):
     """Keine der beiden Quellen hat ein brauchbares Token hergegeben."""
 
 
-def read_oauth_token(force=False):
+def read_oauth_token(force: bool = False) -> list[str]:
     """Alle verfuegbaren Tokens, CLI zuerst.
 
     Die Reihenfolge ist Absicht: die CLI ist die Quelle, die JEDER Deck-Nutzer hat

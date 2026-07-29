@@ -34,6 +34,7 @@ import shutil
 import subprocess
 import threading
 import time
+from typing import Any
 
 from deck.claude.refs import find_refs
 from deck.domain import paths
@@ -74,7 +75,7 @@ _INSTRUCTION_EN = (
 )
 
 
-def instruction(lang):
+def instruction(lang: str) -> str:
     """Modell-Anweisung fuer die gewuenschte Sprache ("english" -> englisch, sonst
     deutsch). Pur -> unit-testbar, kein i18n-Import noetig."""
     return _INSTRUCTION_EN if lang == "english" else _INSTRUCTION_DE
@@ -84,7 +85,7 @@ _QUOTES = "\"'“”„»«‚‘’"
 
 
 # ── pure Helfer (unit-getestet) ──────────────────────────────────────────
-def extract_turns(lines):
+def extract_turns(lines: list[str]) -> list[tuple[str, str]]:
     """Aus den JSONL-Zeilen eines Transcripts die echten Gespraechs-Zuege ziehen:
     getippte User-Nachrichten (message.content ist ein STRING) und die Text-Bloecke
     der Assistant-Antworten. Uebersprungen werden Tool-Aufrufe/-Ergebnisse (User-
@@ -128,7 +129,8 @@ def extract_turns(lines):
     return turns
 
 
-def build_digest(turns, max_chars=3500, per_turn=600):
+def build_digest(turns: list[tuple[str, str]], max_chars: int = 3500,
+                 per_turn: int = 600) -> str:
     """Aus den Zuegen einen kompakten Digest bauen: den ERSTEN Zug (setzt das Thema)
     plus die JUENGSTEN Zuege, bis das Zeichenbudget voll ist -> das Modell bekommt
     Thema UND aktuellen Fokus, ohne das (evtl. riesige) ganze Transcript. Jeder Zug
@@ -136,7 +138,7 @@ def build_digest(turns, max_chars=3500, per_turn=600):
     if not turns:
         return ""
 
-    def fmt(role, text):
+    def fmt(role: str, text: str) -> str:
         text = " ".join(text.split())
         if len(text) > per_turn:
             text = text[:per_turn].rstrip() + "…"
@@ -158,7 +160,7 @@ def build_digest(turns, max_chars=3500, per_turn=600):
     return "\n".join(lines)
 
 
-def clean_summary(raw, max_len=200):
+def clean_summary(raw: str, max_len: int = 200) -> str:
     """Modell-Ausgabe zu einer sauberen Tooltip-Zeile normalisieren: ersten nicht-
     leeren Absatz nehmen, umschliessende Anfuehrungszeichen und ein evtl. Praefix
     ('Zusammenfassung:'/'Thema:'/…) weg, Whitespace glaetten, hart auf max_len
@@ -185,28 +187,28 @@ def clean_summary(raw, max_len=200):
     return text
 
 
-def enc_cwd(cwd):
+def enc_cwd(cwd: str) -> str:
     """cwd -> Ordnername, wie Claude Code ihn unter ~/.claude/projects nutzt: jedes
     Zeichen ausser [A-Za-z0-9] wird zu '-' (also auch ':', '\\', Umlaute)."""
     return re.sub(r"[^A-Za-z0-9]", "-", cwd or "")
 
 
 # ── unreine Helfer (Dateisystem / subprocess) ─────────────────────────────
-def _safe_mtime(p):
+def _safe_mtime(p: str) -> float:
     try:
         return os.path.getmtime(p)
     except OSError:
         return 0.0
 
 
-def _safe_size(p):
+def _safe_size(p: str) -> int:
     try:
         return os.path.getsize(p)
     except OSError:
         return 0
 
 
-def transcript_path(session_id, cwd=None):
+def transcript_path(session_id: str, cwd: str | None = None) -> str | None:
     """Pfad zum Transcript einer Session finden. Schneller Direktweg ueber die
     kodierte cwd; sonst per Glob ueber die (eindeutige) session-id, was auch einen
     worktree-cwd abdeckt. None, wenn nichts gefunden."""
@@ -222,7 +224,7 @@ def transcript_path(session_id, cwd=None):
     return max(hits, key=_safe_mtime)
 
 
-def _read_lines(path):
+def _read_lines(path: str) -> list[str]:
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
             return f.readlines()
@@ -230,30 +232,30 @@ def _read_lines(path):
         return []
 
 
-def _cache_path(session_id):
+def _cache_path(session_id: str) -> str:
     return os.path.join(SUMMARY_DIR, session_id + ".json")
 
 
-def read_cache(session_id):
+def read_cache(session_id: str) -> dict[str, Any] | None:
     if not session_id:
         return None
     return paths.load_json(_cache_path(session_id), None)
 
 
-def cached_summary(session_id):
+def cached_summary(session_id: str) -> str | None:
     """Nur die schon gecachte Zusammenfassung (schnell, KEIN subprocess). None, wenn
     noch keine erzeugt wurde."""
     return (read_cache(session_id) or {}).get("summary") or None
 
 
-def cached_refs(session_id):
+def cached_refs(session_id: str) -> dict[str, str]:
     """Nur die schon erkannten Bezuege aus dem Cache, ohne Transcript zu lesen:
     {"ticket": …, "pr": …} (leere Strings, wenn nichts gescannt/gefunden wurde)."""
     c = read_cache(session_id) or {}
     return {"ticket": c.get("ticket") or "", "pr": c.get("pr") or ""}
 
 
-def _merge_cache(session_id, **fields):
+def _merge_cache(session_id: str, **fields: Any) -> dict[str, Any]:
     """Cache-Datei der Session frisch lesen und nur die uebergebenen Felder ersetzen.
     Wichtig, weil Ticket-Scan und Zusammenfassung dieselbe Datei benutzen: die
     Zusammenfassung braucht ~10 s, in der Zeit darf ein Ticket-Scan nicht verloren
@@ -264,7 +266,8 @@ def _merge_cache(session_id, **fields):
     return data
 
 
-def ensure_refs(session_id, cwd=None, project=None):
+def ensure_refs(session_id: str, cwd: str | None = None,
+                project: str | None = None) -> dict[str, str] | None:
     """Ticket-ID + PR-Nummer der Session bestimmen, cachen und zurueckgeben
     ({"ticket": …, "pr": …}, leer = nichts im Chat).
 
@@ -291,7 +294,7 @@ def ensure_refs(session_id, cwd=None, project=None):
     return refs
 
 
-def _run_claude(prompt, model, timeout):
+def _run_claude(prompt: str, model: str, timeout: float) -> str | None:
     """`claude` HEADLESS im safe-mode aufrufen und die reine Textantwort liefern.
     safe-mode schaltet CLAUDE.md/Skills/Hooks/MCP/Plugins ab (schnell, kein
     agentisches Tool-Loopen), OAuth-Auth + Modellwahl bleiben. None bei jedem
@@ -310,8 +313,9 @@ def _run_claude(prompt, model, timeout):
         return None
 
 
-def generate(session_id, cwd=None, model="haiku", lang="german", min_growth=8000,
-             cooldown=45.0, timeout=60, max_chars=2400):
+def generate(session_id: str, cwd: str | None = None, model: str = "haiku",
+             lang: str = "german", min_growth: int = 8000, cooldown: float = 45.0,
+             timeout: float = 60, max_chars: int = 2400) -> str | None:
     """Zusammenfassung fuer eine Session sicherstellen und zurueckgeben (BLOCKIEREND
     -> nur aus einem Daemon-Thread aufrufen). claude wird NUR neu aufgerufen, wenn es
     noch keinen Cache gibt, die gecachte Fassung in einer ANDEREN Sprache ist ODER das
@@ -343,7 +347,7 @@ def generate(session_id, cwd=None, model="haiku", lang="german", min_growth=8000
         return cached or None
     with _SEM:                                 # nur wenige claude-Prozesse gleichzeitig
         out = _run_claude(instruction(lang) + digest, model, timeout)
-    summary = clean_summary(out)
+    summary = clean_summary(out or "")   # _run_claude kann None liefern (Timeout)
     if not summary:
         return cached or None                  # Fehlschlag -> alten Wert behalten
     # Nur die Summary-Felder ersetzen: ein waehrenddessen gelaufener Ticket-Scan
@@ -352,7 +356,7 @@ def generate(session_id, cwd=None, model="haiku", lang="german", min_growth=8000
     return summary
 
 
-def prune(max_age_days=14):
+def prune(max_age_days: int = 14) -> None:
     """Alte Cache-Dateien laengst geschlossener Sessions entfernen (best effort;
     einmal beim Deck-Start aufgerufen)."""
     try:

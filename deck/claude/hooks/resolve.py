@@ -14,11 +14,11 @@ import sys
 from deck.domain.paths import STATE_DIR
 
 
-def state_dir():
+def state_dir() -> str:
     return STATE_DIR
 
 
-def _ancestor_pids():
+def _ancestor_pids() -> list[int]:
     """PID-Kette (ich -> Elternprozesse) via Toolhelp32-Snapshot. Nur Windows,
     reine stdlib (ctypes), kein Subprozess. Bei Problemen: leere Liste."""
     if sys.platform != "win32":
@@ -66,7 +66,7 @@ def _ancestor_pids():
         return []
 
 
-def _load_pidmap(base):
+def _load_pidmap(base: str) -> dict[int, str]:
     """Alle pidmap-*.json (je Fenster von der Extension geschrieben) zu
     {pid(int): slot} mergen. PIDs sind global eindeutig -> Union ist sicher."""
     out = {}
@@ -84,7 +84,7 @@ def _load_pidmap(base):
     return out
 
 
-def slot_from_procs(base):
+def slot_from_procs(base: str) -> str | None:
     """Ersten eigenen Vorfahren finden, der in der pidmap steht -> dessen Slot.
     Der von der Extension notierte Claude-PID ist immer ein Vorfahre des Hooks."""
     pm = _load_pidmap(base)

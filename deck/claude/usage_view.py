@@ -8,6 +8,7 @@ Zahlen fuer Menschen brauchen einen festen Punkt als Dezimaltrenner; eine
 locale-abhaengige Formatierung zeigt auf einem deutschen System sonst $0,15 statt $0.15.
 """
 from datetime import UTC, datetime
+from typing import Any
 
 from deck import i18n
 
@@ -17,7 +18,7 @@ _GREEN, _AMBER, _RED, _GRAY = "#6ee7a8", "#ffc48a", "#ff6b6b", "#8b8b99"
 _SEVERITY_COLORS = {"normal": _GREEN, "warning": _AMBER, "critical": _RED}
 
 
-def fmt_reset(iso, now=None):
+def fmt_reset(iso: str | None, now: Any = None) -> str:
     """ISO-Zeit -> 'X Tg. Y Std.' / 'X Std. Y Min.' / 'X Min.' relativ zu now
     (tz-aware datetime; Default = jetzt UTC). Leer/kaputt -> ''; Vergangenheit ->
     'jetzt'. now injizierbar, damit Tests nicht von der Wanduhr abhaengen."""
@@ -41,7 +42,7 @@ def fmt_reset(iso, now=None):
     return i18n.L(f"{m} Min.", f"{m}min")
 
 
-def severity_color(severity, percent):
+def severity_color(severity: str | None, percent: float | None) -> str:
     """Hex-Farbe fuers Badge. Zuerst die API-severity (normal/warning/critical);
     fehlt sie, per Schwellwert (wie der Usage-Monitor: <50 gruen, <80 amber, sonst
     rot). Ohne Wert grau."""
@@ -56,7 +57,7 @@ def severity_color(severity, percent):
     return _RED
 
 
-def _limit_label(lim):
+def _limit_label(lim: dict[str, Any]) -> str:
     """Menschlicher (deutscher) Name eines API-Limits fuers Hover."""
     kind = (lim.get("kind") or "").lower()
     if kind == "session":
@@ -75,11 +76,11 @@ def _limit_label(lim):
     return kind.replace("_", " ").title() or "Limit"
 
 
-def _pct(v):
+def _pct(v: Any) -> int | None:
     return round(v) if isinstance(v, (int, float)) else None
 
 
-def parse_usage(data):
+def parse_usage(data: dict[str, Any]) -> dict[str, Any]:
     """Rohe API-Antwort -> normalisiertes Dict:
         {"session": <limit|None>, "limits": [<limit>, …]}
     Ein <limit> ist {kind, group, label, percent, severity, resets_at, active}.
@@ -116,7 +117,7 @@ def parse_usage(data):
     return {"session": session, "limits": limits}
 
 
-def _keep_in_tooltip(lim):
+def _keep_in_tooltip(lim: dict[str, Any]) -> bool:
     """Welche Limits im Hover erscheinen: Session + Wochen-Gesamt immer, modell-
     spezifische Wochenlimits nur, wenn sie Signal tragen (Prozent > 0 oder aktiv).
     So bleibt der Tooltip aufgeraeumt, wenn ein Modell-Limit noch bei 0 % steht."""
@@ -125,7 +126,7 @@ def _keep_in_tooltip(lim):
     return bool(lim["percent"]) or lim["active"]
 
 
-def tooltip_text(snap, now=None):
+def tooltip_text(snap: dict[str, Any], now: Any = None) -> str:
     """Mehrzeiliger Hover-Text aus einem Poller-Snapshot (siehe UsagePoller)."""
     head = i18n.L("Claude – Nutzung", "Claude – usage")
     limits = [lim for lim in (snap.get("limits") or []) if _keep_in_tooltip(lim)]

@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+from typing import Any
 
 from deck.claude.hooks import resolve
 from deck.domain import paths
@@ -29,7 +30,7 @@ _MODE_MAP = {
 }
 
 
-def _read_stdin_json():
+def _read_stdin_json() -> dict[str, Any]:
     """Das an den Hook uebergebene JSON lesen. Robust: kein/kaputtes stdin -> {}.
     Claude Code liefert IMMER UTF-8 -> wir dekodieren die ROHEN Bytes selbst als
     UTF-8. sys.stdin.read() wuerde auf (deutschem) Windows die ANSI-Codepage
@@ -44,19 +45,19 @@ def _read_stdin_json():
         return {}
 
 
-def _mode_of(data):
+def _mode_of(data: dict[str, Any]) -> str | None:
     pm = data.get("permission_mode")
     return _MODE_MAP.get(str(pm).lower(), str(pm).lower()) if pm else None
 
 
-def _effort_of(data):
+def _effort_of(data: dict[str, Any]) -> str | None:
     e = data.get("effort")
     if isinstance(e, dict):
         return e.get("level")
     return e if isinstance(e, str) else None
 
 
-def _prompt_of(data):
+def _prompt_of(data: dict[str, Any]) -> str | None:
     """Text der zuletzt von MIR abgeschickten Frage – nur beim UserPromptSubmit-Event
     im stdin (`prompt`). Whitespace-getrimmt und auf 500 Zeichen gekuerzt: haelt die
     State-Datei klein und den Hover-Tooltip im Deck kurz. Kein/kein-String -> None."""
@@ -69,12 +70,13 @@ def _prompt_of(data):
     return p[:500].rstrip() + "…" if len(p) > 500 else p
 
 
-def _activity_of(data):
+def _activity_of(data: dict[str, Any]) -> str | None:
     """Kurzbeschreibung des gerade genutzten Tools (nur bei Pre/PostToolUse gesetzt)."""
     tn = data.get("tool_name")
     if not tn:
         return None
-    ti = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
+    raw_input = data.get("tool_input")
+    ti: dict[str, Any] = raw_input if isinstance(raw_input, dict) else {}
     detail = (ti.get("command") or ti.get("file_path") or ti.get("path")
               or ti.get("pattern") or ti.get("url") or ti.get("description") or "")
     detail = str(detail).splitlines()[0].strip() if detail else ""
@@ -91,7 +93,7 @@ def _activity_of(data):
 _WAIT_NOTIFY = {"permission_prompt", "elicitation_dialog", "agent_needs_input"}
 
 
-def _is_real_query(data):
+def _is_real_query(data: dict[str, Any]) -> bool:
     """Ist ein Notification-Event eine echte Rueckfrage (Auswahl/Bestaetigung noetig)?
     Bevorzugt das dokumentierte `notification_type`-Feld; fehlt es (aeltere Claude-
     Code-Version ohne den Typ), faellt es auf die Permission-Meldung zurueck
@@ -104,7 +106,7 @@ def _is_real_query(data):
     return ("allow" in low) or ("permission" in low)
 
 
-def main():
+def main() -> None:
     status = sys.argv[1] if len(sys.argv) > 1 else "thinking"
     base = resolve.state_dir()
     slot = os.environ.get("AGENT_SLOT") or resolve.slot_from_procs(base)
