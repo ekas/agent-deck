@@ -28,22 +28,3 @@ jobs:
 
       - name: Unit-Tests
         run: python tests/test_pure.py
-
-  dotnet:
-    name: .NET-Tests
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Wiederherstellen
-        run: dotnet restore AgentDeck.sln
-
-      - name: Bauen
-        run: dotnet build AgentDeck.sln --no-restore -warnaserror
-
-      - name: Tests
-        run: dotnet test AgentDeck.sln --no-build --verbosity normal

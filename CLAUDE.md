@@ -1,115 +1,116 @@
 # Agent Deck
 
 Dashboard für parallel laufende Claude-Code-Agents in VS Code. Eine Kachel je Chat,
-Farbe = Zustand; dockt am Bildschirmrand an. Windows-only, .NET 9 / WPF.
+Farbe = Zustand; dockt am Bildschirmrand an. Windows-only, Python 3.12+ / tkinter.
 
 ## Kommandos
 
 ```powershell
-dotnet build                  # muss warnungsfrei sein (TreatWarningsAsErrors)
-dotnet test                   # < 2 s, immer vor dem Commit
-dotnet format                 # Stil nach .editorconfig
-dotnet run --project src/AgentDeck.App
+python tests/test_pure.py     # Unit-Tests der anzeigefreien Logik, immer vor dem Commit
+python -m compileall -q .      # Syntaxprüfung aller Module
+start.bat                      # Panel leise starten (pythonw, keine Konsole)
+start_debug.bat                # Panel mit Konsole — für den ersten Start und bei Fehlersuche
 ```
 
-## Schichten
+Einzige Pflicht-Abhängigkeit ist **Pillow** (`requirements.txt`); alles andere kommt aus
+der Standardbibliothek.
 
-Abhängigkeiten zeigen **nur nach unten**. Wer eine Datei anlegt, entscheidet zuerst,
-in welche Schicht sie gehört:
+## Aufbau
 
-| Projekt | Enthält | Darf NICHT kennen |
-|---|---|---|
-| `AgentDeck.Core` | Domäne: Protokoll, Slot-Zustand, Statusmodell, Andock-Rechnerei, Broker | Windows, WPF, Claude-Vokabular |
-| `AgentDeck.Windows` | Win32-P/Invoke: Monitore, Zeiger, Fenster | WPF, Claude |
-| `AgentDeck.Claude` | Claude-Code-Spezifisches: Hooks, Payload, Transcript, Usage | WPF |
-| `AgentDeck.App` | WPF: Fenster, ViewModels, Andock-Steuerung | — |
-| `AgentDeck.Hooks` | Exe, das Claude Code als Hook aufruft | — |
+Das Deck besteht aus **flachen Modulen** — kein Package, keine `__init__.py`. Die
+Trennlinie verläuft nicht über Ordner, sondern über eine Frage: *braucht das Modul einen
+Bildschirm?*
 
-`AgentDeck.Core` ist `net9.0` und bleibt plattformneutral — dort liegt alles, was ohne
-Bildschirm testbar sein soll. Der Rest ist `net9.0-windows`.
+| Zuständigkeit | Module |
+|---|---|
+| Panel-Fenster, Kacheln, Interaktion | `agent_deck.py` |
+| Andocken am Rand, Griff-Kapsel | `edge_dock.py`, `handle_render.py`, `handle_wave.py` |
+| Zeichnen (Pillow/Canvas) | `card_render.py`, `glow_animator.py`, `canvas_kit.py`, `bottom_bar.py` |
+| Brücke zur VS-Code-Extension | `broker.py`, `broker_commands.py`, `protocol.py` |
+| Claude-Code-Hooks | `report.py`, `statusline.py`, `hookstate.py` |
+| Statuslogik, Pfade, Log | `status_model.py`, `deck_common.py`, `deck_paths.py`, `deck_log.py` |
+| Claude-Spezifisches | `claude_usage.py`, `chat_summary.py`, `claude_settings.py` |
+| Windows/Bildschirm | `hidpi.py`, `screen_fit.py`, `win_focus.py` |
+| Zuordnung, Einstellungen, Sprache | `bindstore.py`, `config.py`, `i18n.py` |
+| Betrieb | `single_instance.py`, `watchdog.py`, `worktree_cleanup.py` |
 
-**Faustregel:** Rechnen gehört in `Core` und wird getestet; Zeichnen gehört in `App`
-und wird angeschaut. Wenn eine Methode in `App` etwas ausrechnet, das man auf Papier
-nachprüfen könnte, gehört sie nach `Core`.
+**Faustregel:** Rechnen gehört in ein anzeigefreies Modul und wird getestet; Zeichnen
+gehört ins Canvas und wird angeschaut. Wenn eine Methode in `agent_deck.py` etwas
+ausrechnet, das man auf Papier nachprüfen könnte, gehört sie in ein eigenes Modul —
+`status_model.py` und `canvas_kit.py` sind genau dafür entstanden.
 
 ## Verträge, die man nicht raten kann
 
-1. **Das Wire-Protokoll existiert dreifach** — `Core/Protocol.cs`, `protocol.py`,
-   `extension/extension.js`. Es gibt bewusst keinen Build-Step, der sie koppelt. Wer
-   einen String ändert, ändert **alle drei**. `PythonCompatibilityTests` liest die
-   Python-Datei zur Testzeit und schlägt bei Drift fehl.
+1. **Das Wire-Protokoll existiert doppelt** — `protocol.py` und
+   `extension/extension.js`. Es gibt bewusst keinen Build-Step, der sie koppelt (reines
+   JS/Python, die Extension kann die Python-Datei nicht importieren). Wer einen String
+   ändert, ändert **beide**.
 
 2. **Das Slot-JSON-Format ist ein Vertrag.** `%LOCALAPPDATA%\claude-agent-deck\state\<slot>.json`
-   wird von Hooks geschrieben und vom Panel gelesen — solange beide Fassungen
-   existieren, auch über Sprachgrenzen hinweg. Feldnamen sind snake_case, `ts` sind
-   Unix-Sekunden als `double` (nie `DateTime`). Immer atomar schreiben (`.tmp` +
-   ersetzen), nie mit Sperre lesen.
+   wird von den Hooks geschrieben und vom Panel gelesen — zwei getrennte Prozesse.
+   Feldnamen sind snake_case, `ts` sind Unix-Sekunden als Fließkommazahl. Immer atomar
+   schreiben (`.tmp` + ersetzen), nie mit Sperre lesen.
 
-3. **Ein Hook darf NIEMALS mit Fehler enden.** Er blockiert sonst den Agenten. Jeder
-   Pfad in `AgentDeck.Hooks` hat ein Fangnetz und Exit-Code 0.
+3. **Ein Hook darf NIEMALS mit Fehler enden.** Er blockiert sonst den Agenten: bei
+   `UserPromptSubmit` und `PreToolUse` liest Claude Code Exit ≠ 0 als Veto gegen Prompt
+   bzw. Tool-Aufruf. Jeder Pfad in `report.py` und `statusline.py` hat ein Fangnetz und
+   Exit-Code 0.
 
-4. **Zahlen für Menschen brauchen `InvariantCulture`.** Die Statuszeile zeigt sonst
-   auf deutschen Systemen `$0,15` statt `$0.15`.
+   Das reicht aber nicht: **ein Hook, der nicht startet, kommt an sein Fangnetz nicht
+   heran.** Fehlt `python` auf dem PATH oder wurde die Datei verschoben, urteilt der
+   Prozessstarter. Wer die Hook-Einträge in `~/.claude/settings.json` anfasst, prüft
+   danach, dass eine Kachel beim Tippen wirklich reagiert.
 
-5. **Die VS-Code-Extension bleibt JavaScript.** VS Code lädt keine .NET-Extensions.
-   Das ist keine offene Aufgabe.
+4. **Hook-stdin roh als UTF-8 dekodieren** (`sys.stdin.buffer`), nie über `sys.stdin`.
+   Sonst kommen Umlaute unter Windows als cp1252-Mojibake an.
+
+5. **Die VS-Code-Extension ist JavaScript** — VS Code lädt nur JS-Extensions. Das ist
+   keine offene Aufgabe.
 
 ## Fallen, die schon einmal wehgetan haben
 
-- **`SO_REUSEADDR` nicht setzen.** Unter Windows erlaubt die Option zwei Listener auf
-  demselben Port; „Port belegt → still deaktiviert" greift dann nicht, und Extensions
-  landen beim toten Panel.
-- **Kachelliste in place aktualisieren**, nie neu aufbauen — sonst blitzen bei jedem
-  Auf-/Zuklappen alle Kacheln neu auf.
-- **Animationen an `CompositionTarget.Rendering` hängen**, nicht an einen Timer mit
-  festem Intervall. Ein Timer läuft gegen die Bildrate und stottert sichtbar.
+- **`SO_REUSEADDR` ist in `broker.py` schädlich.** Unter Windows erlaubt die Option zwei
+  Listener auf demselben Port; „Port belegt → still deaktiviert" greift dann nicht, und
+  Extensions landen beim toten Panel. Der Guard dagegen ist `single_instance.py`
+  (Lockfile + Handoff), nicht der Port.
+- **Kachelliste in place aktualisieren**, nie neu aufbauen — ein `delete('all')`-Vollneubau
+  setzt Farbe und Statuswert zurück, und dann blitzen beim Auf-/Zuklappen alle Kacheln neu
+  auf. `_carry_tile_anim` vererbt den Animationszustand überlebender Kacheln.
+- **Animationen an die Bildperiode hängen**, nicht an ein festes Timer-Intervall. Ein
+  Timer läuft gegen die Bildrate und stottert sichtbar; dazu gehören
+  `timeBeginPeriod(1)` und `perf_counter` statt der grob getakteten Tk-Uhr.
 - **Ein halb ausgefahrenes Deck ist der eine unzulässige Zustand** (angedockt gibt es
-  keine Titelleiste, man kommt an nichts mehr heran). Deshalb hat
-  `EdgeDockController` genau einen Ausgang aus der Animation, eine Notbremse und
-  einen Watchdog. Diese drei nicht wegoptimieren.
+  keine Titelleiste, man kommt an nichts mehr heran). Deshalb hat `edge_dock.py` genau
+  einen Ausgang aus der Animation (`_anim_finish`), eine Deadline als Notbremse und einen
+  Watchdog. Diese drei nicht wegoptimieren.
 - **Der „gesehen"-Merker muss über den Poll hinaus halten** — in der State-Datei steht
   weiterhin `done`.
+- **Deko-Effekte fliegen auf Nachfrage ganz raus**, nicht „nur leiser gestellt". Und ein
+  Effekt-Timer, der einen Redraw überlebt, verschiebt Kachel-Text dauerhaft.
 
 ## Konventionen
 
-- **Eine Datei = ein Konzept, Ziel < 300 Zeilen.** Der Vorgänger hatte eine Datei mit
-  2.778 Zeilen; jede Änderung daran war ein Risiko.
+- **Eine Datei = ein Konzept, Ziel < 300 Zeilen.** Zwei Altlasten reißen das Ziel:
+  `agent_deck.py` (~2.900 Zeilen) und `edge_dock.py` (~1.900). Neue Konzepte kommen
+  darum in eigene Module, statt dort anzuwachsen.
 - **Kommentare auf Deutsch**, wie der Rest des Repos. Sie erklären das *Warum* — das
   *Was* steht im Code.
-- **Tests neben der Schicht**, eine Testdatei je Quelldatei. Ein Testname beschreibt
-  die Regel, nicht die Methode (`Explizites_window_null_loescht_die_Zuordnung`).
-- **Keine neuen Abhängigkeiten** ohne Not. Das Deck kommt mit der Standardbibliothek
-  aus; das ist Absicht und soll so bleiben.
+- **Tests in `tests/test_pure.py`.** Die Suite läuft mit pytest ODER direkt
+  (`python tests/test_pure.py`, eigener Mini-Runner am Dateiende) und fasst nur
+  anzeigefreie Logik an. Ein Testname beschreibt die Regel, nicht die Methode
+  (`test_explizites_window_null_loescht_die_zuordnung`).
+- **Keine neuen Abhängigkeiten** ohne Not. Außer Pillow kommt das Deck mit der
+  Standardbibliothek aus; das ist Absicht und soll so bleiben.
 
-## Golden-Master: der Port wird gegen Python geprüft
+## Der .NET-Port wurde verworfen
 
-Unter `tests/golden/*.json` liegen ~1.900 Fälle, die die **Python-Fassung** berechnet
-hat: Eingabe plus erwartetes Ergebnis. Die C#-Tests jagen dieselben Eingaben durch den
-Port und vergleichen. Damit ist „verhaltensgleich" gemessen statt behauptet.
+Es gab einen Portierungsversuch nach C#/.NET 9 mit WPF. Er ist am **2026-07-29**
+vollständig verworfen und aus dem Arbeitsverzeichnis entfernt worden: die Rechen-Schicht
+war portiert und gegen Python golden-getestet, aber ausgerechnet die Module, die das
+Aussehen machen (`handle_render`, `handle_wave`, `card_render`, `glow_animator`,
+`edge_dock`), fehlten — das Ergebnis sah entsprechend aus.
 
-```powershell
-python tools/gen_golden.py      # Dateien neu erzeugen (nur solange Python noch da ist)
-```
-
-Abgedeckt: `StatusModel`, `ColorMath`, `Spring`, `ReportHook`, `StatusLineHook`.
-
-Zwei Regeln dazu:
-
-- **Golden-Dateien nie von Hand anpassen, damit ein Test grün wird.** Sie sind die
-  Vorlage; weicht der Port ab, ist der Port falsch. Neu erzeugen nur, wenn sich die
-  *Python-Seite* absichtlich geändert hat.
-- Ein neu portiertes Modul bekommt seinen Fall **in `tools/gen_golden.py`**, bevor es
-  als fertig gilt.
-
-Nach dem Löschen der Python-Fassung bleiben die Dateien als eingefrorene Vorlage
-liegen – sie laufen ohne Python.
-
-## Migration (läuft noch)
-
-Die Python-Fassung im Repo-Wurzelverzeichnis ist **noch produktiv** und wird Modul für
-Modul ersetzt. Sie darf nicht brechen, bevor ihr Gegenstück fertig ist. Der aktuelle
-Stand steht in [README.md](README.md#portierung-nach-net-in-arbeit).
-
-Beim Portieren gilt: **verhaltensgleich, nicht wörtlich.** Wo Windows sich anders
-verhält als die Python-Annahme, folgt der Port der *dokumentierten Absicht* — und der
-Unterschied wird im Code kommentiert.
+Der Code liegt weiterhin im Commit `3fcddbc` unter `src/`, `tests/AgentDeck.*` und
+`tests/golden/`; ein weiterentwickelter Stand hängt als referenzloser Commit `96c9cae`
+in der Objektdatenbank. **Python ist die einzige produktive Fassung.** Wer den Port
+wiederbeleben will, fängt bei der Zeichnerei an, nicht bei der Mathematik.

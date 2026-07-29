@@ -6,8 +6,7 @@
 
 ![Plattform](https://img.shields.io/badge/Plattform-Windows-0078d4)
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab)
-![.NET](https://img.shields.io/badge/.NET-9.0-512bd4)
-![Tests](https://img.shields.io/badge/Tests-144%20Python%20%2B%20109%20.NET-2ea44f)
+![Tests](https://img.shields.io/badge/Tests-144%20passing-2ea44f)
 ![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue)
 
 ---
@@ -238,17 +237,10 @@ Farb- und Text-Helfer, Worktree-Parsing, Usage-Auswertung, Watchdog-Urteile:
 ```powershell
 python tests/test_pure.py     # eigener Mini-Runner, kein pytest nötig
 python -m pytest tests/       # geht auch
-
-dotnet test
 ```
 
-Stand: **144/144 Python**, **109/109 .NET** (davon ~1.900 Golden-Vergleiche gegen die Python-Fassung). Beides läuft in der
-[CI](.github/workflows/ci.yml) bei jedem Push.
-
-Bemerkenswert an der .NET-Seite sind die
-[Kompatibilitätstests](tests/AgentDeck.Core.Tests/PythonCompatibilityTests.cs):
-sie lesen `protocol.py` und `config.py` zur Testzeit ein und vergleichen sie gegen den
-Port. Läuft eine Seite weg, wird der Test rot — statt dass Kacheln stumm nichts mehr tun.
+Stand: **144/144**. Läuft in der [CI](.github/workflows/ci.yml) bei jedem Push, dort
+zusammen mit einer Syntaxprüfung aller Module (`python -m compileall`).
 
 ## Bekannte Grenzen
 
@@ -271,66 +263,15 @@ Ehrlicher als eine Feature-Liste — das hier ist der Stand, nicht ein Versprech
 - **Der Broker lauscht ohne Authentifizierung auf `127.0.0.1:8765`.** Für localhost
   ist das die übliche Abwägung, aber sie sei genannt.
 
-## Portierung nach .NET (in Arbeit)
+## Ein verworfener .NET-Port
 
-Das Deck wird nach C#/.NET 9 portiert — alles unter [`src/`](src), damit die
-lauffähige Python-Fassung unberührt bleibt. Der Stand ist bewusst hier dokumentiert,
-damit klar ist, was schon trägt und was noch nicht:
+Der Commit `3fcddbc` enthält unter `src/` einen Portierungsversuch nach C#/.NET 9 mit
+WPF. Er ist am 2026-07-29 verworfen worden, und die Lehre daraus ist notiert, weil sie
+sich leicht wiederholen lässt: portiert und golden-getestet war die *Mathematik*
+(Statusmodell, Andock-Rechnerei, Feder, Broker, Hooks) — es fehlte die *Zeichnerei*,
+also genau das, was man sieht. Das Ergebnis sah entsprechend aus.
 
-| Teil | Stand |
-|---|---|
-| `Protocol` — Wire-Vokabular | ✅ portiert, gegen `protocol.py` getestet |
-| `DeckPaths` · `SlotState` — State-Ordner, atomares JSON | ✅ portiert, formatkompatibel |
-| `StatusModel` — Statusinterpretation | ✅ portiert, Tests 1:1 gespiegelt |
-| `Broker` — TCP-Server | ✅ portiert, Round-Trip getestet |
-| `HookState` — Slot-Auflösung über die Prozesskette | ✅ portiert (Toolhelp32 via P/Invoke) |
-| `AgentDeck.Hooks` — Hooks als Exe | ✅ portiert, Ende-zu-Ende geprüft |
-| `SlotStore` · `StatusStyle` — Refresh-Loop, Statusstile | ✅ portiert |
-| `Spring` · `DockGeometry` · `SlotOrder` — Feder, Andock-Rechnerei, Reihenfolge | ✅ portiert |
-| `AgentDeck.App` — Kacheln, Farben, Glow, Atem-Takt | ✅ portiert |
-| `AgentDeck.App` — Edge-Dock, Griff-Kapsel, Drag & Drop, Tooltip, ＋-Kachel, Kontextmenü | ✅ portiert |
-| Hover-**Zusammenfassung**, Ticket-/PR-Auto-Erkennung, Usage-Anzeige | offen (Backend) |
-
-Die Oberfläche ist damit vollständig: das Deck dockt an, klappt sich per Hover auf
-und weg, der Griff leuchtet in der Farbe des dringlichsten Status, Kacheln lassen
-sich umsortieren, per Klick fokussieren und per Rechtsklick umstellen.
-
-Zwei Stellen sind in WPF deutlich einfacher als im Original: die Neon-Kapsel braucht
-kein `UpdateLayeredWindow` (`AllowsTransparency` liefert Per-Pixel-Alpha vom
-Compositor), und die Slide-Animation läuft auf `CompositionTarget.Rendering` – also
-genau ein Frame je Bild des Monitors, was das Stottern eines festen Timers gar nicht
-erst entstehen lässt.
-
-Was noch fehlt, ist **kein** Oberflächen-Thema mehr, sondern Backend: die
-KI-Kurzzusammenfassung im Tooltip und die Ticket-/PR-Erkennung aus dem Transcript
-(`chat_summary.py`, ruft `claude` als Unterprozess auf), die Usage-Anzeige
-(`claude_usage.py`) und die Ticket→Worktree-Zuweisung. Der Tooltip zeigt derzeit den
-zuletzt gestellten Prompt und das per Marker-Datei **zugewiesene** Ticket.
-
-Gerendert wird **idiomatisch**: Kacheln sind XAML-Borders, der Schein ist ein
-`DropShadowEffect` auf der GPU — statt der von Hand komponierten Halo-Bitmaps der
-Python-Fassung. Die Optik ist dadurch bewusst *nicht* pixelgleich.
-
-Damit ist **alles außer der Oberfläche** portiert. Die Hooks sind ein Exe mit
-Unterkommando statt zweier Skripte — in `~/.claude/settings.json` also:
-
-```json
-"command": "C:\\Pfad\\zu\\AgentDeck.Hooks.exe report thinking"
-"statusLine": { "type": "command", "command": "C:\\Pfad\\zu\\AgentDeck.Hooks.exe statusline" }
-```
-
-Sie schreiben dieselben Dateien im selben Format wie die Python-Hooks und sind
-untereinander austauschbar — man kann also einzeln umstellen.
-
-Der Port ist **verhaltensgleich, nicht wörtlich**. Wo Windows sich anders verhält als
-die Python-Annahme, folgt der Port der *dokumentierten Absicht*: `Broker` lässt
-`SO_REUSEADDR` bewusst weg, weil Windows damit zwei Listener auf demselben Port
-zulässt — „Port belegt → still deaktiviert" funktioniert nur ohne die Option.
-
-Zwei Dinge bleiben **absichtlich** wie sie sind:
-
-- **Die VS-Code-Extension bleibt JavaScript.** VS Code lädt keine .NET-Extensions.
-- **Die Python-Fassung bleibt lauffähig**, bis der Port sie vollständig ersetzt.
+Python ist die einzige produktive Fassung.
 
 ## Lizenz
 
