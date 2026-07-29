@@ -6,14 +6,21 @@ wann faellt ein 'denkt' auf idle zurueck, wann ist eine Verbindung verloren, wie
 loest sich die xhigh/ultracode-Effort-Kollision auf und wann uebernimmt das Deck
 einen per Hook gemeldeten Permission-Mode.
 """
+from collections.abc import Container, Iterable, Sequence
+from typing import Any
 
 
-def is_fresh(st, now, stale_s):
-    """Meldung frisch = existiert und ist nicht aelter als stale_s Sekunden."""
-    return bool(st) and (now - st.get("ts", 0) <= stale_s)
+def is_fresh(st: dict[str, Any] | None, now: float, stale_s: float) -> bool:
+    """Meldung frisch = existiert und ist nicht aelter als stale_s Sekunden.
+
+    Der leere Zustand zaehlt bewusst wie kein Zustand: ein {} entsteht, wenn eine
+    Statusdatei halb geschrieben oder kaputt war."""
+    if not st:
+        return False
+    return now - st.get("ts", 0) <= stale_s
 
 
-def normalize_status(status, fresh, valid):
+def normalize_status(status: str, fresh: bool, valid: Container[str]) -> str:
     """Status fuer die Anzeige normalisieren: 'thinking'/'running' ohne frische
     Meldung gilt als eingeschlafen (idle); ein unbekannter Status ebenfalls idle.
     `valid` = erlaubte Status (z.B. die Schluessel von GLOW_STYLE)."""
@@ -24,7 +31,7 @@ def normalize_status(status, fresh, valid):
     return status
 
 
-def is_lost(status, fresh, connected):
+def is_lost(status: str, fresh: bool, connected: bool) -> bool:
     """Rot = Verbindung zum Fenster verloren. Nur fuer frische, aktive Agenten,
     damit alte Restdateien beim Start nicht faelschlich rot werden."""
     return status != "none" and fresh and not connected
@@ -39,13 +46,13 @@ DECK_PRIORITY = ("waiting", "done", "lost", "thinking", "idle", "none")
 _DECK_ALIAS = {"running": "thinking"}
 
 
-def _deck_rank(key):
+def _deck_rank(key: str) -> int:
     """Rang in DECK_PRIORITY (klein = dringlicher); Unbekanntes zaehlt als harmlos."""
     key = _DECK_ALIAS.get(key, key)
     return DECK_PRIORITY.index(key) if key in DECK_PRIORITY else len(DECK_PRIORITY)
 
 
-def dominant_status(keys):
+def dominant_status(keys: Iterable[str]) -> str:
     """Alle Kachel-Status zu EINEM Deck-Gesamtzustand verdichten (fuer die Neon-Farbe
     des eingeklappten Griff-Balkens): Rueckfrage > ungelesen > getrennt > denkt > idle.
     So sieht man am Griff, ob einer etwas von dir will, auch wenn das Deck zu ist.
@@ -58,14 +65,14 @@ def dominant_status(keys):
     return "none"
 
 
-def escalated(prev, key):
+def escalated(prev: str, key: str) -> bool:
     """Wird der Deck-Gesamtzustand DRINGLICHER? Nur dann blitzt der Griff kurz auf.
     Ein Wechsel auf einen ruhigeren Zustand (z.B. ungelesen -> idle, weil du die
     Antwort gelesen hast) ist deine eigene Geste und blitzt bewusst NICHT."""
     return key != prev and _deck_rank(key) < _deck_rank(prev)
 
 
-def resolve_effort(live_eff, remembered):
+def resolve_effort(live_eff: str, remembered: str) -> str:
     """Effort-Kollision aufloesen: die statusLine meldet fuer xhigh UND ultracode
     nur 'xhigh'. Das per Button gemerkte Effort gewinnt bei leer/'xhigh' (und
     ueberbrueckt fehlende Live-Daten); meldet die statusLine ein KONKRETES anderes
@@ -74,7 +81,8 @@ def resolve_effort(live_eff, remembered):
     return remembered if (remembered and live_eff in ("", "xhigh")) else live_eff
 
 
-def mode_steps(remembered, target, cycle, start):
+def mode_steps(remembered: int | None, target: str, cycle: Sequence[str],
+               start: str) -> tuple[int, int] | None:
     """Anzahl Shift+Tab vom angenommenen aktuellen zum Ziel-Modus (zyklisch).
     `remembered` = gemerkter Modus-Index des Slots (None -> es wird der Start-Modus
     angenommen, wie bei einem frischen Chat). Liefert (steps, ziel_index) oder None,
@@ -88,7 +96,8 @@ def mode_steps(remembered, target, cycle, start):
     return (tgt - cur) % len(cycle), tgt
 
 
-def adopt_hook_mode(prev_ts, st, cycle):
+def adopt_hook_mode(prev_ts: float, st: dict[str, Any],
+                    cycle: Sequence[str]) -> tuple[int, float] | None:
     """Ist-Permission-Mode aus einem Hook-Event uebernehmen (self-correcting):
     liefert (mode_index, ts) bei einem NEUEREN Event mit gueltigem Modus, sonst
     None. So folgt die Deck-Annahme dem zuletzt gemeldeten echten Modus."""

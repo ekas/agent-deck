@@ -101,6 +101,13 @@ warn_redundant_casts = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
+# Fertig annotierte Pakete werden hier scharf gestellt: eine neue Funktion ohne
+# Signatur macht mypy rot. Die Liste wächst, während die Annotationen wandern -
+# so bleibt der Fortschritt geprüft statt behauptet.
+module = ["deck.domain.*", "deck.net.*"]
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
 # ctypes-Aufrufe sind von Natur aus untypisiert; hier trägt eine Annotation nichts.
 module = ["deck.platform.win32", "deck.platform.layered"]
 disallow_untyped_defs = false

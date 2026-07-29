@@ -8,6 +8,7 @@ Beide Dateien werden selbstheilend geladen und atomar (deck_paths) geschrieben.
 """
 import os
 import re
+from typing import Any
 
 from deck.domain import config as cfg
 from deck.domain.paths import REPO_ROOT, load_json, save_json
@@ -22,7 +23,7 @@ TICKET_FILE = os.path.join(_DIR, "tickets.json")
 ORDER_FILE = os.path.join(_DIR, "slot_order.json")
 
 
-def is_placeholder_ws(ws):
+def is_placeholder_ws(ws: str | None) -> bool:
     """'Kein echtes Projekt' -> nicht binden/persistieren (sonst Phantom-Kachel).
     Platzhalter sind: leer/None und das reservierte Sentinel 'unknown'. 'unknown'
     war frueher der Name, den ein VS-Code-Fenster OHNE geoeffneten Ordner meldete
@@ -34,7 +35,7 @@ def is_placeholder_ws(ws):
     return not ws or str(ws).strip().lower() in ("", "unknown")
 
 
-def repo_from_title(title):
+def repo_from_title(title: str) -> str:
     """Aus 'file - repo - Visual Studio Code' den Repo-/Ordnernamen ziehen."""
     t = title.replace("●", " ").strip()
     parts = [p.strip() for p in t.split(" - ") if p.strip()]
@@ -45,7 +46,7 @@ def repo_from_title(title):
     return parts[-1] if parts else ""
 
 
-def ticket_slug(ticket):
+def ticket_slug(ticket: str) -> str:
     """Ticket-ID -> ordner-/branch-tauglicher Slug: klein, nur [a-z0-9], alles andere
     zu einem einzelnen '-' zusammengefasst, Raender getrimmt. 'ABC-123: Login fix'
     -> 'abc-123-login-fix'. Leer -> '' (Aufrufer faengt das ab)."""
@@ -58,7 +59,7 @@ def ticket_slug(ticket):
     return slug.strip("-")
 
 
-def ticket_branch(ticket, prefix=None):
+def ticket_branch(ticket: str, prefix: str | None = None) -> str:
     """Branch-Name aus Ticket-ID: PREFIX + slug (z.B. 'ticket/abc-123'). Leerer Slug
     -> ''. prefix default aus config.TICKET_BRANCH_PREFIX."""
     slug = ticket_slug(ticket)
@@ -68,7 +69,7 @@ def ticket_branch(ticket, prefix=None):
     return pref + slug
 
 
-def jira_key(ticket, project=None):
+def jira_key(ticket: str, project: str | None = None) -> str:
     """Aus der eingegebenen Ticket-ID einen Jira-Issue-Key machen, damit der Agent das
     Ticket eindeutig nachschlagen kann. Steckt schon ein Key der Form ABC-123 drin ->
     unveraendert uebernehmen (Projektteil gross, z.B. 'proj-42' -> 'PROJ-42'). Wurde nur
@@ -95,9 +96,9 @@ class BindStore:
     sind schlichte Dicts, die der Aufrufer direkt mutiert; nach Aenderungen
     save_bindings()/save_effort() rufen."""
 
-    def __init__(self, bind_file=BIND_FILE, effort_file=EFFORT_FILE,
-                 ticket_file=TICKET_FILE, settings_file=SETTINGS_FILE,
-                 order_file=ORDER_FILE):
+    def __init__(self, bind_file: str = BIND_FILE, effort_file: str = EFFORT_FILE,
+                 ticket_file: str = TICKET_FILE, settings_file: str = SETTINGS_FILE,
+                 order_file: str = ORDER_FILE) -> None:
         self.bind_file = bind_file
         self.effort_file = effort_file
         self.ticket_file = ticket_file
@@ -109,7 +110,7 @@ class BindStore:
         self.settings = self._load_settings()    # {"slim": bool, …} Panel-Einstellungen
         self.order = self._load_order()          # {"A": [slot, …]} vom Nutzer gezogene Reihenfolge
 
-    def _load_bindings(self):
+    def _load_bindings(self) -> dict[str, str]:
         raw = load_json(self.bind_file)
         if not isinstance(raw, dict):
             # Erst-Start / kaputt / kein Objekt -> aus config.WINDOW_MATCH vorbelegen.
@@ -125,26 +126,26 @@ class BindStore:
                 pass
         return clean
 
-    def save_bindings(self):
+    def save_bindings(self) -> None:
         try:
             save_json(self.bind_file, self.bindings)
         except Exception:
             pass
 
-    def _load_effort(self):
+    def _load_effort(self) -> dict[str, str]:
         """Gemerktes Effort je Slot. Nur so ist ultracode von xhigh unterscheidbar -
         die statusLine meldet fuer beide nur 'xhigh'. Persistent, damit die
         Unterscheidung Neustart/Modellwechsel ueberlebt."""
         raw = load_json(self.effort_file)
         return raw if isinstance(raw, dict) else {}
 
-    def save_effort(self):
+    def save_effort(self) -> None:
         try:
             save_json(self.effort_file, self.effort)
         except Exception:
             pass
 
-    def _load_tickets(self):
+    def _load_tickets(self) -> dict[str, str]:
         """Zugewiesenes Ticket je Slot (Anzeige auf der Karte). Persistent, damit die
         Ticket-ID einen Panel-Neustart ueberlebt. {slot: ticket-id-string}."""
         raw = load_json(self.ticket_file)
@@ -153,26 +154,26 @@ class BindStore:
         # Selbstheilung: nur String-Werte behalten (leere/kaputte Eintraege raus).
         return {k: str(v) for k, v in raw.items() if isinstance(v, str) and v.strip()}
 
-    def save_tickets(self):
+    def save_tickets(self) -> None:
         try:
             save_json(self.ticket_file, self.tickets)
         except Exception:
             pass
 
-    def _load_settings(self):
+    def _load_settings(self) -> dict[str, Any]:
         """Panel-weite Einstellungen (z.B. Slim-Modus an/aus). Ein schlichtes Dict,
         das der Aufrufer direkt mutiert; danach save_settings() rufen. Persistent,
         damit ein Moduswechsel einen Panel-Neustart ueberlebt."""
         raw = load_json(self.settings_file)
         return raw if isinstance(raw, dict) else {}
 
-    def save_settings(self):
+    def save_settings(self) -> None:
         try:
             save_json(self.settings_file, self.settings)
         except Exception:
             pass
 
-    def _load_order(self):
+    def _load_order(self) -> dict[str, list[str]]:
         """Vom Nutzer per Drag&Drop gewaehlte Kachel-Reihenfolge je Fenster. VS Code
         gibt die visuelle Terminal-/Pane-Reihenfolge nicht preis (kein Positions-API)
         -> das Deck ist die Quelle der Wahrheit und merkt sie hier persistent, damit
@@ -187,7 +188,7 @@ class BindStore:
                 clean[str(w)] = [str(s) for s in seq if isinstance(s, str) and s]
         return clean
 
-    def save_order(self):
+    def save_order(self) -> None:
         try:
             save_json(self.order_file, self.order)
         except Exception:

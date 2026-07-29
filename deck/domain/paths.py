@@ -9,6 +9,7 @@ sys.path, der Import haengt also nicht am cwd).
 """
 import json
 import os
+from typing import Any
 
 # Wurzel des Repos: drei Ebenen ueber dieser Datei (deck/domain/paths.py).
 #
@@ -27,25 +28,25 @@ STATE_DIR = os.path.join(
 )
 
 
-def state_path(slot):
+def state_path(slot: str) -> str:
     return os.path.join(STATE_DIR, slot + ".json")
 
 
-def found_ticket_path(slot):
+def found_ticket_path(slot: str) -> str:
     """Marker-Datei, in die ein Agent bei der 'Im Chat suchen'-Zuweisung die selbst
     gefundene Ticket-ID schreibt (Klartext, eine Zeile). Das Deck kennt die ID dann
     nicht vorher und liest sie von hier fuer die Karten-Anzeige."""
     return os.path.join(STATE_DIR, slot + ".ticket")
 
 
-def worktree_marker_path(slot):
+def worktree_marker_path(slot: str) -> str:
     """Marker-Datei, in die ein Agent den absoluten Pfad des fuer sein Ticket
     angelegten git worktree schreibt (Klartext, eine Zeile). Beim Schliessen des
     Agenten raeumt das Deck genau diesen worktree wieder auf (worktree_cleanup)."""
     return os.path.join(STATE_DIR, slot + ".worktree")
 
 
-def load_json(path, default=None):
+def load_json(path: str, default: Any = None) -> Any:
     """JSON aus path lesen; fehlt/halb geschrieben/kaputt -> default (nie Exception)."""
     try:
         with open(path, encoding="utf-8") as f:
@@ -54,7 +55,7 @@ def load_json(path, default=None):
         return default
 
 
-def save_json(path, data):
+def save_json(path: str, data: Any) -> None:
     """Atomar schreiben: erst <path>.tmp, dann os.replace -> nie halbe Dateien.
     Legt den Zielordner bei Bedarf an."""
     os.makedirs(os.path.dirname(path), exist_ok=True)

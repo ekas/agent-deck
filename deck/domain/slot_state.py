@@ -7,11 +7,17 @@ Ordner und das atomare Schreiben kommen aus deck_paths (eine Quelle).
 """
 import os
 import time
+from typing import Any
 
 from deck.domain.paths import STATE_DIR, load_json, save_json, state_path
 
+# Ein Slot-Zustand, wie report.py ihn schreibt. Bewusst locker typisiert: das Format
+# ist ein VERTRAG zwischen zwei Prozessen (Hook schreibt, Panel liest) und darf hier
+# nicht enger werden als dort - ein neues Feld im Hook soll das Panel nicht brechen.
+SlotState = dict[str, Any]
 
-def write_state(slot, status):
+
+def write_state(slot: str, status: str) -> None:
     """Schreibt den Zustand atomar (deck_paths.save_json: erst .tmp, dann os.replace).
     Vorhandene Zusatzfelder (mode/effort/prompt/session_id/…) bleiben erhalten -> das
     'als gelesen markieren' (done->idle beim Anklicken) verliert die letzte Frage
@@ -21,7 +27,7 @@ def write_state(slot, status):
     save_json(state_path(slot), rec)
 
 
-def clear_state(slot):
+def clear_state(slot: str) -> None:
     """Zustands-Datei eines Slots entfernen (beim Schliessen eines Agenten). Verhindert,
     dass ein spaeter WIEDERVERWENDETER Slot-Name — die Extension vergibt <Fenster><max+1>,
     recycelt also den Namen des geschlossenen hoechsten Agenten — den alten Status/Modus
@@ -33,7 +39,7 @@ def clear_state(slot):
         pass
 
 
-def read_all():
+def read_all() -> dict[str, SlotState]:
     """Liefert {slot: {status, ts, mode, effort, activity}} aus state/<slot>.json.
     Ignoriert .live.json (statusLine) und pidmap-*.json."""
     out = {}
@@ -49,7 +55,7 @@ def read_all():
     return out
 
 
-def read_live():
+def read_live() -> dict[str, SlotState]:
     """Live-Werte aus state/<slot>.live.json (von statusline.py): {slot: {...}}."""
     out = {}
     suffix = ".live.json"
@@ -65,7 +71,7 @@ def read_live():
     return out
 
 
-def read_found_tickets():
+def read_found_tickets() -> dict[str, str]:
     """Vom Agenten selbst gemeldete Ticket-IDs aus state/<slot>.ticket (Klartext, eine
     Zeile) – genutzt bei der 'Im Chat suchen'-Zuweisung, bei der das Deck die ID nicht
     vorher kennt. {slot: id}. Kaputte/leere Dateien werden ignoriert; der Wert wird auf
@@ -88,7 +94,7 @@ def read_found_tickets():
     return out
 
 
-def read_found_worktrees():
+def read_found_worktrees() -> dict[str, str]:
     """Vom Agenten gemeldete worktree-Pfade aus state/<slot>.worktree (Klartext, eine
     Zeile mit dem absoluten Pfad). Beim Schliessen des Agenten raeumt das Deck genau
     diesen worktree auf. {slot: pfad}. Kaputte/leere Dateien werden ignoriert; der
