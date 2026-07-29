@@ -24,7 +24,7 @@ erkannt wird, was im Gespraech steht. Ergebnis liegt im selben Session-Cache (Fe
 
 Reine stdlib. Der Aufruf blockiert (subprocess) und gehoert NICHT auf den Tk-Thread;
 agent_deck ruft `generate()` aus einem Daemon-Thread. `extract_turns`/`build_digest`/
-`clean_summary`/`find_ticket`/`find_pr` sind pur und unit-getestet (tests/test_pure.py).
+`clean_summary`/`find_ticket`/`find_pr` sind pur und unit-getestet (tests/test_claude_summarize.py).
 """
 import os
 import re

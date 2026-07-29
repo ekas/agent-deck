@@ -27,4 +27,4 @@ jobs:
         run: python -m compileall -q .
 
       - name: Unit-Tests
-        run: python tests/test_pure.py
+        run: python tests/run.py

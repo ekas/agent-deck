@@ -31,7 +31,7 @@ Funktionen definierte Fehler, die der UsagePoller abfaengt und als Fehlertext in
 den Snapshot legt. Das Deck laeuft ungestoert weiter; das Badge zeigt dann "—".
 
 Bewusst OHNE tkinter-Import -> die puren Parser (parse_usage / fmt_reset /
-severity_color / tooltip_text) sind headless testbar (tests/test_pure.py).
+severity_color / tooltip_text) sind headless testbar (tests/test_claude_usage.py).
 """
 import os
 import glob

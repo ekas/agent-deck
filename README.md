@@ -235,12 +235,14 @@ Die anzeigefreie Logik ist unit-getestet — Statusmodell, Ticket-/PR-Erkennung,
 Farb- und Text-Helfer, Worktree-Parsing, Usage-Auswertung, Watchdog-Urteile:
 
 ```powershell
-python tests/test_pure.py     # eigener Mini-Runner, kein pytest nötig
-python -m pytest tests/       # geht auch
+python tests/run.py                   # alle 144 Tests, kein pytest nötig
+python tests/test_dock_animation.py   # eine Datei allein läuft auch
+python -m pytest tests/               # geht ebenfalls
 ```
 
-Stand: **144/144**. Läuft in der [CI](.github/workflows/ci.yml) bei jedem Push, dort
-zusammen mit einer Syntaxprüfung aller Module (`python -m compileall`).
+Stand: **144/144** in 20 Dateien, die `deck/` spiegeln. Läuft in der
+[CI](.github/workflows/ci.yml) bei jedem Push, dort zusammen mit einer Syntaxprüfung
+aller Module (`python -m compileall`).
 
 ## Bekannte Grenzen
 

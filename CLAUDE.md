@@ -6,7 +6,8 @@ Farbe = Zustand; dockt am Bildschirmrand an. Windows-only, Python 3.12+ / tkinte
 ## Kommandos
 
 ```powershell
-python tests/test_pure.py     # Unit-Tests der anzeigefreien Logik, immer vor dem Commit
+python tests/run.py            # alle Unit-Tests, immer vor dem Commit
+python tests/test_dock_animation.py   # eine Datei allein läuft auch
 python -m compileall -q .      # Syntaxprüfung aller Module
 start.bat                      # Panel leise starten (pythonw, keine Konsole)
 start_debug.bat                # Panel mit Konsole — für den ersten Start und bei Fehlersuche
@@ -116,9 +117,14 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
   aufgeteilt; neue Konzepte kommen in eigene Module, statt dort anzuwachsen.
 - **Kommentare auf Deutsch**, wie der Rest des Repos. Sie erklären das *Warum* — das
   *Was* steht im Code.
-- **Tests spiegeln `deck/`.** Die Suite läuft mit pytest ODER direkt
-  (`python tests/test_pure.py`, eigener Mini-Runner am Dateiende) und fasst nur
-  anzeigefreie Logik an. Ein Testname beschreibt die Regel, nicht die Methode
+- **Tests spiegeln `deck/`** — eine Datei je Modulbereich, benannt nach ihm
+  (`test_dock_animation.py`, `test_claude_usage.py`). Sie fassen nur anzeigefreie
+  Logik an und laufen **ohne pytest**: `tests/run.py` sammelt alle `test_*.py` ein,
+  jede Datei ist aber auch einzeln aufrufbar. `tests/helpers.py` legt die Repo-Wurzel
+  auf den `sys.path` und nagelt die Deck-Sprache auf Deutsch — ohne das hingen die
+  Anzeige-Tests am echten `~/.claude/settings.json`. Darum importiert **jede**
+  Testdatei `helpers`, auch wenn sie nichts daraus benutzt.
+- Ein Testname beschreibt die Regel, nicht die Methode
   (`test_explizites_window_null_loescht_die_zuordnung`).
 - **Keine neuen Abhängigkeiten** ohne Not. Außer Pillow kommt das Deck mit der
   Standardbibliothek aus; das ist Absicht und soll so bleiben.
