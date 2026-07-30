@@ -31,7 +31,10 @@ Dasselbe gilt für VS Codes Extension-Registratur: `deck/ops/vscode_ext.py` schr
 nach denselben Regeln und mit denselben Tests (`tests/test_ops_vscode_ext.py`). Beide
 Module werden aus `install.ps1` über `Invoke-DeckTool` aufgerufen und liefern ihre
 Bilanz als `## fails=N warns=N` zurück — das Skript **zeigt** Urteile an, es fällt keine.
-Wer eine neue Prüfung braucht, schreibt sie in Python, wo sie getestet ist.
+Wer eine neue Prüfung braucht, schreibt sie in Python, wo sie getestet ist. Die Bilanzzeile
+ist Pflicht auf **jedem** Rückgabeweg: kommt ein Modul ohne sie zurück (Traceback,
+Tippfehler im Modulnamen, halbe Installation), ist das selbst ein Befund — sonst zählt der
+Lauf null Probleme und meldet am Ende grün.
 
 ## Aufbau
 
@@ -183,6 +186,16 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
   „python.exe startet nicht (Microsoft-Store-Platzhalter?)", obwohl Python tadellos lief.
   Unter `pwsh` 7 lief dasselbe Snippet durch; kaputt war ausgerechnet die Aufrufform aus
   der Doku (`powershell -File install.ps1 -Check`). Wer prüft, prüft unter **5.1**.
+
+  Die Fassung mit `"` (Commit `227acb5`) lief noch am selben Tag bei einem Kollegen auf,
+  und die Meldung log dabei **zweimal**: sie behauptete „startet nicht", obwohl Python
+  tadellos lief — und sie zeigte nur die *erste* stderr-Zeile (`File "<string>", line 1`),
+  weil `$ErrorActionPreference = 'Stop'` aus einem `2>&1` bei einem nativen Programm einen
+  terminierenden Fehler macht: im `catch` bleibt der NativeCommandError, und der ist eine
+  Zeile lang. Genau der Satz mit dem `SyntaxError` fehlte also, und darum las sich ein
+  Fehler *im Aufruf* wie ein fehlendes Python. `Try-Run` senkt die Preference seither
+  lokal ab und die Meldung gibt den Wortlaut mehrzeilig aus. Merksatz: **die ganze
+  Ausgabe zeigen** — die Diagnose steht selten in Zeile 1.
 - **`SO_REUSEADDR` ist in `deck/net/broker.py` schädlich.** Unter Windows erlaubt die
   Option zwei Listener auf demselben Port; „Port belegt → still deaktiviert" greift dann
   nicht, und Extensions landen beim toten Panel. Der Guard dagegen ist

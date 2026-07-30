@@ -61,12 +61,28 @@ function Info ($t) { Write-Host "         $t" -ForegroundColor DarkGray }
 # (die Argumente der Funktion selbst). Ein gleichnamiger Parameter wird ueberschrieben,
 # das Kommando startet dann ohne Argumente - bei python heisst das: die REPL geht auf,
 # und ihr Banner landet als "Ausgabe" in der Auswertung.
+#
+# $ErrorActionPreference steht im Skript auf 'Stop', und damit macht Windows PowerShell
+# 5.1 aus `2>&1` bei einem NATIVEN Programm einen terminierenden Fehler: die erste
+# stderr-Zeile kommt als NativeCommandError im catch an, der REST IST WEG. So wurde am
+# 2026-07-30 aus einem viergezeiligen Python-SyntaxError die Meldung
+#
+#   [FAIL] python.exe startet nicht (Microsoft-Store-Platzhalter?):   File "<string>", line 1
+#
+# - ausgerechnet die Zeile mit dem `SyntaxError` fehlte, und darum las sich ein Fehler IM
+# Aufruf wie ein fehlendes Python. Hier also lokal absenken: die Ausgabe eines
+# Kommandos, das scheitern DARF, ist ein Ergebnis und kein Fehler.
 function Try-Run([string]$exe, [string[]]$argv) {
+    $alt = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     try {
         $out = & $exe @argv 2>&1
-        return @{ ok = ($LASTEXITCODE -eq 0); code = $LASTEXITCODE; out = ($out -join "`n") }
+        return @{ ok = ($LASTEXITCODE -eq 0); code = $LASTEXITCODE
+                  out = (($out | ForEach-Object { "$_" }) -join "`n") }
     } catch {
         return @{ ok = $false; code = -1; out = "$_" }
+    } finally {
+        $ErrorActionPreference = $alt
     }
 }
 
@@ -82,14 +98,30 @@ function Invoke-DeckTool([string]$mod, [string[]]$extra) {
     $a = @('-m', $mod, '--porcelain')
     if ($extra) { $a += $extra }     # ohne Guard haengt $null als leeres Argument an
     Push-Location $Here              # damit `python -m deck...` das Paket findet
+    $script:Bilanz = $false
+    $alt = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'   # 2>&1 mit 'Stop' verschluckt Tracebacks, s.o.
     try {
-        & $py @a | ForEach-Object {
-            if ($_ -match '^## fails=(\d+) warns=(\d+)$') {
+        & $py @a 2>&1 | ForEach-Object {
+            $zeile = "$_"
+            if ($zeile -match '^## fails=(\d+) warns=(\d+)$') {
                 $script:Fails += [int]$Matches[1]
                 $script:Warns += [int]$Matches[2]
-            } else { Write-Host $_ }
+                $script:Bilanz = $true
+            } else { Write-Host $zeile }
         }
-    } finally { Pop-Location }
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $alt
+        Pop-Location
+    }
+    # Beide Module drucken die Bilanz auf JEDEM Rueckgabeweg. Fehlt sie, ist das Modul
+    # nicht bis zum Ende gekommen (Traceback, Tippfehler im Modulnamen, halbe
+    # Installation) - und dann zaehlt dieser Lauf null Befunde und meldet am Ende gruen.
+    # Das ist dieselbe Sorte Luege wie ein Hook mit Exit 0, der nichts schreibt.
+    if (-not $script:Bilanz) {
+        Fail "python -m $mod kam ohne Bilanz zurueck (Exit $code) - seine Ausgabe steht darueber."
+    }
 }
 
 Write-Host ''
@@ -118,7 +150,15 @@ if (-not $py) {
         'import sys; print(sys.version.split()[0]); sys.exit(0 if sys.version_info >= (3,12) else 9)')
     $ver = ($v.out -split "`n")[0].Trim()
     if ($v.code -eq 9)      { Fail "Python $ver gefunden, gebraucht wird 3.12+." }
-    elseif (-not $v.ok)     { Fail "python.exe startet nicht (Microsoft-Store-Platzhalter?): $($v.out)" }
+    elseif (-not $v.ok)     {
+        # Die Ausgabe MEHRZEILIG zeigen und nichts behaupten, was sie nicht sagt: wer
+        # eine Fehlermeldung liefert, ist gestartet. Ein Store-Platzhalter sagt "Python
+        # wurde nicht gefunden"; ein SyntaxError in "<string>" sagt, dass die
+        # Kommandozeile verstuemmelt ankam - zwei Fehler, eine Zeile, verschiedene Wege.
+        Fail "python.exe liefert keine Version (Exit $($v.code)). Wortlaut:"
+        $v.out -split "`n" | ForEach-Object { Info $_ }
+        Info 'SyntaxError in "<string>"? Dann kam das Snippet zerhackt an - install.ps1 aktualisieren (git pull).'
+    }
     else {
         Ok "Python $ver ($py)"
         # tkinter fehlt bei der Store-Python - und ohne es gibt es kein Fenster.
