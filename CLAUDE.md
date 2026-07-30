@@ -6,8 +6,9 @@ Farbe = Zustand; dockt am Bildschirmrand an. Windows-only, Python 3.12+ / tkinte
 ## Kommandos
 
 ```powershell
-.\install.ps1                  # EINRICHTUNG: prüft, holt Pillow, kopiert Extension,
-                               #   merged Hooks+statusLine, beweist den Schreibvorgang
+.\install.ps1                  # EINRICHTUNG: prüft, holt Pillow, kopiert Extension UND
+                               #   registriert sie, merged Hooks+statusLine, beweist den
+                               #   Schreibvorgang
 .\install.ps1 -Check           # der Doctor — erste Adresse, wenn Kacheln stumm bleiben
 python tests/run.py            # alle Unit-Tests, immer vor dem Commit
 python tests/test_dock_animation.py   # eine Datei allein läuft auch
@@ -26,6 +27,12 @@ Repo wird repariert statt verdoppelt) und getestet (`tests/test_claude_hook_setu
 Wer die Hook-Einträge ändert, ändert sie **dort**, nicht in der Doku: `docs/SETUP.md`
 beschreibt nur noch, was das Skript tut.
 
+Dasselbe gilt für VS Codes Extension-Registratur: `deck/ops/vscode_ext.py` schreibt sie,
+nach denselben Regeln und mit denselben Tests (`tests/test_ops_vscode_ext.py`). Beide
+Module werden aus `install.ps1` über `Invoke-DeckTool` aufgerufen und liefern ihre
+Bilanz als `## fails=N warns=N` zurück — das Skript **zeigt** Urteile an, es fällt keine.
+Wer eine neue Prüfung braucht, schreibt sie in Python, wo sie getestet ist.
+
 ## Aufbau
 
 Der Code liegt im Paket `deck/`. Abhängigkeiten zeigen **nur nach unten** — wer eine
@@ -38,7 +45,7 @@ Datei anlegt, entscheidet zuerst, in welche Schicht sie gehört:
 | `deck/render/` | Zeichnerei (Pillow/Canvas): Kachel, Kapsel, Welle, Glow | `domain`, `platform` |
 | `deck/net/` | Broker (TCP) und Kommando-Vokabular zur Extension | `domain` |
 | `deck/claude/` | Claude-Code-Spezifisches: Usage, Zusammenfassung, Settings, **Hooks** | `domain`, `i18n` |
-| `deck/ops/` | Betrieb: Log, Zweitstart-Guard, Wächter, Worktrees, VS-Code-Patch | `domain`, `platform`, `i18n` |
+| `deck/ops/` | Betrieb: Log, Zweitstart-Guard, Wächter, Worktrees, VS-Code-Patch, Extension-Registratur | `domain`, `platform`, `i18n` |
 | `deck/dock/` | Andocken am Rand, Griff-Fenster, Slide-Animation | `domain`, `platform`, `render` |
 | `deck/ui/` | Panel-Fenster, Kacheln, Interaktion — die oberste Schicht | alle |
 | `deck/i18n.py` | Deutsch/Englisch. Querschnitt, liegt auf der Paketwurzel und ist die **einzige** erlaubte Abhängigkeit nach oben (der Sprachregler steht in Claudes `settings.json`) | `claude` |
@@ -73,7 +80,8 @@ das man auf Papier nachprüfen könnte, gehört sie nach `domain/`.
 | ein neues Kommando an die Extension | `domain/protocol.py` **und** `extension/extension.js` |
 | Hook-Verhalten (was gemeldet wird) | `claude/hooks/report.py` |
 | welche Hooks **eingetragen** werden | `claude/hook_setup.py` (`HOOKS`) — und `docs/SETUP.md`-Anhang nachziehen |
-| Einrichtung, Voraussetzungs-Prüfung | `install.ps1` — Rechnen und Urteile aber in `claude/hook_setup.py`, damit sie getestet sind |
+| ob VS Code die Extension überhaupt **lädt** | `ops/vscode_ext.py` (Eintrag in `extensions.json`) — der Ordner allein beweist nichts |
+| Einrichtung, Voraussetzungs-Prüfung | `install.ps1` — Rechnen und Urteile aber in `claude/hook_setup.py` bzw. `ops/vscode_ext.py`, damit sie getestet sind |
 | Usage: Zahlen holen | `claude/usage.py`, Token in `claude/usage_token.py` |
 | Usage: Anzeige und Ampelfarben | `claude/usage_view.py`, Balken in `ui/bottombar.py` |
 | Ticket zuweisen | `ui/ticket.py` |
@@ -151,8 +159,30 @@ Fünf Dateien liegen bewusst **außerhalb** von `deck/` und enthalten nur einen
 6. **Die VS-Code-Extension ist JavaScript** — VS Code lädt nur JS-Extensions. Das ist
    keine offene Aufgabe.
 
+7. **Der Extension-Ordner ist nicht die Installation.** Geladen wird, was in VS Codes
+   Registratur `~/.vscode/extensions/extensions.json` steht — der Ordner
+   `agent-deck-bridge\` daneben ist nur die Ware. Beides kann auseinanderlaufen: wird der
+   Ordner umbenannt, bleibt der Eintrag stehen und zeigt ins Leere. VS Code meldet dann
+   beim Start einmal `Unable to read file '…\package.json'` und lädt die Extension **gar
+   nicht**, während der richtige Ordner unregistriert daneben liegt.
+
+   Das ist die Extension-Fassung von Falle 3: am Ordner ist nichts zu sehen. Genau
+   deshalb hat `install.ps1 -Check` am 2026-07-30 grün „Extension installiert und
+   aktuell" gemeldet — es prüfte Datei und Hash, und beide stimmten — während die Brücke
+   zum Panel tot war. Seither urteilt `deck/ops/vscode_ext.py` darüber, und zwar
+   getestet. Wer die Registratur anfasst, beachtet zwei Dinge: dort stehen **alle**
+   Extensions des Nutzers (also ergänzen, nie neu schreiben — und eine Datei, die nicht
+   als JSON-Array liest, gar nicht anfassen), und eine Reparatur wirkt erst nach
+   „Developer: Reload Window", pro Fenster.
+
 ## Fallen, die schon einmal wehgetan haben
 
+- **Keine `"` in ein `python -c`-Snippet in `install.ps1`.** Windows PowerShell 5.1
+  entfernt sie beim Weitergeben an ein natives Programm — aus `print("%d")` wird
+  `print(%d)`, Python wirft einen SyntaxError, und der Doctor meldete daraufhin
+  „python.exe startet nicht (Microsoft-Store-Platzhalter?)", obwohl Python tadellos lief.
+  Unter `pwsh` 7 lief dasselbe Snippet durch; kaputt war ausgerechnet die Aufrufform aus
+  der Doku (`powershell -File install.ps1 -Check`). Wer prüft, prüft unter **5.1**.
 - **`SO_REUSEADDR` ist in `deck/net/broker.py` schädlich.** Unter Windows erlaubt die
   Option zwei Listener auf demselben Port; „Port belegt → still deaktiviert" greift dann
   nicht, und Extensions landen beim toten Panel. Der Guard dagegen ist

@@ -70,6 +70,28 @@ function Try-Run([string]$exe, [string[]]$argv) {
     }
 }
 
+# Ein deck-Modul laufen lassen, das seine eigenen Urteile faellt. Die Urteile gehoeren
+# nach Python, weil sie dort getestet sind (tests/test_claude_hook_setup.py,
+# tests/test_ops_vscode_ext.py); dieses Skript zeigt sie nur an und zaehlt mit.
+#
+# Gezaehlt wird an der ausdruecklichen Bilanzzeile (## fails=N warns=N), nicht am
+# Meldungstext: eine Textkopplung bricht beim naechsten Umformulieren still und zeigt
+# dann falsche Zahlen. Die Zeile wird aus der Anzeige wieder herausgefiltert.
+function Invoke-DeckTool([string]$mod, [string[]]$extra) {
+    if (-not $py) { Fail 'ohne Python nicht moeglich'; return }
+    $a = @('-m', $mod, '--porcelain')
+    if ($extra) { $a += $extra }     # ohne Guard haengt $null als leeres Argument an
+    Push-Location $Here              # damit `python -m deck...` das Paket findet
+    try {
+        & $py @a | ForEach-Object {
+            if ($_ -match '^## fails=(\d+) warns=(\d+)$') {
+                $script:Fails += [int]$Matches[1]
+                $script:Warns += [int]$Matches[2]
+            } else { Write-Host $_ }
+        }
+    } finally { Pop-Location }
+}
+
 Write-Host ''
 Write-Host 'Agent Deck - Einrichtung' -ForegroundColor White
 Write-Host "  Repo: $Here" -ForegroundColor DarkGray
@@ -85,8 +107,15 @@ if (-not $py) {
     # [version]-Cast in PowerShell verliert sich sonst an Ausgaben wie "3.14.0rc1"
     # oder am REPL-Banner, falls der Aufruf ins Interaktive kippt.
     # Der Store-Stub heisst auch python.exe, oeffnet aber nur den Microsoft Store.
+    #
+    # KEINE Anfuehrungszeichen in dieses Snippet: Windows PowerShell 5.1 entfernt sie
+    # beim Weitergeben an ein natives Programm. Aus print("%d") wurde so print(%d),
+    # Python warf einen SyntaxError - und der Doctor meldete "python.exe startet nicht
+    # (Microsoft-Store-Platzhalter?)", obwohl Python tadellos lief. Unter pwsh 7 lief
+    # dasselbe Snippet durch, unter `powershell -File install.ps1` also nicht: genau
+    # die Zeile, die in der Doku steht. sys.version.split() braucht keine Quotes.
     $v = Try-Run $py @('-c',
-        'import sys; print("%d.%d.%d" % sys.version_info[:3]); sys.exit(0 if sys.version_info >= (3,12) else 9)')
+        'import sys; print(sys.version.split()[0]); sys.exit(0 if sys.version_info >= (3,12) else 9)')
     $ver = ($v.out -split "`n")[0].Trim()
     if ($v.code -eq 9)      { Fail "Python $ver gefunden, gebraucht wird 3.12+." }
     elseif (-not $v.ok)     { Fail "python.exe startet nicht (Microsoft-Store-Platzhalter?): $($v.out)" }
@@ -138,6 +167,9 @@ $dstJs = Join-Path $ExtDst 'extension.js'
 if ($Remove) {
     if (Test-Path $ExtDst) { Remove-Item $ExtDst -Recurse -Force; Ok 'Extension entfernt' }
     else { Ok 'Extension war nicht installiert' }
+    # Auch aus der Registratur nehmen: ein Eintrag ohne Ordner ist genau der Zustand,
+    # der die Pruefung unten ueberhaupt erst noetig gemacht hat.
+    Invoke-DeckTool 'deck.ops.vscode_ext' @('--remove')
 } elseif ($Check) {
     if (-not (Test-Path $dstJs)) {
         Fail "Extension nicht installiert ($ExtDst)"
@@ -145,41 +177,34 @@ if ($Remove) {
         # Genau dieses Fehlerbild stand schon zweimal hinter "verbindet nicht mehr".
         Fail 'Installierte Extension weicht vom Repo ab - install.ps1 neu laufen lassen, dann Reload Window.'
     } else {
-        Ok 'Extension installiert und aktuell'
+        Ok 'Extension-Ordner ist da und aktuell'
     }
+    # Der Ordner allein beweist NICHTS: geladen wird, was in VS Codes extensions.json
+    # steht. Am 2026-07-30 zeigte der Eintrag dort auf einen umbenannten Ordner, und
+    # dieser Schritt meldete gruen, waehrend VS Code die Extension nie geladen hat.
+    Invoke-DeckTool 'deck.ops.vscode_ext' @('--check')
 } else {
     $vorher = if (Test-Path $dstJs) { (Get-FileHash $dstJs).Hash } else { '' }
     New-Item -ItemType Directory -Force -Path $ExtDst | Out-Null
     Copy-Item (Join-Path $Here 'extension\*') $ExtDst -Recurse -Force
     if ($vorher -eq (Get-FileHash $dstJs).Hash) { Ok 'Extension war schon aktuell' }
-    else { Ok "Extension kopiert -> $ExtDst"; Info 'In JEDEM offenen VS-Code-Fenster: "Developer: Reload Window"' }
+    else { Ok "Extension kopiert -> $ExtDst" }
+    # Erst kopieren, DANN registrieren - umgekehrt legt der Lauf einen Eintrag auf einen
+    # Ordner an, den es noch nicht gibt, und VS Code bricht beim Laden ab.
+    Invoke-DeckTool 'deck.ops.vscode_ext'
+    Info 'In JEDEM offenen VS-Code-Fenster: "Developer: Reload Window"'
 }
 
 # ── 4. Hooks in ~/.claude/settings.json ──────────────────────────────────────
 $SettingsShown = if ($SettingsPath) { $SettingsPath } else { '~/.claude/settings.json' }
 Step "4/5  Hooks und statusLine in $SettingsShown"
 
-if (-not $py) {
-    Fail 'ohne Python nicht moeglich'
-} else {
-    Push-Location $Here      # damit `python -m deck...` das Paket findet
-    try {
-        $a = @('-m', 'deck.claude.hook_setup', '--porcelain')
-        if ($Check)  { $a += '--check' }
-        if ($Remove) { $a += '--remove' }
-        if ($Force)  { $a += '--force' }
-        if ($SettingsPath) { $a += @('--settings', $SettingsPath) }
-        # Die Bilanzzeile aus der Anzeige nehmen und in die Gesamtzaehlung geben. Ohne
-        # sie muesste hier der Meldungstext geparst werden - eine Kopplung, die beim
-        # naechsten Umformulieren still bricht und dann falsche Zahlen zeigt.
-        & $py @a | ForEach-Object {
-            if ($_ -match '^## fails=(\d+) warns=(\d+)$') {
-                $script:Fails += [int]$Matches[1]
-                $script:Warns += [int]$Matches[2]
-            } else { Write-Host $_ }
-        }
-    } finally { Pop-Location }
-}
+$a = @()
+if ($Check)  { $a += '--check' }
+if ($Remove) { $a += '--remove' }
+if ($Force)  { $a += '--force' }
+if ($SettingsPath) { $a += @('--settings', $SettingsPath) }
+Invoke-DeckTool 'deck.claude.hook_setup' $a
 
 # ── 5. Der Beweis: schreibt ein Hook wirklich? ───────────────────────────────
 Step '5/5  Beweis (Hook feuern und state\ pruefen)'

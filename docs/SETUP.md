@@ -30,6 +30,7 @@ Das Skript erledigt in einem Lauf alles, was früher Handarbeit war:
 | **prüft** | Python 3.12+, tkinter (fehlt bei der Store-Python!), VS Code, `claude` auf dem PATH, Anmeldung |
 | **holt** | Pillow (`requirements.txt`) |
 | **kopiert** | die Extension nach `~/.vscode/extensions/agent-deck-bridge` |
+| **registriert** | sie in VS Codes `extensions.json` — der Ordner allein genügt nicht, geladen wird nur, was dort steht |
 | **merged** | die sechs Hooks **und die `statusLine`** in `~/.claude/settings.json` — mit absolutem Pfad und `\|\| exit 0` |
 | **beweist** | dass ein Hook wirklich schreibt: er wird gefeuert, und danach muss eine Datei in `state\` frisch sein |
 | **startet** | das Panel (falls nicht schon eins läuft) |
@@ -52,7 +53,16 @@ wieder aufrufen — nach einem Repo-Umzug ist es sogar der Weg, die Pfade zu rep
 **`-Check` ist die erste Adresse, wenn etwas nicht geht.** Er nennt jeden Befund
 einzeln — fehlender Hook, `cmd /c`, fehlendes `|| exit 0`, Pfad ins Leere, Pfad in ein
 anderes Repo, veraltete installierte Extension (ein Fehlerbild, das schon zweimal hinter
-„verbindet nicht mehr" stand).
+„verbindet nicht mehr" stand) und die Extension, die zwar an ihrem Platz liegt, aber in
+VS Codes `extensions.json` **nicht registriert** ist bzw. deren Eintrag auf einen
+umbenannten Ordner zeigt.
+
+Dieser letzte Befund ist am 2026-07-30 dazugekommen, weil er vorher durchfiel: der
+Eintrag zeigte auf `agent-deck-bridge.testbackup`, VS Code meldete beim Start einmal
+`Unable to read file '…\package.json'` und lud die Extension nicht — während `-Check`
+grün „installiert und aktuell" sagte, denn Ordner und Hash stimmten ja. Geradebiegen tut
+das ein gewöhnlicher `.\install.ps1`-Lauf; danach in **jedem** Fenster „Developer: Reload
+Window".
 
 > Kein `agentDeck.window`-Setting und kein Ordnername in `deck/domain/config.py` von Hand
 > nötig — welches Fenster A bzw. B ist, legst du **im Panel per Klick** fest (Schritt 3).
